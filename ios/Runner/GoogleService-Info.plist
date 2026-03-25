@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>592011118-c9i6errsnb0fd3ren7ed36v3k0u7famd.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCabp0mwzNWdBsqnP8u-purIitWZ1d9aSI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>592011118</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.juegaloGanaDinero</string>
+	<key>PROJECT_ID</key>
+	<string>juegalo-491305</string>
+	<key>STORAGE_BUCKET</key>
+	<string>juegalo-491305.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:592011118:ios:a7a860142f072fa2292b7f</string>
+</dict>
+</plist>

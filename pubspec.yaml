@@ -1,0 +1,75 @@
+name: juegalo_gana_dinero
+description: "JUÉGALO — Gana Dinero Real."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # --- State Management ---
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # --- Navegación ---
+  go_router: ^14.6.2
+
+  # --- Supabase (auth + DB + realtime) ---
+  supabase_flutter: ^2.8.1
+
+  # --- Auth social ---
+  google_sign_in: ^6.2.2
+
+  # --- HTTP ---
+  dio: ^5.7.0
+
+  # --- Cache local ---
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.3.4
+
+  # --- AdMob (videos rewarded) ---
+  google_mobile_ads: ^5.3.0
+
+  # --- WebView (offerwall Tapjoy / CPX Research) ---
+  flutter_inappwebview: ^6.1.5
+
+  # --- Push notifications (Firebase FCM) ---
+  firebase_core: ^3.10.0
+  firebase_messaging: ^15.2.4
+  flutter_local_notifications: ^17.2.4
+
+  # --- UI ---
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  lottie: ^3.3.1
+  flutter_svg: ^2.0.17
+  percent_indicator: ^4.2.4
+  intl: ^0.19.0
+
+  # --- Utilidades ---
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
+  connectivity_plus: ^6.1.1
+  package_info_plus: ^8.1.3
+  uuid: ^4.5.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.3
+  hive_generator: ^2.0.1
+  json_serializable: ^6.9.0
