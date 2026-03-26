@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/notification_service.dart';
 
 // Web OAuth client ID (para que Supabase verifique el token)
 const _webClientId =
@@ -19,6 +20,11 @@ class AppUser {
   final int dailyCoins;
   final int dailyGoal;
   final int streakDays;
+  final String referralCode;
+  final int referralsCount;
+  final int referralEarnings;
+  final bool reviewClaimed;
+  final bool dailyBonusClaimed;
 
   const AppUser({
     required this.id,
@@ -30,19 +36,33 @@ class AppUser {
     required this.dailyCoins,
     required this.dailyGoal,
     required this.streakDays,
+    this.referralCode      = '',
+    this.referralsCount    = 0,
+    this.referralEarnings  = 0,
+    this.reviewClaimed     = false,
+    this.dailyBonusClaimed = false,
   });
 
-  factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
-    id:           j['id'] as String,
-    username:     j['username'] as String? ?? '',
-    email:        j['email'] as String? ?? '',
-    countryCode:  j['country_code'] as String? ?? 'MX',
-    coins:        j['coins'] as int? ?? 0,
-    totalEarned:  j['total_earned'] as int? ?? 0,
-    dailyCoins:   j['daily_coins'] as int? ?? 0,
-    dailyGoal:    j['daily_goal'] as int? ?? 1500,
-    streakDays:   j['streak_days'] as int? ?? 0,
-  );
+  factory AppUser.fromJson(Map<String, dynamic> j) {
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    final claimedAt = j['daily_bonus_claimed_at'] as String?;
+    return AppUser(
+      id:                 j['id'] as String,
+      username:           j['username'] as String? ?? '',
+      email:              j['email'] as String? ?? '',
+      countryCode:        j['country_code'] as String? ?? 'MX',
+      coins:              j['coins'] as int? ?? 0,
+      totalEarned:        j['total_earned'] as int? ?? 0,
+      dailyCoins:         j['daily_coins'] as int? ?? 0,
+      dailyGoal:          j['daily_goal'] as int? ?? 1500,
+      streakDays:         j['streak_days'] as int? ?? 0,
+      referralCode:       j['referral_code'] as String? ?? '',
+      referralsCount:     j['referrals_count'] as int? ?? 0,
+      referralEarnings:   j['referral_earnings'] as int? ?? 0,
+      reviewClaimed:      j['review_claimed_at'] != null,
+      dailyBonusClaimed:  claimedAt != null && claimedAt.startsWith(today),
+    );
+  }
 
   double get balanceUsd => coins / 1000.0;
   double get dailyProgressPct => (dailyCoins / dailyGoal).clamp(0.0, 1.0);
@@ -81,10 +101,9 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
   }
 
   // Sign in con Google — nativo (sin abrir browser)
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle({String? referralCode}) async {
     final googleSignIn = GoogleSignIn(serverClientId: _webClientId);
 
-    // Abre el sheet nativo de selección de cuenta
     final googleUser = await googleSignIn.signIn();
     if (googleUser == null) throw Exception('Sign-in cancelado');
 
@@ -97,15 +116,36 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
       idToken: idToken,
       accessToken: googleAuth.accessToken,
     );
+
+    await _applyReferral(referralCode);
+    await NotificationService.instance.requestAndSaveToken();
   }
 
   // Sign in anónimo (jugar sin cuenta)
-  Future<void> signInAnonymously() async {
+  Future<void> signInAnonymously({String? referralCode}) async {
     await _db.auth.signInAnonymously();
+    await _applyReferral(referralCode);
+    await NotificationService.instance.requestAndSaveToken();
+  }
+
+  // Aplica código de referido si es la primera vez del usuario
+  Future<void> _applyReferral(String? code) async {
+    if (code == null || code.isEmpty) return;
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _db.rpc('apply_referral_code', params: {
+        'p_user_id': uid,
+        'p_code'   : code,
+      });
+    } catch (_) {
+      // No bloquear el login si el código falla
+    }
   }
 
   // Sign out
   Future<void> signOut() async {
+    await NotificationService.instance.clearToken();
     await _db.auth.signOut();
     state = const AsyncData(null);
   }

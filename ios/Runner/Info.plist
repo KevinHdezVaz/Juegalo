@@ -45,5 +45,23 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- AdMob App ID — TEST ID (reemplazar con real cuando tengas cuenta) -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- Nombre visible en la app -->
+	<key>CFBundleDisplayName</key>
+	<string>JUÉGALO</string>
+	<!-- Google Sign-In: reversed iOS client ID como URL scheme -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.592011118-c2dsbl6d26jp50gm1pbq04prs5gakn8i</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

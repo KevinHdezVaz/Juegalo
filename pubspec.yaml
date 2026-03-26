@@ -51,6 +51,15 @@ dependencies:
   percent_indicator: ^4.2.4
   intl: ^0.19.0
 
+  # --- Crypto (MD5 para CPX secure_hash) ---
+  crypto: ^3.0.6
+
+  # --- Reseña nativa (in-app review dialog) ---
+  in_app_review: ^2.0.9
+
+  # --- Tutorial liquid swipe ---
+  liquid_swipe: ^3.1.0
+
   # --- Utilidades ---
   share_plus: ^10.1.4
   url_launcher: ^6.3.1
@@ -73,3 +82,12 @@ dev_dependencies:
   riverpod_generator: ^2.6.3
   hive_generator: ^2.0.1
   json_serializable: ^6.9.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+  web:
+    generate: false

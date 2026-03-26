@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../shared/providers/user_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -15,17 +20,18 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mi perfil'),
         backgroundColor: AppColors.fondoPrincipal,
+        foregroundColor: AppColors.textoPrimario,
       ),
       body: userAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.verdePrimario)),
+            child: CircularProgressIndicator(color: AppColors.azulPrimario)),
         error: (_, __) => const Center(child: Text('Error')),
         data: (user) {
           if (user == null) return const SizedBox.shrink();
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Avatar
+              // ── Avatar ──────────────────────────────────────────
               Center(
                 child: CircleAvatar(
                   radius: 40,
@@ -35,7 +41,7 @@ class ProfileScreen extends ConsumerWidget {
                         ? user.username[0].toUpperCase()
                         : '?',
                     style: const TextStyle(
-                        fontSize: 32, color: AppColors.verdePrimario),
+                        fontSize: 32, color: AppColors.azulPrimario),
                   ),
                 ),
               ),
@@ -48,14 +54,22 @@ class ProfileScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 24),
-              // Stats
+
+              // ── Stats ────────────────────────────────────────────
               _StatRow(label: 'Monedas actuales', value: '${user.coins}'),
-              _StatRow(label: 'Total ganado (monedas)', value: '${user.totalEarned}'),
-              _StatRow(label: 'Total ganado (USD)',
+              _StatRow(
+                  label: 'Total ganado (USD)',
                   value: '\$${(user.totalEarned / 1000).toStringAsFixed(2)}'),
-              _StatRow(label: 'Racha actual', value: '${user.streakDays} días 🔥'),
+              _StatRow(
+                  label: 'Racha actual',
+                  value: '${user.streakDays} días 🔥'),
               const SizedBox(height: 24),
-              // Cerrar sesión
+
+              // ── Tarjeta de referidos ─────────────────────────────
+              _ReferralCard(user: user),
+              const SizedBox(height: 24),
+
+              // ── Cerrar sesión ────────────────────────────────────
               OutlinedButton(
                 onPressed: () =>
                     ref.read(userNotifierProvider.notifier).signOut(),
@@ -68,6 +82,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: const Text('Cerrar sesión'),
               ),
+              const SizedBox(height: 24),
             ],
           );
         },
@@ -76,34 +91,234 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+// ── Tarjeta de referidos ──────────────────────────────────────────
+class _ReferralCard extends StatelessWidget {
+  final dynamic user;
+  const _ReferralCard({required this.user});
+
+  void _share() {
+    final code = user.referralCode as String;
+    Share.share(
+      '¡Únete a JUÉGALO y gana dinero real jugando, completando encuestas y viendo videos! 🎮💰\n\n'
+      'Usa mi código al registrarte y los dos ganamos 1,000 monedas cuando hagas tu primer cobro.\n\n'
+      '📱 Código: $code\n\n'
+      'Descarga la app: juegalo.app',
+      subject: 'Gana dinero con JUÉGALO',
+    );
+  }
+
+  void _copy(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: user.referralCode as String));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Código copiado al portapapeles'),
+        backgroundColor: AppColors.verdePrimario,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final code     = user.referralCode as String;
+    final count    = user.referralsCount as int;
+    final earnings = user.referralEarnings as int;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFA8893C), Color(0xFFC9A84C), Color(0xFFD4B96A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.dorado.withValues(alpha: 0.4),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.people_alt_rounded,
+                  color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Invita amigos',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                  Text('Ganan 1,000 monedas los dos',
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12)),
+                ],
+              ),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          // Código
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white30),
+            ),
+            child: Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Tu código',
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11)),
+                    const SizedBox(height: 2),
+                    Text(
+                      code.isNotEmpty ? code : '--------',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _copy(context),
+                icon: const Icon(Icons.copy_rounded,
+                    color: Colors.white70, size: 20),
+                tooltip: 'Copiar',
+              ),
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          // Botón compartir
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _share,
+              icon: const Icon(Icons.share_rounded, size: 18),
+              label: const Text('Compartir código',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.doradoOscuro,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Stats
+          Row(children: [
+            Expanded(
+              child: _ReferralStat(
+                label: 'Referidos',
+                value: '$count',
+                icon: Icons.people_outline_rounded,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ReferralStat(
+                label: 'Monedas ganadas',
+                value: '$earnings',
+                icon: Icons.monetization_on_outlined,
+              ),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReferralStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  const _ReferralStat(
+      {required this.label, required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white24,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white30),
+        ),
+        child: Row(children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(value,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: 10)),
+          ]),
+        ]),
+      );
+}
+
+// ── Stat row ──────────────────────────────────────────────────────
 class _StatRow extends StatelessWidget {
   final String label;
   final String value;
   const _StatRow({required this.label, required this.value});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.fondoCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fondoCardBorde),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.textoSecundario, fontSize: 13)),
-          Text(value,
-              style: const TextStyle(
-                  color: AppColors.textoPrimario,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.fondoCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.fondoCardBorde),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    color: AppColors.textoSecundario, fontSize: 13)),
+            Text(value,
+                style: const TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14)),
+          ],
+        ),
+      );
 }

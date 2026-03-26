@@ -2,13 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 
-// ── Tapjoy / Adjoe config ─────────────────────────────────────────
-// TODO: reemplazar con tu API key de publishers.tapjoy.com
-const _tapjoyReady = AppConstants.tapjoyApiKey != 'TAPJOY_API_KEY';
+// ── Configuración de redes ────────────────────────────────────────
+// Llena la que tengas primero. La app usa la primera que esté lista.
 
+const _adjoeAppId   = AppConstants.adjoeAppId;   // adjoe.io
+const _tapjoyApiKey = AppConstants.tapjoyApiKey;  // publishers.tapjoy.com
+
+// Red activa (cambia cuando tengas credenciales)
+const _activeNetwork = _OfferwallNetwork.none; // .adjoe | .tapjoy | .none
+
+enum _OfferwallNetwork { adjoe, tapjoy, none }
+
+// ── URL del offerwall según red ───────────────────────────────────
+String _offerwallUrl(String uid) => switch (_activeNetwork) {
+  _OfferwallNetwork.adjoe  =>
+    'https://sdk.adjoe.io/offerwall/'
+    '?app_id=$_adjoeAppId'
+    '&user_id=$uid'
+    '&ua_network=organic',
+  _OfferwallNetwork.tapjoy =>
+    'https://offerwall.tapjoy.com/v2/sdk'
+    '?sdk_type=tapjoy_sdk'
+    '&app_id=$_tapjoyApiKey'
+    '&user_id=$uid',
+  _OfferwallNetwork.none   => '',
+};
+
+// ── Pantalla principal ────────────────────────────────────────────
 class GamesScreen extends ConsumerStatefulWidget {
   const GamesScreen({super.key});
 
@@ -19,38 +43,42 @@ class GamesScreen extends ConsumerStatefulWidget {
 class _GamesScreenState extends ConsumerState<GamesScreen> {
   bool _loading = true;
 
-  // URL del offerwall de Tapjoy (WebView offerwall)
-  String get _offerwallUrl {
-    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
-    return 'https://offerwall.tapjoy.com/v2/sdk?'
-        'sdk_type=tapjoy_sdk'
-        '&app_id=${AppConstants.tapjoyApiKey}'
-        '&user_id=$uid'
-        '&display_multiplier=1';
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_tapjoyReady) return const _SetupPlaceholder();
+    if (_activeNetwork == _OfferwallNetwork.none) {
+      return const _OfferwallPlaceholder();
+    }
+
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? 'anonymous';
+    final url = _offerwallUrl(uid);
 
     return Stack(
       children: [
         InAppWebView(
-          initialUrlRequest: URLRequest(url: WebUri(_offerwallUrl)),
+          initialUrlRequest: URLRequest(url: WebUri(url)),
           initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            useWideViewPort: true,
-            loadWithOverviewMode: true,
-            domStorageEnabled: true,
+            javaScriptEnabled    : true,
+            useWideViewPort      : true,
+            loadWithOverviewMode : true,
+            domStorageEnabled    : true,
+            mediaPlaybackRequiresUserGesture: false,
           ),
-          onLoadStop: (_, __) => setState(() => _loading = false),
-          onLoadStart: (_, __) => setState(() => _loading = true),
+          onLoadStop  : (_, __) => setState(() => _loading = false),
+          onLoadStart : (_, __) => setState(() => _loading = true),
         ),
         if (_loading)
           Container(
             color: AppColors.fondoPrincipal,
             child: const Center(
-              child: CircularProgressIndicator(color: AppColors.colorJuegos),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.colorJuegos),
+                  SizedBox(height: 16),
+                  Text('Cargando juegos…',
+                      style: TextStyle(color: AppColors.textoSecundario)),
+                ],
+              ),
             ),
           ),
       ],
@@ -58,211 +86,325 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
   }
 }
 
-// ── Placeholder cuando no hay credenciales Tapjoy ────────────────
-class _SetupPlaceholder extends StatelessWidget {
-  const _SetupPlaceholder();
+// ── Placeholder: aún sin red configurada ─────────────────────────
+class _OfferwallPlaceholder extends StatelessWidget {
+  const _OfferwallPlaceholder();
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
-          // Ícono principal
+          // Hero
           Container(
-            width: 80, height: 80,
+            width: 88, height: 88,
             decoration: BoxDecoration(
-              color: AppColors.colorJuegos.withValues(alpha: 0.15),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.colorJuegos.withValues(alpha: 0.45),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: const Icon(Icons.sports_esports_rounded,
-                size: 42, color: AppColors.colorJuegos),
+                size: 46, color: Colors.white),
           ),
-          const SizedBox(height: 20),
-
-          const Text('Juegos Tapjoy',
+          const SizedBox(height: 18),
+          const Text('Juegos & Ofertas',
               style: TextStyle(
                   color: AppColors.textoPrimario,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800)),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
           const Text(
-            'Miles de juegos y apps que pagan cuando tus usuarios los instalan y completan misiones.',
+            'Instala juegos, completa misiones\ny gana monedas reales.',
+            textAlign: TextAlign.center,
             style: TextStyle(
                 color: AppColors.textoSecundario, fontSize: 14, height: 1.5),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 28),
-
-          // Métricas
-          Row(children: [
-            _MetricCard(
-              icon: Icons.videogame_asset_rounded,
-              value: '10,000+',
-              label: 'Juegos disponibles',
-              color: AppColors.colorJuegos,
-            ),
-            const SizedBox(width: 10),
-            _MetricCard(
-              icon: Icons.attach_money_rounded,
-              value: '\$1–\$5',
-              label: 'Por instalación',
-              color: AppColors.verdePrimario,
-            ),
-          ]),
-          const SizedBox(height: 10),
-          Row(children: [
-            _MetricCard(
-              icon: Icons.public_rounded,
-              value: 'Global',
-              label: 'LatAm + USA',
-              color: AppColors.dorado,
-            ),
-            const SizedBox(width: 10),
-            _MetricCard(
-              icon: Icons.trending_up_rounded,
-              value: '60%',
-              label: 'Para el usuario',
-              color: AppColors.colorEncuestas,
-            ),
-          ]),
-
-          const SizedBox(height: 28),
-
-          // Pasos
-          _StepCard(step: '1', title: 'Regístrate en Tapjoy',
-              description: 'publishers.tapjoy.com → Create Publisher Account',
-              color: AppColors.colorJuegos),
-          const SizedBox(height: 10),
-          _StepCard(step: '2', title: 'Crea una app',
-              description: 'Agrega JUÉGALO (Android) y obtén tu API Key',
-              color: AppColors.colorJuegos),
-          const SizedBox(height: 10),
-          _StepCard(step: '3', title: 'Configura postbacks',
-              description: 'URL: \${apiBaseUrl}/api/postback/tapjoy',
-              color: AppColors.colorJuegos),
-          const SizedBox(height: 10),
-          _StepCard(step: '4', title: 'Activa los juegos',
-              description: 'Pon tu API Key en app_constants.dart → tapjoyApiKey',
-              color: AppColors.colorJuegos),
-
           const SizedBox(height: 24),
+
+          // ── Cómo funciona ─────────────────────────────────────
+          _SectionTitle('¿Cómo funciona?'),
+          const SizedBox(height: 12),
+          _HowItWorksRow(
+            icon: Icons.download_rounded,
+            title: 'Instala un juego',
+            subtitle: 'Elige de miles de juegos disponibles',
+            color: AppColors.colorJuegos,
+          ),
+          const SizedBox(height: 8),
+          _HowItWorksRow(
+            icon: Icons.emoji_events_rounded,
+            title: 'Completa misiones',
+            subtitle: 'Llega al nivel X, juega Y minutos…',
+            color: AppColors.dorado,
+          ),
+          const SizedBox(height: 8),
+          _HowItWorksRow(
+            icon: Icons.monetization_on_rounded,
+            title: 'Gana monedas',
+            subtitle: '\$1–\$5 USD por instalación completada',
+            color: AppColors.verdePrimario,
+          ),
+          const SizedBox(height: 24),
+
+          // ── Redes disponibles ─────────────────────────────────
+          _SectionTitle('Redes de ofertas'),
+          const SizedBox(height: 12),
+          _NetworkCard(
+            name: 'Adjoe',
+            description: 'Recompensas por tiempo jugado. El modelo de JustPlay. Ideal para LatAm y USA.',
+            badge: 'RECOMENDADO',
+            badgeColor: AppColors.verdePrimario,
+            icon: Icons.timer_rounded,
+            color: const Color(0xFF6C5CE7),
+            steps: const [
+              'Regístrate en adjoe.io → Publishers',
+              'Crea una app con tu bundle ID',
+              'Obtén tu App ID',
+              'Ponlo en app_constants.dart → adjoeAppId',
+            ],
+            url: 'https://adjoe.io',
+          ),
+          const SizedBox(height: 12),
+          _NetworkCard(
+            name: 'Tapjoy / Liftoff',
+            description: 'El offerwall más grande. +10,000 juegos globales. Requiere app publicada en Play Store.',
+            badge: 'REQUIERE APP PUBLICADA',
+            badgeColor: AppColors.textoSecundario,
+            icon: Icons.videogame_asset_rounded,
+            color: AppColors.colorJuegos,
+            steps: const [
+              'Publica JUÉGALO en Play Store (beta)',
+              'Regístrate en publishers.tapjoy.com',
+              'Crea tu app y obtén el API Key',
+              'Ponlo en app_constants.dart → tapjoyApiKey',
+            ],
+            url: 'https://tapjoy.com',
+          ),
+          const SizedBox(height: 24),
+
+          // ── Activa cuando tengas credenciales ─────────────────
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.colorJuegos.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: AppColors.colorJuegos.withValues(alpha: 0.3)),
+                  color: AppColors.colorJuegos.withValues(alpha: 0.25)),
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.lightbulb_outline_rounded,
+                Icon(Icons.code_rounded,
                     color: AppColors.dorado, size: 18),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Tapjoy ya tiene miles de publishers. No necesitas reclutar juegos — te conectas y ya tienes el catálogo completo desde el día 1.',
+                    'Cuando tengas tu App ID, cambia _activeNetwork a '
+                    '_OfferwallNetwork.adjoe (o .tapjoy) en games_screen.dart '
+                    'y los juegos aparecerán automáticamente.',
                     style: TextStyle(
                         color: AppColors.textoPrimario,
-                        fontSize: 13, height: 1.4),
+                        fontSize: 12, height: 1.5),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-  const _MetricCard({
-    required this.icon, required this.value,
-    required this.label, required this.color,
-  });
+// ── Widgets auxiliares ────────────────────────────────────────────
 
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
   @override
-  Widget build(BuildContext context) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.fondoElevado,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.fondoCardBorde),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(height: 6),
-              Text(value,
-                  style: TextStyle(
-                      color: color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800)),
-              Text(label,
-                  style: const TextStyle(
-                      color: AppColors.textoSecundario, fontSize: 11)),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerLeft,
+        child: Text(text,
+            style: const TextStyle(
+                color: AppColors.textoPrimario,
+                fontWeight: FontWeight.w700,
+                fontSize: 15)),
       );
 }
 
-class _StepCard extends StatelessWidget {
-  final String step;
+class _HowItWorksRow extends StatelessWidget {
+  final IconData icon;
   final String title;
-  final String description;
+  final String subtitle;
   final Color color;
-  const _StepCard({
-    required this.step, required this.title,
-    required this.description, required this.color,
+  const _HowItWorksRow({
+    required this.icon, required this.title,
+    required this.subtitle, required this.color,
   });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.fondoElevado,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.fondoCardBorde),
         ),
-        child: Row(
+        child: Row(children: [
+          Container(
+            width: 38, height: 38,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: AppColors.textoPrimario,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13)),
+                Text(subtitle,
+                    style: const TextStyle(
+                        color: AppColors.textoSecundario, fontSize: 12)),
+              ],
+            ),
+          ),
+        ]),
+      );
+}
+
+class _NetworkCard extends StatelessWidget {
+  final String name;
+  final String description;
+  final String badge;
+  final Color badgeColor;
+  final IconData icon;
+  final Color color;
+  final List<String> steps;
+  final String url;
+
+  const _NetworkCard({
+    required this.name, required this.description,
+    required this.badge, required this.badgeColor,
+    required this.icon, required this.color,
+    required this.steps, required this.url,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.fondoElevado,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 28, height: 28,
-              decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: Center(
-                child: Text(step,
-                    style: TextStyle(
-                        color: color, fontWeight: FontWeight.w800, fontSize: 13)),
+            // Header
+            Row(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: AppColors.textoPrimario,
-                          fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Text(description,
-                      style: const TextStyle(
-                          color: AppColors.textoSecundario, fontSize: 12)),
-                ],
+              const SizedBox(width: 10),
+              Text(name,
+                  style: const TextStyle(
+                      color: AppColors.textoPrimario,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(badge,
+                    style: TextStyle(
+                        color: badgeColor,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Text(description,
+                style: const TextStyle(
+                    color: AppColors.textoSecundario,
+                    fontSize: 12, height: 1.4)),
+            const SizedBox(height: 12),
+            // Pasos
+            ...steps.asMap().entries.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 18, height: 18,
+                        margin: const EdgeInsets.only(top: 1),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text('${e.key + 1}',
+                              style: TextStyle(
+                                  color: color,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(e.value,
+                            style: const TextStyle(
+                                color: AppColors.textoSecundario,
+                                fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => launchUrl(Uri.parse(url),
+                    mode: LaunchMode.externalApplication),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: color,
+                  side: BorderSide(color: color.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                child: Text('Ir a $name',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 13)),
               ),
             ),
           ],

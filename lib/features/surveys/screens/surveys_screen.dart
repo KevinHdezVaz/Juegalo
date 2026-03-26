@@ -1,13 +1,21 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/helpers/daily_bonus_helper.dart';
 
 // ── CPX Research config ──────────────────────────────────────────
-// TODO: reemplazar con tu App ID de cpx-research.com → Publishers
-const _cpxAppId = '';
-const _cpxReady = _cpxAppId != '';
+const _cpxAppId      = '32134';
+const _cpxSecureKey  = '0aTTC5U3oXSLv0Vt8JSyV7H2ExPjvep7';
+const _cpxReady      = true;
+
+String _cpxHash(String userId) {
+  final bytes = utf8.encode('$userId-$_cpxSecureKey');
+  return md5.convert(bytes).toString();
+}
 
 class SurveysScreen extends ConsumerStatefulWidget {
   const SurveysScreen({super.key});
@@ -20,10 +28,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   bool _loading = true;
 
   String get _surveyUrl {
-    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final uid  = Supabase.instance.client.auth.currentUser?.id ?? 'anonymous';
+    final hash = _cpxHash(uid);
     return 'https://offers.cpx-research.com/index.php'
         '?app_id=$_cpxAppId'
         '&ext_user_id=$uid'
+        '&secure_hash=$hash'
         '&output_method=publisher_iframe';
   }
 
@@ -40,7 +50,14 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             useWideViewPort: true,
             loadWithOverviewMode: true,
           ),
-          onLoadStop: (_, __) => setState(() => _loading = false),
+          onLoadStop: (controller, url) {
+            setState(() => _loading = false);
+            // CPX redirige a una URL con "status=1" al completar encuesta
+            final urlStr = url?.toString() ?? '';
+            if (urlStr.contains('status=1') || urlStr.contains('survey_complete')) {
+              tryClaimDailyBonus(context, ref);
+            }
+          },
           onLoadStart: (_, __) => setState(() => _loading = true),
         ),
         if (_loading)
@@ -69,11 +86,22 @@ class _SetupPlaceholder extends StatelessWidget {
           Container(
             width: 80, height: 80,
             decoration: BoxDecoration(
-              color: AppColors.colorEncuestas.withValues(alpha: 0.15),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF3B82F6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.azulPrimario.withValues(alpha: 0.40),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: const Icon(Icons.assignment_outlined,
-                size: 42, color: AppColors.colorEncuestas),
+                size: 42, color: Colors.white),
           ),
           const SizedBox(height: 20),
           const Text('Encuestas CPX Research',

@@ -11,7 +11,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.juegaloGanaDinero</string>
+	<string>com.kevinhv.juegalo</string>
 	<key>PROJECT_ID</key>
 	<string>juegalo-491305</string>
 	<key>STORAGE_BUCKET</key>
@@ -26,7 +26,11 @@
 	<true></true>
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
+	<key>CLIENT_ID</key>
+	<string>592011118-c2dsbl6d26jp50gm1pbq04prs5gakn8i.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.592011118-c2dsbl6d26jp50gm1pbq04prs5gakn8i</string>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:592011118:ios:a7a860142f072fa2292b7f</string>
+	<string>1:592011118:ios:35d091c1a7df3c3d292b7f</string>
 </dict>
 </plist>

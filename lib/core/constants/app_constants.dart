@@ -37,8 +37,12 @@ class AppConstants {
   static const String admobRewardedAndroid = 'ca-app-pub-XXXXXXXX/XXXXXXXX';
   static const String admobRewardedIos     = 'ca-app-pub-XXXXXXXX/XXXXXXXX';
 
+  // ── Adjoe Offerwall ───────────────────────────────────────────
+  // TODO: reemplazar con tu App ID de adjoe.io → Publishers
+  static const String adjoeAppId = 'ADJOE_APP_ID';
+
   // ── Tapjoy Offerwall ──────────────────────────────────────────
-  // TODO: reemplazar con tu API key de Tapjoy
+  // TODO: reemplazar con tu API key de publishers.tapjoy.com
   static const String tapjoyApiKey = 'TAPJOY_API_KEY';
 
   // ── Revenue share ─────────────────────────────────────────────

@@ -5,29 +5,32 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../games/screens/games_screen.dart';
+import '../../ranking/screens/ranking_screen.dart';
 import '../../surveys/screens/surveys_screen.dart';
 import '../../videos/screens/videos_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
 import '../widgets/balance_card.dart';
+import '../widgets/daily_bonus_card.dart';
 import '../widgets/daily_goal_bar.dart';
 
-// Índice del tab activo
 final activeTabProvider = StateProvider<int>((ref) => 0);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   static const _tabs = [
-    _TabItem(icon: Icons.sports_esports_rounded, label: 'Juegos',    color: AppColors.colorJuegos),
-    _TabItem(icon: Icons.assignment_outlined,    label: 'Encuestas', color: AppColors.colorEncuestas),
-    _TabItem(icon: Icons.play_circle_outline,    label: 'Videos',    color: AppColors.colorVideos),
-    _TabItem(icon: Icons.account_balance_wallet_outlined, label: 'Cobrar', color: AppColors.colorWallet),
+    _TabItem(icon: Icons.sports_esports_rounded,          label: 'Juegos',    color: AppColors.colorJuegos),
+    _TabItem(icon: Icons.assignment_outlined,             label: 'Encuestas', color: AppColors.colorEncuestas),
+    _TabItem(icon: Icons.play_circle_outline,             label: 'Videos',    color: AppColors.colorVideos),
+    _TabItem(icon: Icons.leaderboard_rounded,             label: 'Ranking',   color: AppColors.dorado),
+    _TabItem(icon: Icons.account_balance_wallet_outlined, label: 'Cobrar',    color: AppColors.azulPrimario),
   ];
 
   static const _screens = [
     GamesScreen(),
     SurveysScreen(),
     VideosScreen(),
+    RankingScreen(),
     WalletScreen(),
   ];
 
@@ -39,12 +42,32 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.fondoPrincipal,
       appBar: AppBar(
-        backgroundColor: AppColors.fondoPrincipal,
+        backgroundColor: AppColors.fondoCard,
+        elevation: 0,
         title: Row(
           children: [
-            const Icon(Icons.sports_esports_rounded,
-                color: AppColors.verdePrimario, size: 22),
-            const SizedBox(width: 8),
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.azulPrimario.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/icons/app_icon.png',
+                  width: 32, height: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
             const Text('JUÉGALO',
                 style: TextStyle(
                     color: AppColors.textoPrimario,
@@ -54,18 +77,17 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          // Balance rápido en appbar
           if (user != null)
             GestureDetector(
-              onTap: () => ref.read(activeTabProvider.notifier).state = 3,
+              onTap: () => ref.read(activeTabProvider.notifier).state = 4,
               child: Container(
-                margin: const EdgeInsets.only(right: 16),
+                margin: const EdgeInsets.only(right: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.verdePrimario.withValues(alpha: 0.15),
+                  color: AppColors.azulPrimario.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: AppColors.verdePrimario.withValues(alpha: 0.4)),
+                      color: AppColors.azulPrimario.withValues(alpha: 0.30)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -76,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                     Text(
                       '${user.coins}',
                       style: const TextStyle(
-                        color: AppColors.dorado,
+                        color: AppColors.azulPrimario,
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
@@ -91,28 +113,30 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Banner balance + meta diaria (solo en tab home/juegos)
-          if (activeTab == 0 && user != null) ...[
-            BalanceCard(user: user),
-            DailyGoalBar(user: user),
-          ],
-          Expanded(child: _screens[activeTab]),
-        ],
-      ),
+      body: activeTab == 0 && user != null
+          ? NestedScrollView(
+              headerSliverBuilder: (_, __) => [
+                SliverToBoxAdapter(child: DailyGoalBar(user: user)),
+                const SliverToBoxAdapter(child: DailyBonusCard()),
+              ],
+              body: _screens[activeTab],
+            )
+          : _screens[activeTab],
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
+          color: AppColors.fondoCard,
           border: Border(top: BorderSide(color: AppColors.fondoCardBorde)),
         ),
         child: BottomNavigationBar(
           currentIndex: activeTab,
           onTap: (i) => ref.read(activeTabProvider.notifier).state = i,
-          backgroundColor: AppColors.fondoElevado,
+          backgroundColor: AppColors.fondoCard,
           selectedItemColor: _tabs[activeTab].color,
           unselectedItemColor: AppColors.textoDeshabilitado,
           type: BottomNavigationBarType.fixed,
           elevation: 0,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           items: _tabs
               .map((t) => BottomNavigationBarItem(
                     icon: Icon(t.icon),

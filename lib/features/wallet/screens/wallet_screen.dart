@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/providers/user_provider.dart';
+
+// ── Provider: últimas 20 transacciones ───────────────────────────
+final transactionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final uid = Supabase.instance.client.auth.currentUser?.id;
+  if (uid == null) return [];
+  final rows = await Supabase.instance.client
+      .from('transactions')
+      .select()
+      .eq('user_id', uid)
+      .order('created_at', ascending: false)
+      .limit(20);
+  return List<Map<String, dynamic>>.from(rows);
+});
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
@@ -15,7 +29,7 @@ class WalletScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.verdePrimario)),
+          child: CircularProgressIndicator(color: AppColors.azulPrimario)),
       error: (_, __) => const Center(
           child: Text('Error al cargar',
               style: TextStyle(color: AppColors.textoSecundario))),
@@ -34,28 +48,35 @@ class WalletScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0D2B1A), Color(0xFF0A1628)],
+                    colors: [Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF3B82F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: AppColors.verdePrimario.withValues(alpha: 0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.azulPrimario.withValues(alpha: 0.40),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
                     const Icon(Icons.account_balance_wallet_rounded,
-                        color: AppColors.verdePrimario, size: 36),
+                        color: Colors.white, size: 36),
                     const SizedBox(height: 12),
                     Text(
                       '\$${user.balanceUsd.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        color: AppColors.textoPrimario,
+                        color: Colors.white,
                         fontSize: 48,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text('${user.coins} monedas disponibles',
                         style: const TextStyle(
-                            color: AppColors.textoSecundario, fontSize: 13)),
+                            color: Colors.white70, fontSize: 13)),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -63,9 +84,17 @@ class WalletScreen extends ConsumerWidget {
                         onPressed: canCashout
                             ? () => context.push(AppRoutes.cashout)
                             : null,
-                        child: Text(canCashout
-                            ? 'Solicitar cobro'
-                            : 'Mínimo \$1.00 para cobrar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.azulOscuro,
+                          elevation: 0,
+                          disabledBackgroundColor: Colors.white30,
+                          disabledForegroundColor: Colors.white60,
+                        ),
+                        child: Text(
+                          canCashout ? 'Solicitar cobro' : 'Mínimo \$1.00 para cobrar',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                     ),
                   ],
@@ -110,14 +139,89 @@ class WalletScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w700,
                       fontSize: 16)),
               const SizedBox(height: 12),
-              const Center(
-                child: Text('Sin transacciones aún',
-                    style: TextStyle(color: AppColors.textoSecundario)),
+              ref.watch(transactionsProvider).when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.verdePrimario, strokeWidth: 2)),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (txs) => txs.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Text('Sin transacciones aún',
+                              style: TextStyle(
+                                  color: AppColors.textoSecundario)),
+                        ),
+                      )
+                    : Column(
+                        children: txs
+                            .map((tx) => _TransactionRow(tx: tx))
+                            .toList(),
+                      ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+// ── Fila de transacción ───────────────────────────────────────────
+class _TransactionRow extends StatelessWidget {
+  final Map<String, dynamic> tx;
+  const _TransactionRow({required this.tx});
+
+  @override
+  Widget build(BuildContext context) {
+    final amount  = (tx['amount'] as int? ?? 0);
+    final source  = tx['source'] as String? ?? '';
+    final desc    = tx['description'] as String? ?? source;
+    final isCredit = amount > 0;
+
+    final icon = switch (source) {
+      'video'   => Icons.play_circle_outline_rounded,
+      'survey'  => Icons.assignment_outlined,
+      'game'    => Icons.sports_esports_outlined,
+      'cashout' => Icons.arrow_upward_rounded,
+      'referral'=> Icons.people_outline_rounded,
+      _         => Icons.monetization_on_outlined,
+    };
+    final color = isCredit ? AppColors.verdePrimario : AppColors.colorVideos;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.fondoCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.fondoCardBorde),
+      ),
+      child: Row(children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(desc,
+              style: const TextStyle(
+                  color: AppColors.textoPrimario,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
+        ),
+        Text(
+          '${isCredit ? '+' : ''}$amount',
+          style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 14),
+        ),
+      ]),
     );
   }
 }

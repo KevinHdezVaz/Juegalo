@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Fondo azul -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1A3FCC"/>
+      <stop offset="55%"  stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+
+    <!-- Moneda dorada -->
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FDE68A"/>
+      <stop offset="45%"  stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <!-- Brillo de la moneda -->
+    <linearGradient id="coinShine" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Sombra sutil del control -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14"
+                    flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- Glow dorado de la moneda -->
+    <filter id="coinGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="18"
+                    flood-color="#F59E0B" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- ── Fondo redondeado ──────────────────────────────────── -->
+  <rect width="1024" height="1024" rx="224" ry="224" fill="url(#bgGrad)"/>
+
+  <!-- Círculos decorativos de fondo -->
+  <circle cx="120"  cy="110"  r="210" fill="white" opacity="0.035"/>
+  <circle cx="940"  cy="930"  r="260" fill="white" opacity="0.035"/>
+  <circle cx="920"  cy="100"  r="130" fill="white" opacity="0.025"/>
+
+  <!-- ── Mango izquierdo ───────────────────────────────────── -->
+  <rect x="240" y="558" width="156" height="208"
+        rx="78" fill="white" filter="url(#softShadow)"/>
+
+  <!-- ── Mango derecho ─────────────────────────────────────── -->
+  <rect x="628" y="558" width="156" height="208"
+        rx="78" fill="white" filter="url(#softShadow)"/>
+
+  <!-- ── Cuerpo principal del control ─────────────────────── -->
+  <rect x="212" y="296" width="600" height="298"
+        rx="149" fill="white" filter="url(#softShadow)"/>
+
+  <!-- ── Gatillos superiores ───────────────────────────────── -->
+  <rect x="240" y="268" width="156" height="50" rx="25" fill="white" opacity="0.90"/>
+  <rect x="628" y="268" width="156" height="50" rx="25" fill="white" opacity="0.90"/>
+
+  <!-- ── D-Pad (izquierda, centro 362, 445) ────────────────── -->
+  <rect x="316" y="432" width="92"  height="28" rx="8" fill="#2563EB"/>
+  <rect x="348" y="399" width="28"  height="92" rx="8" fill="#2563EB"/>
+  <circle cx="362" cy="446" r="16" fill="#1D4ED8"/>
+
+  <!-- ── Botones de acción ABXY (derecha, centro 662, 446) ─── -->
+  <!-- Arriba (Y) -->
+  <circle cx="662" cy="400" r="21" fill="#7C3AED"/>
+  <text x="662" y="400" font-family="Arial" font-size="20" font-weight="900"
+        fill="white" text-anchor="middle" dominant-baseline="central">Y</text>
+  <!-- Derecha (B) -->
+  <circle cx="706" cy="446" r="21" fill="#DC2626"/>
+  <text x="706" y="446" font-family="Arial" font-size="20" font-weight="900"
+        fill="white" text-anchor="middle" dominant-baseline="central">B</text>
+  <!-- Abajo (A) -->
+  <circle cx="662" cy="492" r="21" fill="#16A34A"/>
+  <text x="662" y="492" font-family="Arial" font-size="20" font-weight="900"
+        fill="white" text-anchor="middle" dominant-baseline="central">A</text>
+  <!-- Izquierda (X) -->
+  <circle cx="618" cy="446" r="21" fill="#2563EB"/>
+  <text x="618" y="446" font-family="Arial" font-size="20" font-weight="900"
+        fill="white" text-anchor="middle" dominant-baseline="central">X</text>
+
+  <!-- ── Sticks analógicos ──────────────────────────────────── -->
+  <circle cx="424" cy="528" r="27" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="3"/>
+  <circle cx="424" cy="528" r="10" fill="#CBD5E1"/>
+  <circle cx="600" cy="528" r="27" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="3"/>
+  <circle cx="600" cy="528" r="10" fill="#CBD5E1"/>
+
+  <!-- ── Botones centrales (start/select) ─────────────────── -->
+  <rect x="464" y="432" width="26" height="13" rx="6.5" fill="#E2E8F0"/>
+  <rect x="534" y="432" width="26" height="13" rx="6.5" fill="#E2E8F0"/>
+
+  <!-- ── MONEDA DORADA (centro, elemento hero) ─────────────── -->
+  <!-- Halo exterior glow -->
+  <circle cx="512" cy="445" r="88" fill="#F59E0B" opacity="0.22"
+          filter="url(#coinGlow)"/>
+  <!-- Cuerpo moneda -->
+  <circle cx="512" cy="445" r="78" fill="url(#coinGrad)"
+          filter="url(#softShadow)"/>
+  <!-- Anillo interior -->
+  <circle cx="512" cy="445" r="65" fill="none"
+          stroke="#92400E" stroke-width="3" opacity="0.5"/>
+  <!-- Brillo superficial -->
+  <circle cx="512" cy="445" r="78" fill="url(#coinShine)"/>
+  <!-- Símbolo $ -->
+  <text x="512" y="445"
+        font-family="-apple-system, BlinkMacSystemFont, 'Arial Black', Arial, sans-serif"
+        font-size="80" font-weight="900"
+        fill="#78350F"
+        text-anchor="middle"
+        dominant-baseline="central">$</text>
+</svg>

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../shared/helpers/daily_bonus_helper.dart';
 
 // ── Test IDs (reemplazar con reales cuando tengas cuenta AdMob) ──
 const _rewardedAdUnitId = String.fromEnvironment(
@@ -106,9 +107,9 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     try {
       await Supabase.instance.client.rpc('credit_coins', params: {
         'p_user_id'    : uid,
-        'p_amount'     : AppConstants.coinsPerVideo,
-        'p_description': 'Video completado',
+        'p_coins'      : AppConstants.coinsPerVideo,
         'p_source'     : 'video',
+        'p_description': 'Video completado',
       });
 
       // Actualiza contador local
@@ -129,9 +130,20 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
+        // Auto-reclama el bono diario si aún no fue reclamado
+        await tryClaimDailyBonus(context, ref);
       }
-    } catch (_) {
-      // No hacer nada si falla (anti-doble crédito lo maneja el RPC)
+    } catch (e) {
+      debugPrint('❌ credit_coins error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al acreditar monedas: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -227,17 +239,19 @@ class _DailyProgressCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.colorVideos.withValues(alpha: 0.15),
-            AppColors.fondoPrincipal,
-          ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB91C1C), Color(0xFFDC2626), Color(0xFFEF4444)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppColors.colorVideos.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.colorVideos.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,19 +259,19 @@ class _DailyProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [
-                const Icon(Icons.play_circle_fill_rounded,
-                    color: AppColors.colorVideos, size: 20),
-                const SizedBox(width: 8),
-                const Text('Videos de hoy',
+              const Row(children: [
+                Icon(Icons.play_circle_fill_rounded,
+                    color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Videos de hoy',
                     style: TextStyle(
-                        color: AppColors.textoPrimario,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 15)),
               ]),
               Text('$watched / $max',
                   style: const TextStyle(
-                      color: AppColors.textoSecundario, fontSize: 13)),
+                      color: Colors.white70, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 10),
@@ -266,18 +280,18 @@ class _DailyProgressCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 6,
-              backgroundColor: AppColors.fondoCardBorde,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.colorVideos),
+              backgroundColor: Colors.white30,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
           const SizedBox(height: 8),
           Row(children: [
             const Icon(Icons.monetization_on_rounded,
-                color: AppColors.dorado, size: 14),
+                color: Colors.white, size: 14),
             const SizedBox(width: 4),
             Text('$earned monedas ganadas hoy',
                 style: const TextStyle(
-                    color: AppColors.dorado,
+                    color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w600)),
           ]),

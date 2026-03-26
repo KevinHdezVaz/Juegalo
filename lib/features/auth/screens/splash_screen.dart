@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../tutorial/screens/tutorial_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -37,7 +38,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
     final session = ref.read(currentSessionProvider);
-    context.go(session != null ? AppRoutes.home : AppRoutes.onboarding);
+    if (session == null) {
+      context.go(AppRoutes.onboarding);
+      return;
+    }
+    final tutorialDone = await isTutorialCompleted();
+    if (!mounted) return;
+    context.go(tutorialDone ? AppRoutes.home : AppRoutes.tutorial);
   }
 
   @override
@@ -58,21 +65,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Logo / ícono
+                // Logo
                 Container(
-                  width: 100, height: 100,
+                  width: 110, height: 110,
                   decoration: BoxDecoration(
-                    color: AppColors.verdePrimario.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: AppColors.verdePrimario.withValues(alpha: 0.5),
-                      width: 2,
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.azulPrimario.withValues(alpha: 0.40),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  child: const Icon(
-                    Icons.sports_esports_rounded,
-                    size: 54,
-                    color: AppColors.verdePrimario,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      'assets/icons/app_icon.png',
+                      width: 110, height: 110,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -89,7 +101,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 Text(
                   AppConstants.appTagline.toUpperCase(),
                   style: const TextStyle(
-                    color: AppColors.verdePrimario,
+                    color: AppColors.azulPrimario,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 3,
@@ -100,7 +112,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
-                    color: AppColors.verdePrimario,
+                    color: AppColors.azulPrimario,
                     strokeWidth: 2.5,
                   ),
                 ),

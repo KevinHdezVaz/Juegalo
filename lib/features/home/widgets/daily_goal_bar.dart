@@ -36,7 +36,7 @@ class DailyGoalBar extends StatelessWidget {
                     style: TextStyle(
                       color: reached
                           ? AppColors.verdePrimario
-                          : AppColors.textoPrimario,
+                          : AppColors.azulPrimario,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -56,7 +56,7 @@ class DailyGoalBar extends StatelessWidget {
             percent: pct,
             padding: EdgeInsets.zero,
             backgroundColor: AppColors.fondoCardBorde,
-            progressColor: reached ? AppColors.dorado : AppColors.verdePrimario,
+            progressColor: reached ? AppColors.dorado : AppColors.azulPrimario,
             barRadius: const Radius.circular(4),
           ),
           if (!reached) ...[

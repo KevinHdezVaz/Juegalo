@@ -13,16 +13,21 @@ class BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0D2B1A), Color(0xFF0A1628)],
+          colors: [Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF3B82F6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: AppColors.verdePrimario.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.azulPrimario.withValues(alpha: 0.40),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -31,8 +36,7 @@ class BalanceCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Tu saldo',
-                    style: TextStyle(
-                        color: AppColors.textoSecundario, fontSize: 12)),
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -40,7 +44,7 @@ class BalanceCard extends ConsumerWidget {
                     Text(
                       '\$${user.balanceUsd.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        color: AppColors.textoPrimario,
+                        color: Colors.white,
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                       ),
@@ -48,8 +52,7 @@ class BalanceCard extends ConsumerWidget {
                     const Padding(
                       padding: EdgeInsets.only(bottom: 5, left: 6),
                       child: Text('USD',
-                          style: TextStyle(
-                              color: AppColors.textoSecundario, fontSize: 13)),
+                          style: TextStyle(color: Colors.white70, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -57,19 +60,19 @@ class BalanceCard extends ConsumerWidget {
                 Text(
                   '${user.coins} monedas',
                   style: const TextStyle(
-                      color: AppColors.verdePrimario,
+                      color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600),
                 ),
               ],
             ),
           ),
-          // Botón cobrar
           ElevatedButton(
             onPressed: () => context.push(AppRoutes.cashout),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.verdePrimario,
-              foregroundColor: Colors.black,
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.azulOscuro,
+              elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
