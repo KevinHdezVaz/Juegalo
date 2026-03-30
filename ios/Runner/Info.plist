@@ -50,7 +50,7 @@
 	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<!-- Nombre visible en la app -->
 	<key>CFBundleDisplayName</key>
-	<string>JUÉGALO</string>
+	<string>JUEGALO</string>
 	<!-- Google Sign-In: reversed iOS client ID como URL scheme -->
 	<key>CFBundleURLTypes</key>
 	<array>

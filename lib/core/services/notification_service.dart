@@ -14,13 +14,13 @@ class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  final _fcm   = FirebaseMessaging.instance;
+  final _fcm = FirebaseMessaging.instance;
   final _local = FlutterLocalNotificationsPlugin();
 
   // Canal Android
   static const _androidChannel = AndroidNotificationChannel(
     'juegalo_main',
-    'JUÉGALO Notificaciones',
+    'JUEGALO Notificaciones',
     description: 'Alertas de bonos, ranking y actividad',
     importance: Importance.high,
     playSound: true,
@@ -38,7 +38,7 @@ class NotificationService {
 
     // Inicializar flutter_local_notifications
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit     = DarwinInitializationSettings(
+    const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
@@ -85,8 +85,7 @@ class NotificationService {
     try {
       await Supabase.instance.client
           .from('users')
-          .update({'fcm_token': token})
-          .eq('id', uid);
+          .update({'fcm_token': token}).eq('id', uid);
       debugPrint('✅ FCM token guardado: ${token.substring(0, 20)}...');
     } catch (e) {
       debugPrint('❌ Error guardando FCM token: $e');
@@ -126,8 +125,7 @@ class NotificationService {
     try {
       await Supabase.instance.client
           .from('users')
-          .update({'fcm_token': null})
-          .eq('id', uid);
+          .update({'fcm_token': null}).eq('id', uid);
       await _fcm.deleteToken();
     } catch (_) {}
   }

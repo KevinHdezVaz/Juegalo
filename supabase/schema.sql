@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════════════════════╗
--- ║         JUÉGALO — Schema Supabase PostgreSQL         ║
+-- ║         JUEGALO — Schema Supabase PostgreSQL         ║
 -- ╚══════════════════════════════════════════════════════╝
 
 -- Usuarios

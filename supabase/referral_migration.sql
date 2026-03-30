@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════════════════════╗
--- ║     JUÉGALO — Migración: Sistema de Referidos        ║
+-- ║     JUEGALO — Migración: Sistema de Referidos        ║
 -- ║     Corre esto en Supabase SQL Editor                ║
 -- ╚══════════════════════════════════════════════════════╝
 

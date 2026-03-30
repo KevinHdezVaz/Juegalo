@@ -9,8 +9,8 @@ import '../../../core/constants/app_constants.dart';
 // ── Configuración de redes ────────────────────────────────────────
 // Llena la que tengas primero. La app usa la primera que esté lista.
 
-const _adjoeAppId   = AppConstants.adjoeAppId;   // adjoe.io
-const _tapjoyApiKey = AppConstants.tapjoyApiKey;  // publishers.tapjoy.com
+const _adjoeAppId = AppConstants.adjoeAppId; // adjoe.io
+const _tapjoyApiKey = AppConstants.tapjoyApiKey; // publishers.tapjoy.com
 
 // Red activa (cambia cuando tengas credenciales)
 const _activeNetwork = _OfferwallNetwork.none; // .adjoe | .tapjoy | .none
@@ -19,18 +19,16 @@ enum _OfferwallNetwork { adjoe, tapjoy, none }
 
 // ── URL del offerwall según red ───────────────────────────────────
 String _offerwallUrl(String uid) => switch (_activeNetwork) {
-  _OfferwallNetwork.adjoe  =>
-    'https://sdk.adjoe.io/offerwall/'
-    '?app_id=$_adjoeAppId'
-    '&user_id=$uid'
-    '&ua_network=organic',
-  _OfferwallNetwork.tapjoy =>
-    'https://offerwall.tapjoy.com/v2/sdk'
-    '?sdk_type=tapjoy_sdk'
-    '&app_id=$_tapjoyApiKey'
-    '&user_id=$uid',
-  _OfferwallNetwork.none   => '',
-};
+      _OfferwallNetwork.adjoe => 'https://sdk.adjoe.io/offerwall/'
+          '?app_id=$_adjoeAppId'
+          '&user_id=$uid'
+          '&ua_network=organic',
+      _OfferwallNetwork.tapjoy => 'https://offerwall.tapjoy.com/v2/sdk'
+          '?sdk_type=tapjoy_sdk'
+          '&app_id=$_tapjoyApiKey'
+          '&user_id=$uid',
+      _OfferwallNetwork.none => '',
+    };
 
 // ── Pantalla principal ────────────────────────────────────────────
 class GamesScreen extends ConsumerStatefulWidget {
@@ -57,14 +55,14 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
         InAppWebView(
           initialUrlRequest: URLRequest(url: WebUri(url)),
           initialSettings: InAppWebViewSettings(
-            javaScriptEnabled    : true,
-            useWideViewPort      : true,
-            loadWithOverviewMode : true,
-            domStorageEnabled    : true,
+            javaScriptEnabled: true,
+            useWideViewPort: true,
+            loadWithOverviewMode: true,
+            domStorageEnabled: true,
             mediaPlaybackRequiresUserGesture: false,
           ),
-          onLoadStop  : (_, __) => setState(() => _loading = false),
-          onLoadStart : (_, __) => setState(() => _loading = true),
+          onLoadStop: (_, __) => setState(() => _loading = false),
+          onLoadStart: (_, __) => setState(() => _loading = true),
         ),
         if (_loading)
           Container(
@@ -100,10 +98,15 @@ class _OfferwallPlaceholder extends StatelessWidget {
 
           // Hero
           Container(
-            width: 88, height: 88,
+            width: 88,
+            height: 88,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+                colors: [
+                  Color(0xFF5B21B6),
+                  Color(0xFF7C3AED),
+                  Color(0xFF8B5CF6)
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -164,7 +167,8 @@ class _OfferwallPlaceholder extends StatelessWidget {
           const SizedBox(height: 12),
           _NetworkCard(
             name: 'Adjoe',
-            description: 'Recompensas por tiempo jugado. El modelo de JustPlay. Ideal para LatAm y USA.',
+            description:
+                'Recompensas por tiempo jugado. El modelo de JustPlay. Ideal para LatAm y USA.',
             badge: 'RECOMENDADO',
             badgeColor: AppColors.verdePrimario,
             icon: Icons.timer_rounded,
@@ -180,13 +184,14 @@ class _OfferwallPlaceholder extends StatelessWidget {
           const SizedBox(height: 12),
           _NetworkCard(
             name: 'Tapjoy / Liftoff',
-            description: 'El offerwall más grande. +10,000 juegos globales. Requiere app publicada en Play Store.',
+            description:
+                'El offerwall más grande. +10,000 juegos globales. Requiere app publicada en Play Store.',
             badge: 'REQUIERE APP PUBLICADA',
             badgeColor: AppColors.textoSecundario,
             icon: Icons.videogame_asset_rounded,
             color: AppColors.colorJuegos,
             steps: const [
-              'Publica JUÉGALO en Play Store (beta)',
+              'Publica JUEGALO en Play Store (beta)',
               'Regístrate en publishers.tapjoy.com',
               'Crea tu app y obtén el API Key',
               'Ponlo en app_constants.dart → tapjoyApiKey',
@@ -207,8 +212,7 @@ class _OfferwallPlaceholder extends StatelessWidget {
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.code_rounded,
-                    color: AppColors.dorado, size: 18),
+                Icon(Icons.code_rounded, color: AppColors.dorado, size: 18),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -217,7 +221,8 @@ class _OfferwallPlaceholder extends StatelessWidget {
                     'y los juegos aparecerán automáticamente.',
                     style: TextStyle(
                         color: AppColors.textoPrimario,
-                        fontSize: 12, height: 1.5),
+                        fontSize: 12,
+                        height: 1.5),
                   ),
                 ),
               ],
@@ -252,8 +257,10 @@ class _HowItWorksRow extends StatelessWidget {
   final String subtitle;
   final Color color;
   const _HowItWorksRow({
-    required this.icon, required this.title,
-    required this.subtitle, required this.color,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
   });
 
   @override
@@ -266,7 +273,8 @@ class _HowItWorksRow extends StatelessWidget {
         ),
         child: Row(children: [
           Container(
-            width: 38, height: 38,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
@@ -304,10 +312,14 @@ class _NetworkCard extends StatelessWidget {
   final String url;
 
   const _NetworkCard({
-    required this.name, required this.description,
-    required this.badge, required this.badgeColor,
-    required this.icon, required this.color,
-    required this.steps, required this.url,
+    required this.name,
+    required this.description,
+    required this.badge,
+    required this.badgeColor,
+    required this.icon,
+    required this.color,
+    required this.steps,
+    required this.url,
   });
 
   @override
@@ -324,7 +336,8 @@ class _NetworkCard extends StatelessWidget {
             // Header
             Row(children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
@@ -339,8 +352,7 @@ class _NetworkCard extends StatelessWidget {
                       fontSize: 15)),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: badgeColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -356,7 +368,8 @@ class _NetworkCard extends StatelessWidget {
             Text(description,
                 style: const TextStyle(
                     color: AppColors.textoSecundario,
-                    fontSize: 12, height: 1.4)),
+                    fontSize: 12,
+                    height: 1.4)),
             const SizedBox(height: 12),
             // Pasos
             ...steps.asMap().entries.map((e) => Padding(
@@ -365,7 +378,8 @@ class _NetworkCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 18, height: 18,
+                        width: 18,
+                        height: 18,
                         margin: const EdgeInsets.only(top: 1),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.2),

@@ -61,8 +61,7 @@ class ProfileScreen extends ConsumerWidget {
                   label: 'Total ganado (USD)',
                   value: '\$${(user.totalEarned / 1000).toStringAsFixed(2)}'),
               _StatRow(
-                  label: 'Racha actual',
-                  value: '${user.streakDays} días 🔥'),
+                  label: 'Racha actual', value: '${user.streakDays} días 🔥'),
               const SizedBox(height: 24),
 
               // ── Tarjeta de referidos ─────────────────────────────
@@ -99,11 +98,11 @@ class _ReferralCard extends StatelessWidget {
   void _share() {
     final code = user.referralCode as String;
     Share.share(
-      '¡Únete a JUÉGALO y gana dinero real jugando, completando encuestas y viendo videos! 🎮💰\n\n'
+      '¡Únete a JUEGALO y gana dinero real jugando, completando encuestas y viendo videos! 🎮💰\n\n'
       'Usa mi código al registrarte y los dos ganamos 1,000 monedas cuando hagas tu primer cobro.\n\n'
       '📱 Código: $code\n\n'
       'Descarga la app: juegalo.app',
-      subject: 'Gana dinero con JUÉGALO',
+      subject: 'Gana dinero con JUEGALO',
     );
   }
 
@@ -121,8 +120,8 @@ class _ReferralCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final code     = user.referralCode as String;
-    final count    = user.referralsCount as int;
+    final code = user.referralCode as String;
+    final count = user.referralsCount as int;
     final earnings = user.referralEarnings as int;
 
     return Container(
@@ -148,7 +147,8 @@ class _ReferralCard extends StatelessWidget {
           // Header
           Row(children: [
             Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: Colors.white24,
                 borderRadius: BorderRadius.circular(10),
@@ -167,9 +167,7 @@ class _ReferralCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           fontSize: 15)),
                   Text('Ganan 1,000 monedas los dos',
-                      style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12)),
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
                 ],
               ),
             ),
@@ -190,9 +188,7 @@ class _ReferralCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Tu código',
-                        style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11)),
+                        style: TextStyle(color: Colors.white70, fontSize: 11)),
                     const SizedBox(height: 2),
                     Text(
                       code.isNotEmpty ? code : '--------',
@@ -285,8 +281,7 @@ class _ReferralStat extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
             Text(label,
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 10)),
+                style: const TextStyle(color: Colors.white70, fontSize: 10)),
           ]),
         ]),
       );

@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════════════════════╗
--- ║       JUÉGALO — Ranking Semanal Migration            ║
+-- ║       JUEGALO — Ranking Semanal Migration            ║
 -- ╚══════════════════════════════════════════════════════╝
 -- Ejecutar en Supabase SQL Editor
 

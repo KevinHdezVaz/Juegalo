@@ -51,46 +51,99 @@ class _Item {
 
 final _slides = [
   _SlideData(
-    bgColor:     const Color(0xFF1D4ED8),
+    bgColor: const Color(0xFF1D4ED8),
     accentColor: Colors.white,
-    emoji:  '🎮',
-    title:  '¡Bienvenido a JUÉGALO!',
+    emoji: '🎮',
+    title: '¡Bienvenido a JUEGALO!',
     subtitle: 'La app donde juegas, haces\nencuestas y ganas dinero real.',
+    items: const [
+      _Item(
+          emoji: '✅',
+          label: '100% gratis para siempre',
+          value: 'Sin cargos',
+          color: Color(0xFFBBF7D0)),
+      _Item(
+          emoji: '🌎',
+          label: 'Disponible en Latinoamérica',
+          value: 'Desde hoy',
+          color: Color(0xFF93C5FD)),
+      _Item(
+          emoji: '⚡',
+          label: 'Empieza a ganar en 1 minuto',
+          value: 'Rápido',
+          color: Color(0xFFFDE68A)),
+    ],
   ),
   _SlideData(
-    bgColor:     const Color(0xFF15803D),
+    bgColor: const Color(0xFF15803D),
     accentColor: Colors.white,
-    emoji:  '🪙',
-    title:  'Gana monedas fácil',
+    emoji: '🪙',
+    title: 'Gana monedas fácil',
     subtitle: 'Tres formas de acumular\nmonedas cada día.',
     items: const [
-      _Item(emoji: '▶️', label: 'Videos',    value: '50 🪙 c/u',     color: Color(0xFFFCA5A5)),
-      _Item(emoji: '📋', label: 'Encuestas', value: 'hasta 500 🪙',  color: Color(0xFFC4B5FD)),
-      _Item(emoji: '🕹️', label: 'Juegos',    value: 'hasta 2,000 🪙',color: Color(0xFF93C5FD)),
+      _Item(
+          emoji: '▶️',
+          label: 'Videos',
+          value: '50 🪙 c/u',
+          color: Color(0xFFFCA5A5)),
+      _Item(
+          emoji: '📋',
+          label: 'Encuestas',
+          value: 'hasta 500 🪙',
+          color: Color(0xFFC4B5FD)),
+      _Item(
+          emoji: '🕹️',
+          label: 'Juegos',
+          value: 'hasta 2,000 🪙',
+          color: Color(0xFF93C5FD)),
     ],
   ),
   _SlideData(
-    bgColor:     const Color(0xFFB45309),
+    bgColor: const Color(0xFFB45309),
     accentColor: Colors.white,
-    emoji:  '🏆',
-    title:  'Ranking semanal',
+    emoji: '🏆',
+    title: 'Ranking semanal',
     subtitle: 'Compite cada semana.\nLos mejores ganan premios extra.',
     items: const [
-      _Item(emoji: '🥇', label: 'Puesto #1', value: '5,000 🪙', color: Color(0xFFFDE68A)),
-      _Item(emoji: '🥈', label: 'Puesto #2', value: '2,000 🪙', color: Color(0xFFE5E7EB)),
-      _Item(emoji: '🥉', label: 'Puesto #3', value: '1,000 🪙', color: Color(0xFFFED7AA)),
+      _Item(
+          emoji: '🥇',
+          label: 'Puesto #1',
+          value: '5,000 🪙',
+          color: Color(0xFFFDE68A)),
+      _Item(
+          emoji: '🥈',
+          label: 'Puesto #2',
+          value: '2,000 🪙',
+          color: Color(0xFFE5E7EB)),
+      _Item(
+          emoji: '🥉',
+          label: 'Puesto #3',
+          value: '1,000 🪙',
+          color: Color(0xFFFED7AA)),
     ],
   ),
   _SlideData(
-    bgColor:     const Color(0xFF0F172A),
+    bgColor: const Color(0xFF0F172A),
     accentColor: Colors.white,
-    emoji:  '💸',
-    title:  'Cobra cuando quieras',
+    emoji: '💸',
+    title: 'Cobra cuando quieras',
     subtitle: '1,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.',
     items: const [
-      _Item(emoji: '💳', label: 'PayPal',       value: 'Instantáneo', color: Color(0xFF93C5FD)),
-      _Item(emoji: '📱', label: 'MercadoPago',  value: 'En minutos',  color: Color(0xFF6EE7B7)),
-      _Item(emoji: '🏪', label: 'OXXO / Tienda',value: 'Efectivo',    color: Color(0xFFFCA5A5)),
+      _Item(
+          emoji: '💳',
+          label: 'PayPal',
+          value: 'Instantáneo',
+          color: Color(0xFF93C5FD)),
+      _Item(
+          emoji: '📱',
+          label: 'MercadoPago',
+          value: 'En minutos',
+          color: Color(0xFF6EE7B7)),
+      _Item(
+          emoji: '🏪',
+          label: 'OXXO / Tienda',
+          value: 'Efectivo',
+          color: Color(0xFFFCA5A5)),
     ],
   ),
 ];
@@ -162,16 +215,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
             ],
           ),
 
-          // ── Bloquea swipe en el último slide (evita pasar a fantasma) ──
-          if (_current == _slides.length - 1)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onHorizontalDragStart: (_) {},
-                onHorizontalDragUpdate: (_) {},
-                onHorizontalDragEnd: (_) {},
-              ),
-            ),
+          // (sin bloqueador — el usuario puede regresar)
 
           // ── Botón Saltar (arriba derecha) ────────────────────
           SafeArea(
@@ -193,8 +237,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
                               horizontal: 16, vertical: 6),
                         ),
                         child: const Text('Saltar',
-                            style: TextStyle(fontSize: 13,
-                                fontWeight: FontWeight.w600)),
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
               ),
             ),
@@ -217,29 +261,76 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       current: _current,
                     ),
                     const SizedBox(height: 20),
-                    // Botón
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _next,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: _slides[_current].bgColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    // Botones
+                    if (isLast)
+                      Row(
+                        children: [
+                          // ← Anterior
+                          SizedBox(
+                            height: 54,
+                            child: OutlinedButton(
+                              onPressed: () => _controller.animateToPage(
+                                page: _current - 1,
+                                duration: 600,
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.50)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20),
+                              ),
+                              child: const Icon(
+                                  Icons.arrow_back_ios_rounded, size: 18),
+                            ),
                           ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          isLast ? '¡Empezar a ganar! 🚀' : 'Siguiente →',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                          const SizedBox(width: 12),
+                          // ¡Empezar!
+                          Expanded(
+                            child: SizedBox(
+                              height: 54,
+                              child: ElevatedButton(
+                                onPressed: _finish,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: _slides[_current].bgColor,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  '¡Empezar a ganar! 🚀',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: _next,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: _slides[_current].bgColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Siguiente →',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w800),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -263,6 +354,7 @@ class _SlidePage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 0, 28, 180),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Ícono
           Container(
@@ -277,8 +369,7 @@ class _SlidePage extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(slide.emoji,
-                  style: const TextStyle(fontSize: 56)),
+              child: Text(slide.emoji, style: const TextStyle(fontSize: 56)),
             ),
           ),
           const SizedBox(height: 28),
@@ -348,8 +439,7 @@ class _ItemRow extends StatelessWidget {
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(20),
@@ -388,9 +478,7 @@ class _DotsIndicator extends StatelessWidget {
           width: active ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: active
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.35),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(4),
           ),
         );

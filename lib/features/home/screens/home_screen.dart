@@ -19,11 +19,26 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   static const _tabs = [
-    _TabItem(icon: Icons.sports_esports_rounded,          label: 'Juegos',    color: AppColors.colorJuegos),
-    _TabItem(icon: Icons.assignment_outlined,             label: 'Encuestas', color: AppColors.colorEncuestas),
-    _TabItem(icon: Icons.play_circle_outline,             label: 'Videos',    color: AppColors.colorVideos),
-    _TabItem(icon: Icons.leaderboard_rounded,             label: 'Ranking',   color: AppColors.dorado),
-    _TabItem(icon: Icons.account_balance_wallet_outlined, label: 'Cobrar',    color: AppColors.azulPrimario),
+    _TabItem(
+        icon: Icons.sports_esports_rounded,
+        label: 'Juegos',
+        color: AppColors.colorJuegos),
+    _TabItem(
+        icon: Icons.assignment_outlined,
+        label: 'Encuestas',
+        color: AppColors.colorEncuestas),
+    _TabItem(
+        icon: Icons.play_circle_outline,
+        label: 'Videos',
+        color: AppColors.colorVideos),
+    _TabItem(
+        icon: Icons.leaderboard_rounded,
+        label: 'Ranking',
+        color: AppColors.dorado),
+    _TabItem(
+        icon: Icons.account_balance_wallet_outlined,
+        label: 'Cobrar',
+        color: AppColors.azulPrimario),
   ];
 
   static const _screens = [
@@ -37,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeTab = ref.watch(activeTabProvider);
-    final user      = ref.watch(userProvider).value;
+    final user = ref.watch(userProvider).value;
 
     return Scaffold(
       backgroundColor: AppColors.fondoPrincipal,
@@ -47,7 +62,8 @@ class HomeScreen extends ConsumerWidget {
         title: Row(
           children: [
             Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
@@ -62,13 +78,14 @@ class HomeScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
                   'assets/icons/app_icon.png',
-                  width: 32, height: 32,
+                  width: 32,
+                  height: 32,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            const Text('JUÉGALO',
+            const Text('JUEGALO',
                 style: TextStyle(
                     color: AppColors.textoPrimario,
                     fontWeight: FontWeight.w900,
@@ -82,7 +99,8 @@ class HomeScreen extends ConsumerWidget {
               onTap: () => ref.read(activeTabProvider.notifier).state = 4,
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.azulPrimario.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(20),
@@ -108,7 +126,8 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.person_outline, color: AppColors.textoSecundario),
+            icon: const Icon(Icons.person_outline,
+                color: AppColors.textoSecundario),
             onPressed: () => context.push(AppRoutes.profile),
           ),
         ],
@@ -153,5 +172,6 @@ class _TabItem {
   final IconData icon;
   final String label;
   final Color color;
-  const _TabItem({required this.icon, required this.label, required this.color});
+  const _TabItem(
+      {required this.icon, required this.label, required this.color});
 }

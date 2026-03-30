@@ -1,5 +1,5 @@
 name: juegalo_gana_dinero
-description: "JUÉGALO — Gana Dinero Real."
+description: "JUEGALO — Gana Dinero Real."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -89,5 +89,6 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icons/app_icon.png"
   min_sdk_android: 21
+  remove_alpha_ios: true
   web:
     generate: false
