@@ -37,14 +37,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
-    final session = ref.read(currentSessionProvider);
-    if (session == null) {
-      context.go(AppRoutes.onboarding);
-      return;
-    }
+
+    // Primera vez: mostrar tutorial antes del login
     final tutorialDone = await isTutorialCompleted();
     if (!mounted) return;
-    context.go(tutorialDone ? AppRoutes.home : AppRoutes.tutorial);
+    if (!tutorialDone) {
+      context.go(AppRoutes.tutorial);
+      return;
+    }
+
+    // Tutorial ya visto: ir al home (si hay sesión) o al login
+    final session = ref.read(currentSessionProvider);
+    context.go(session != null ? AppRoutes.home : AppRoutes.onboarding);
   }
 
   @override

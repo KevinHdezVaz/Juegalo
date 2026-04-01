@@ -51,6 +51,10 @@ dependencies:
   percent_indicator: ^4.2.4
   intl: ^0.19.0
 
+  # --- CPX Research SDK oficial (encuestas) - copia local parcheada ---
+  cpx_research_sdk_flutter:
+    path: packages/cpx_research_sdk_flutter
+
   # --- Crypto (MD5 para CPX secure_hash) ---
   crypto: ^3.0.6
 

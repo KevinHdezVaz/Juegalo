@@ -78,16 +78,21 @@ final currentSessionProvider = Provider<Session?>((ref) {
   return _db.auth.currentSession;
 });
 
-// ── Usuario actual con realtime ───────────────────────────────────
-final userProvider = StreamProvider<AppUser?>((ref) {
-  final userId = _db.auth.currentUser?.id;
-  if (userId == null) return Stream.value(null);
+// ── Usuario actual (fetch simple, sin realtime) ───────────────────
+// Se refresca cuando cambia el auth state (login/logout/token renovado).
+final userProvider = StreamProvider<AppUser?>((ref) async* {
+  ref.watch(authStateProvider);
 
-  return _db
+  final userId = _db.auth.currentUser?.id;
+  if (userId == null) { yield null; return; }
+
+  final row = await _db
       .from('users')
-      .stream(primaryKey: ['id'])
+      .select()
       .eq('id', userId)
-      .map((rows) => rows.isEmpty ? null : AppUser.fromJson(rows.first));
+      .maybeSingle();
+
+  yield row == null ? null : AppUser.fromJson(row);
 });
 
 // ── Notifier para acciones del usuario ───────────────────────────

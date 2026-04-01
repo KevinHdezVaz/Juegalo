@@ -172,7 +172,8 @@ class _HeroHeader extends StatelessWidget {
           // Título + refresh
           Row(
             children: [
-              const Text('🏆', style: TextStyle(fontSize: 22)),
+              const Icon(Icons.emoji_events_rounded,
+                  color: Colors.amber, size: 26),
               const SizedBox(width: 10),
               const Expanded(
                 child: Column(
@@ -232,13 +233,13 @@ class _HeroHeader extends StatelessWidget {
           // Premios
           Row(
             children: [
-              Expanded(child: _PrizeCard(medal: '🥇', pos: '#1', coins: '5,000', usd: '\$5',
+              Expanded(child: _PrizeCard(medalIcon: Icons.looks_one_rounded, pos: '#1', coins: '5,000',
                   color: const Color(0xFFFFD700))),
               const SizedBox(width: 8),
-              Expanded(child: _PrizeCard(medal: '🥈', pos: '#2', coins: '2,000', usd: '\$2',
+              Expanded(child: _PrizeCard(medalIcon: Icons.looks_two_rounded, pos: '#2', coins: '2,000',
                   color: const Color(0xFFD0D8E8))),
               const SizedBox(width: 8),
-              Expanded(child: _PrizeCard(medal: '🥉', pos: '#3', coins: '1,000', usd: '\$1',
+              Expanded(child: _PrizeCard(medalIcon: Icons.looks_3_rounded, pos: '#3', coins: '1,000',
                   color: const Color(0xFFCD9B6A))),
             ],
           ),
@@ -259,16 +260,14 @@ class _HeroHeader extends StatelessWidget {
 }
 
 class _PrizeCard extends StatelessWidget {
-  final String medal;
+  final IconData medalIcon;
   final String pos;
   final String coins;
-  final String usd;
   final Color  color;
   const _PrizeCard(
-      {required this.medal,
+      {required this.medalIcon,
       required this.pos,
       required this.coins,
-      required this.usd,
       required this.color});
 
   @override
@@ -283,7 +282,7 @@ class _PrizeCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(medal, style: const TextStyle(fontSize: 16)),
+            Icon(medalIcon, size: 18, color: color),
             const SizedBox(width: 6),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +290,8 @@ class _PrizeCard extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('🪙', style: TextStyle(fontSize: 12)),
+                    const Icon(Icons.monetization_on_rounded,
+                        size: 13, color: Colors.amber),
                     const SizedBox(width: 3),
                     Text(coins,
                         style: TextStyle(
@@ -300,7 +300,7 @@ class _PrizeCard extends StatelessWidget {
                             fontSize: 14)),
                   ],
                 ),
-                Text('$usd · $pos',
+                Text(pos,
                     style: const TextStyle(
                         color: Colors.white60, fontSize: 10)),
               ],
@@ -575,18 +575,18 @@ class _Podium extends StatelessWidget {
         children: [
           if (second != null)
             _PodiumSlot(entry: second, isMe: second.id == myId,
-                medal: '🥈', avatarSize: 52, pedestalH: 64,
-                pedestalColor: const Color(0xFFCBD5E1))
+                medalIcon: Icons.looks_two_rounded, medalColor: const Color(0xFFCBD5E1),
+                avatarSize: 52, pedestalH: 64, pedestalColor: const Color(0xFFCBD5E1))
           else const SizedBox(width: 90),
           if (first != null)
             _PodiumSlot(entry: first, isMe: first.id == myId,
-                medal: '🥇', avatarSize: 66, pedestalH: 84,
-                pedestalColor: const Color(0xFFFCD34D))
+                medalIcon: Icons.looks_one_rounded, medalColor: const Color(0xFFFFD700),
+                avatarSize: 66, pedestalH: 84, pedestalColor: const Color(0xFFFCD34D))
           else const SizedBox(width: 90),
           if (third != null)
             _PodiumSlot(entry: third, isMe: third.id == myId,
-                medal: '🥉', avatarSize: 44, pedestalH: 48,
-                pedestalColor: const Color(0xFFFCA16C))
+                medalIcon: Icons.looks_3_rounded, medalColor: const Color(0xFFFCA16C),
+                avatarSize: 44, pedestalH: 48, pedestalColor: const Color(0xFFFCA16C))
           else const SizedBox(width: 90),
         ],
       ),
@@ -597,12 +597,14 @@ class _Podium extends StatelessWidget {
 class _PodiumSlot extends StatelessWidget {
   final RankEntry entry;
   final bool isMe;
-  final String medal;
+  final IconData medalIcon;
+  final Color medalColor;
   final double avatarSize;
   final double pedestalH;
   final Color pedestalColor;
   const _PodiumSlot({
-    required this.entry, required this.isMe, required this.medal,
+    required this.entry, required this.isMe,
+    required this.medalIcon, required this.medalColor,
     required this.avatarSize, required this.pedestalH,
     required this.pedestalColor,
   });
@@ -611,7 +613,7 @@ class _PodiumSlot extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(medal, style: const TextStyle(fontSize: 18)),
+          Icon(medalIcon, size: 20, color: medalColor),
           const SizedBox(height: 4),
           Container(
             width: avatarSize, height: avatarSize,
@@ -774,9 +776,17 @@ class _RankRow extends StatelessWidget {
                   ],
                 ]),
                 if (entry.streakDays > 0)
-                  Text('🔥 ${entry.streakDays} días',
-                      style: const TextStyle(
-                          color: AppColors.textoDeshabilitado, fontSize: 11)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_fire_department_rounded,
+                          color: Colors.orange, size: 12),
+                      const SizedBox(width: 3),
+                      Text('${entry.streakDays} días',
+                          style: const TextStyle(
+                              color: AppColors.textoDeshabilitado, fontSize: 11)),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -786,7 +796,8 @@ class _RankRow extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('🪙', style: TextStyle(fontSize: 13)),
+                  const Icon(Icons.monetization_on_rounded,
+                      color: Colors.amber, size: 15),
                   const SizedBox(width: 4),
                   Text('${entry.weeklyCoins}',
                       style: TextStyle(

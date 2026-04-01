@@ -28,8 +28,11 @@ class DailyGoalBar extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(reached ? '🎯' : '🔥',
-                      style: const TextStyle(fontSize: 14)),
+                  Icon(
+                    reached ? Icons.gps_fixed_rounded : Icons.local_fire_department_rounded,
+                    size: 16,
+                    color: reached ? AppColors.verdePrimario : Colors.orange,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     reached ? '¡Meta alcanzada! Bono x2 activo' : 'Meta de hoy',

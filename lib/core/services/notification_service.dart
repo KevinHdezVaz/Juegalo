@@ -69,13 +69,26 @@ class NotificationService {
       return;
     }
 
-    // iOS: necesita APNS token primero
+    // iOS: necesita APNS token primero (no disponible en simulador)
     if (Platform.isIOS) {
-      await _fcm.getAPNSToken();
+      try {
+        final apns = await _fcm.getAPNSToken();
+        if (apns == null) {
+          debugPrint('⚠️ APNS token no disponible (simulador o sin permisos)');
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ APNS no disponible: $e');
+        return;
+      }
     }
 
-    final token = await _fcm.getToken();
-    if (token != null) await _saveToken(token);
+    try {
+      final token = await _fcm.getToken();
+      if (token != null) await _saveToken(token);
+    } catch (e) {
+      debugPrint('⚠️ No se pudo obtener FCM token: $e');
+    }
   }
 
   Future<void> _saveToken(String token) async {

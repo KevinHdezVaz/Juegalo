@@ -51,7 +51,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Rutas que no redirigen
       if (loc == AppRoutes.splash   ||
           loc == AppRoutes.onboarding ||
-          loc == AppRoutes.tutorial) return null;
+          loc == AppRoutes.tutorial) { return null; }
 
       if (!isAuth) return AppRoutes.onboarding;
       return null;

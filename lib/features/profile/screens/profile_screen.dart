@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../shared/providers/user_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -61,7 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                   label: 'Total ganado (USD)',
                   value: '\$${(user.totalEarned / 1000).toStringAsFixed(2)}'),
               _StatRow(
-                  label: 'Racha actual', value: '${user.streakDays} días 🔥'),
+                  label: 'Racha actual', value: '${user.streakDays} días'),
               const SizedBox(height: 24),
 
               // ── Tarjeta de referidos ─────────────────────────────

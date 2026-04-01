@@ -1,14 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="JUEGALO"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- AdMob App ID — TEST ID (cambiar por el real cuando tengas cuenta AdMob) -->
+        <!-- AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-5486388630970825~2374341538"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

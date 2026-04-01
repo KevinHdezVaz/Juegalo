@@ -1,21 +1,11 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
+import 'package:cpx_research_sdk_flutter/cpx.dart';
+import 'package:cpx_research_sdk_flutter/model/cpx_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
-
-// ── CPX Research config ──────────────────────────────────────────
-const _cpxAppId = '32134';
-const _cpxSecureKey = '0aTTC5U3oXSLv0Vt8JSyV7H2ExPjvep7';
-const _cpxReady = true;
-
-String _cpxHash(String userId) {
-  final bytes = utf8.encode('$userId-$_cpxSecureKey');
-  return md5.convert(bytes).toString();
-}
 
 class SurveysScreen extends ConsumerStatefulWidget {
   const SurveysScreen({super.key});
@@ -25,205 +15,465 @@ class SurveysScreen extends ConsumerStatefulWidget {
 }
 
 class _SurveysScreenState extends ConsumerState<SurveysScreen> {
-  bool _loading = true;
+  final CPXData _cpxData = CPXData.cpxData;
+  DateTime? _lastUpdated;
 
-  String get _surveyUrl {
-    final uid = Supabase.instance.client.auth.currentUser?.id ?? 'anonymous';
-    final hash = _cpxHash(uid);
-    return 'https://offers.cpx-research.com/index.php'
-        '?app_id=$_cpxAppId'
-        '&ext_user_id=$uid'
-        '&secure_hash=$hash'
-        '&output_method=publisher_iframe';
+  @override
+  void initState() {
+    super.initState();
+    // Escuchar transacciones completadas → acreditar monedas
+    _cpxData.transactions.addListener(_onTransactions);
+    // Fetch inicial (CPXResearch en HomeScreen ya arranca el timer,
+    // pero hacemos uno manual para respuesta inmediata al entrar al tab)
+    fetchCPXSurveysAndTransactions();
+    _lastUpdated = DateTime.now();
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (!_cpxReady) return const _SetupPlaceholder();
+  void dispose() {
+    _cpxData.transactions.removeListener(_onTransactions);
+    super.dispose();
+  }
 
-    return Stack(
-      children: [
-        InAppWebView(
-          initialUrlRequest: URLRequest(url: WebUri(_surveyUrl)),
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            useWideViewPort: true,
-            loadWithOverviewMode: true,
+  // ── Listener de transacciones ─────────────────────────────────────
+  void _onTransactions() {
+    final txs = _cpxData.transactions.value;
+    if (txs == null || txs.isEmpty) return;
+    for (final tx in txs) {
+      _creditCoins(
+        transactionId: tx.transactionID ?? '',
+        messageId: tx.messageID ?? '',
+        earningsGross: tx.verdienstUserLocalMoney ?? '0',
+      );
+    }
+  }
+
+  Future<void> _creditCoins({
+    required String transactionId,
+    required String messageId,
+    required String earningsGross,
+  }) async {
+    if (transactionId.isEmpty) return;
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await Supabase.instance.client.rpc('credit_coins', params: {
+        'p_user_id': uid,
+        'p_coins': AppConstants.coinsPerSurvey,
+        'p_source': 'survey',
+        'p_description': 'Encuesta CPX completada (\$$earningsGross)',
+      });
+      // Marcar como pagada para no procesar de nuevo
+      markTransactionAsPaid(transactionId, messageId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            '+${AppConstants.coinsPerSurvey} monedas — encuesta completada',
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
-          onLoadStop: (controller, url) {
-            setState(() => _loading = false);
-            // CPX redirige a una URL con "status=1" al completar encuesta
-            final urlStr = url?.toString() ?? '';
-            if (urlStr.contains('status=1') ||
-                urlStr.contains('survey_complete')) {
-              tryClaimDailyBonus(context, ref);
-            }
-          },
-          onLoadStart: (_, __) => setState(() => _loading = true),
-        ),
-        if (_loading)
-          Container(
-            color: AppColors.fondoPrincipal,
-            child: const Center(
-              child: CircularProgressIndicator(color: AppColors.colorEncuestas),
-            ),
-          ),
-      ],
+          backgroundColor: AppColors.verdePrimario,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ));
+        await tryClaimDailyBonus(context, ref);
+      }
+    } catch (e) {
+      debugPrint('❌ credit_coins (survey): $e');
+    }
+  }
+
+  void _refresh() {
+    fetchCPXSurveysAndTransactions();
+    setState(() => _lastUpdated = DateTime.now());
+  }
+
+  String _timeAgo() {
+    if (_lastUpdated == null) return '';
+    final diff = DateTime.now().difference(_lastUpdated!);
+    if (diff.inSeconds < 60) return 'hace ${diff.inSeconds}s';
+    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
+    return 'hace ${diff.inHours}h';
+  }
+
+  // ── Builder personalizado para cada tarjeta de encuesta ──────────
+  Widget _surveyCardBuilder(
+    List<Survey> surveys,
+    CPXCardConfig config,
+    CPXText? text,
+  ) {
+    if (surveys.isEmpty) {
+      return _EmptyState(onRefresh: _refresh);
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: surveys.length,
+      itemBuilder: (context, i) => _SurveyCard(
+        survey: surveys[i],
+        text: text,
+        onTap: () => showCPXBrowserOverlay(surveys[i].id),
+      ),
     );
   }
-}
-
-// ── Placeholder cuando no hay credenciales CPX ───────────────────
-class _SetupPlaceholder extends StatelessWidget {
-  const _SetupPlaceholder();
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 32),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF1D4ED8),
-                  Color(0xFF2563EB),
-                  Color(0xFF3B82F6)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.azulPrimario.withValues(alpha: 0.40),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
+    return RefreshIndicator(
+      color: AppColors.azulPrimario,
+      onRefresh: () async => _refresh(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────────────
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.textoPrimario.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_outlined,
+                    color: AppColors.textoPrimario,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Encuestas disponibles',
+                        style: TextStyle(
+                          color: AppColors.textoPrimario,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                      ValueListenableBuilder<List<Survey>?>(
+                        valueListenable: _cpxData.surveys,
+                        builder: (_, surveys, __) {
+                          final count = surveys?.length ?? 0;
+                          return Text(
+                            count > 0
+                                ? '$count ${count == 1 ? 'encuesta' : 'encuestas'} • ${_timeAgo()}'
+                                : 'Actualizado ${_timeAgo()}',
+                            style: const TextStyle(
+                              color: AppColors.textoSecundario,
+                              fontSize: 12,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Botón refresh
+                IconButton(
+                  onPressed: _refresh,
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    color: AppColors.textoPrimario,
+                  ),
+                  tooltip: 'Actualizar',
                 ),
               ],
             ),
-            child: const Icon(Icons.assignment_outlined,
-                size: 42, color: Colors.white),
-          ),
-          const SizedBox(height: 20),
-          const Text('Encuestas CPX Research',
-              style: TextStyle(
-                  color: AppColors.textoPrimario,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          const Text(
-            'Completa encuestas y gana monedas. Siempre hay encuestas disponibles.',
-            style: TextStyle(
-                color: AppColors.textoSecundario, fontSize: 14, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 28),
-          _StepCard(
-              step: '1',
-              title: 'Regístrate en CPX Research',
-              description: 'cpx-research.com → Publishers → Create Account',
-              color: AppColors.colorEncuestas),
-          const SizedBox(height: 10),
-          _StepCard(
-              step: '2',
-              title: 'Crea una app publisher',
-              description: 'Agrega JUEGALO y obtén tu App ID',
-              color: AppColors.colorEncuestas),
-          const SizedBox(height: 10),
-          _StepCard(
-              step: '3',
-              title: 'Activa las encuestas',
-              description: 'Pon tu App ID en surveys_screen.dart → _cpxAppId',
-              color: AppColors.colorEncuestas),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.colorEncuestas.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: AppColors.colorEncuestas.withValues(alpha: 0.3)),
-            ),
-            child: const Row(children: [
-              Icon(Icons.monetization_on_rounded,
-                  color: AppColors.dorado, size: 18),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'CPX paga \$0.50–\$5.00 por encuesta. 60% va al usuario, 40% a la app.',
-                  style: TextStyle(
-                      color: AppColors.textoPrimario,
-                      fontSize: 13,
-                      height: 1.4),
+            const SizedBox(height: 8),
+
+            // ── Banner informativo ────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.textoPrimario.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.textoPrimario.withValues(alpha: 0.20),
                 ),
               ),
-            ]),
-          ),
-        ],
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.monetization_on_rounded,
+                    color: AppColors.dorado,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textoSecundario,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Ganas '),
+                          TextSpan(
+                            text: '+${AppConstants.coinsPerSurvey} monedas',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.verdePrimario,
+                            ),
+                          ),
+                          const TextSpan(text: ' por cada encuesta completada'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Lista de encuestas ────────────────────────────────────
+            CPXSurveyCards(
+              config: CPXCardConfig(
+                accentColor: AppColors.azulClaro,
+                cardBackgroundColor: AppColors.fondoCard,
+                textColor: AppColors.textoPrimario,
+                starColor: AppColors.dorado,
+                inactiveStarColor: AppColors.fondoCardBorde,
+                payoutColor: AppColors.verdePrimario,
+                cardCount: 3,
+              ),
+              hideIfEmpty: false,
+              padding: EdgeInsets.zero,
+              noSurveysWidget: _EmptyState(onRefresh: _refresh),
+              builder: _surveyCardBuilder,
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _StepCard extends StatelessWidget {
-  final String step;
-  final String title;
-  final String description;
-  final Color color;
-  const _StepCard({
-    required this.step,
-    required this.title,
-    required this.description,
-    required this.color,
+// ── Tarjeta individual de encuesta ────────────────────────────────────
+class _SurveyCard extends StatelessWidget {
+  final Survey survey;
+  final CPXText? text;
+  final VoidCallback onTap;
+
+  const _SurveyCard({
+    required this.survey,
+    required this.text,
+    required this.onTap,
   });
 
+  Widget _stars(int avg) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) {
+        return Icon(
+          Icons.star_rounded,
+          size: 13,
+          color: i < avg ? AppColors.dorado : AppColors.fondoCardBorde,
+        );
+      }),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final payout = survey.payout ?? '?';
+    final payoutOriginal = survey.payoutOriginal;
+    final loi = survey.loi?.toString() ?? '?';
+    final avg = survey.statisticsRatingAvg ?? 0;
+    final currency = text?.currency_name_plural ?? 'Monedas';
+    final minLabel = text?.shortcurt_min ?? 'min';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.fondoElevado,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.fondoCard,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.fondoCardBorde),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Icono de encuesta
             Container(
-              width: 28,
-              height: 28,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: Center(
-                child: Text(step,
-                    style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13)),
+                color: AppColors.azulClaro.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.assignment_outlined,
+                color: AppColors.azulClaro,
+                size: 22,
               ),
             ),
             const SizedBox(width: 12),
+
+            // Info central
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: AppColors.textoPrimario,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Text(description,
-                      style: const TextStyle(
-                          color: AppColors.textoSecundario, fontSize: 12)),
+                  // Pago
+                  Row(
+                    children: [
+                      if (payoutOriginal != null) ...[
+                        Text(
+                          payoutOriginal,
+                          style: const TextStyle(
+                            color: AppColors.textoDeshabilitado,
+                            fontSize: 12,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        payout,
+                        style: TextStyle(
+                          color: payoutOriginal != null
+                              ? AppColors.verdePrimario
+                              : AppColors.textoPrimario,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        currency,
+                        style: const TextStyle(
+                          color: AppColors.textoSecundario,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // Duración + estrellas
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.watch_later_outlined,
+                        size: 13,
+                        color: AppColors.textoSecundario,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$loi $minLabel',
+                        style: const TextStyle(
+                          color: AppColors.textoSecundario,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _stars(avg),
+                    ],
+                  ),
                 ],
+              ),
+            ),
+
+            // Flecha
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.textoPrimario.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.textoPrimario,
+                size: 14,
               ),
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
+}
+
+// ── Estado vacío ─────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onRefresh;
+  const _EmptyState({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.textoPrimario.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.assignment_outlined,
+                color: AppColors.textoPrimario,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No hay encuestas disponibles',
+              style: TextStyle(
+                color: AppColors.textoPrimario,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Vuelve más tarde o toca actualizar',
+              style: TextStyle(
+                color: AppColors.textoSecundario,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_rounded,
+                  color: AppColors.textoPrimario),
+              label: const Text(
+                'Actualizar',
+                style: TextStyle(color: AppColors.textoPrimario),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.textoPrimario),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

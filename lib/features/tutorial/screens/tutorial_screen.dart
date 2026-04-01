@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_swipe/liquid_swipe.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 
 const _kTutorialKey = 'tutorial_completed';
@@ -21,7 +20,7 @@ Future<void> markTutorialCompleted() async {
 class _SlideData {
   final Color bgColor;
   final Color accentColor;
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
   final List<_Item> items;
@@ -29,7 +28,7 @@ class _SlideData {
   const _SlideData({
     required this.bgColor,
     required this.accentColor,
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
     this.items = const [],
@@ -37,12 +36,12 @@ class _SlideData {
 }
 
 class _Item {
-  final String emoji;
+  final IconData icon;
   final String label;
   final String value;
   final Color color;
   const _Item({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.value,
     required this.color,
@@ -53,22 +52,22 @@ final _slides = [
   _SlideData(
     bgColor: const Color(0xFF1D4ED8),
     accentColor: Colors.white,
-    emoji: '🎮',
+    icon: Icons.sports_esports_rounded,
     title: '¡Bienvenido a JUEGALO!',
     subtitle: 'La app donde juegas, haces\nencuestas y ganas dinero real.',
     items: const [
       _Item(
-          emoji: '✅',
+          icon: Icons.check_circle_rounded,
           label: '100% gratis para siempre',
           value: 'Sin cargos',
           color: Color(0xFFBBF7D0)),
       _Item(
-          emoji: '🌎',
+          icon: Icons.language_rounded,
           label: 'Disponible en Latinoamérica',
           value: 'Desde hoy',
           color: Color(0xFF93C5FD)),
       _Item(
-          emoji: '⚡',
+          icon: Icons.bolt_rounded,
           label: 'Empieza a ganar en 1 minuto',
           value: 'Rápido',
           color: Color(0xFFFDE68A)),
@@ -77,70 +76,70 @@ final _slides = [
   _SlideData(
     bgColor: const Color(0xFF15803D),
     accentColor: Colors.white,
-    emoji: '🪙',
+    icon: Icons.monetization_on_rounded,
     title: 'Gana monedas fácil',
     subtitle: 'Tres formas de acumular\nmonedas cada día.',
     items: const [
       _Item(
-          emoji: '▶️',
+          icon: Icons.play_circle_rounded,
           label: 'Videos',
-          value: '50 🪙 c/u',
+          value: '+50 monedas c/u',
           color: Color(0xFFFCA5A5)),
       _Item(
-          emoji: '📋',
+          icon: Icons.assignment_rounded,
           label: 'Encuestas',
-          value: 'hasta 500 🪙',
+          value: 'hasta 500 monedas',
           color: Color(0xFFC4B5FD)),
       _Item(
-          emoji: '🕹️',
+          icon: Icons.videogame_asset_rounded,
           label: 'Juegos',
-          value: 'hasta 2,000 🪙',
+          value: 'hasta 2,000 monedas',
           color: Color(0xFF93C5FD)),
     ],
   ),
   _SlideData(
     bgColor: const Color(0xFFB45309),
     accentColor: Colors.white,
-    emoji: '🏆',
+    icon: Icons.emoji_events_rounded,
     title: 'Ranking semanal',
     subtitle: 'Compite cada semana.\nLos mejores ganan premios extra.',
     items: const [
       _Item(
-          emoji: '🥇',
+          icon: Icons.looks_one_rounded,
           label: 'Puesto #1',
-          value: '5,000 🪙',
+          value: '5,000 monedas',
           color: Color(0xFFFDE68A)),
       _Item(
-          emoji: '🥈',
+          icon: Icons.looks_two_rounded,
           label: 'Puesto #2',
-          value: '2,000 🪙',
+          value: '2,000 monedas',
           color: Color(0xFFE5E7EB)),
       _Item(
-          emoji: '🥉',
+          icon: Icons.looks_3_rounded,
           label: 'Puesto #3',
-          value: '1,000 🪙',
+          value: '1,000 monedas',
           color: Color(0xFFFED7AA)),
     ],
   ),
   _SlideData(
     bgColor: const Color(0xFF0F172A),
     accentColor: Colors.white,
-    emoji: '💸',
+    icon: Icons.account_balance_wallet_rounded,
     title: 'Cobra cuando quieras',
     subtitle: '1,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.',
     items: const [
       _Item(
-          emoji: '💳',
+          icon: Icons.credit_card_rounded,
           label: 'PayPal',
           value: 'Instantáneo',
           color: Color(0xFF93C5FD)),
       _Item(
-          emoji: '📱',
+          icon: Icons.phone_android_rounded,
           label: 'MercadoPago',
           value: 'En minutos',
           color: Color(0xFF6EE7B7)),
       _Item(
-          emoji: '🏪',
+          icon: Icons.store_rounded,
           label: 'OXXO / Tienda',
           value: 'Efectivo',
           color: Color(0xFFFCA5A5)),
@@ -162,7 +161,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
   Future<void> _finish() async {
     await markTutorialCompleted();
-    if (mounted) context.go(AppRoutes.home);
+    if (mounted) context.go(AppRoutes.onboarding);
   }
 
   void _next() {
@@ -301,7 +300,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                                   elevation: 0,
                                 ),
                                 child: const Text(
-                                  '¡Empezar a ganar! 🚀',
+                                  '¡Empezar a ganar!',
                                   style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800),
@@ -369,7 +368,7 @@ class _SlidePage extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(slide.emoji, style: const TextStyle(fontSize: 56)),
+              child: Icon(slide.icon, size: 60, color: Colors.white),
             ),
           ),
           const SizedBox(height: 28),
@@ -426,7 +425,7 @@ class _ItemRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(item.emoji, style: const TextStyle(fontSize: 24)),
+          Icon(item.icon, size: 24, color: item.color),
           const SizedBox(width: 14),
           Expanded(
             child: Text(

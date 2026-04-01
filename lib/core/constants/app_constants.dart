@@ -18,6 +18,7 @@ class AppConstants {
   // ── Recompensas ───────────────────────────────────────────────
   static const int coinsPerVideo = 50;
   static const int coinsPerVideoMax = 20; // max videos por día
+  static const int coinsPerSurvey = 200;  // monedas por encuesta CPX
   static const int coinsStreak7days = 1000; // bonus racha 7 días
   static const int coinsStreak30days = 5000; // bonus racha 30 días
   static const int coinsReferral = 1000; // cuando referido cobra $1

@@ -100,7 +100,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                 ),
                 child: Row(
                   children: [
-                    const Text('🔥', style: TextStyle(fontSize: 20)),
+                    const Icon(Icons.local_fire_department_rounded,
+                        color: Colors.orange, size: 22),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -237,29 +238,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                             border: Border.all(
                                 color: AppColors.azulPrimario.withValues(alpha: 0.40)),
                           ),
-                          child: Column(
-                            children: [
-                              const Icon(Icons.play_circle_outline_rounded,
-                                  color: AppColors.azulPrimario, size: 22),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Juega para',
-                                style: TextStyle(
-                                  color: AppColors.azulPrimario,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Text(
-                                'reclamar',
-                                style: TextStyle(
-                                  color: AppColors.azulPrimario,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: const Icon(Icons.play_circle_outline_rounded,
+                              color: AppColors.azulPrimario, size: 22),
                         ),
                       ),
                   ],
@@ -322,7 +302,8 @@ class _DayCircle extends StatelessWidget {
           ),
           child: Center(
             child: isActive
-                ? const Text('🔥', style: TextStyle(fontSize: 14))
+                ? const Icon(Icons.local_fire_department_rounded,
+                    color: Colors.orange, size: 16)
                 : Text(
                     '$day',
                     style: TextStyle(

@@ -1,3 +1,4 @@
+import 'package:cpx_research_sdk_flutter/cpx.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +10,8 @@ import '../../ranking/screens/ranking_screen.dart';
 import '../../surveys/screens/surveys_screen.dart';
 import '../../videos/screens/videos_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
-import '../widgets/balance_card.dart';
-import '../widgets/daily_bonus_card.dart';
-import '../widgets/daily_goal_bar.dart';
+
+const _cpxAppId = '32134';
 
 final activeTabProvider = StateProvider<int>((ref) => 0);
 
@@ -26,7 +26,7 @@ class HomeScreen extends ConsumerWidget {
     _TabItem(
         icon: Icons.assignment_outlined,
         label: 'Encuestas',
-        color: AppColors.colorEncuestas),
+        color: AppColors.azulPrimario),
     _TabItem(
         icon: Icons.play_circle_outline,
         label: 'Videos',
@@ -132,15 +132,20 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: activeTab == 0 && user != null
-          ? NestedScrollView(
-              headerSliverBuilder: (_, __) => [
-                SliverToBoxAdapter(child: DailyGoalBar(user: user)),
-                const SliverToBoxAdapter(child: DailyBonusCard()),
-              ],
-              body: _screens[activeTab],
-            )
-          : _screens[activeTab],
+      // ── CPXResearch overlay global (requerido para browser y cards) ──
+      body: Stack(
+        children: [
+          _screens[activeTab],
+          if (user != null)
+            CPXResearch(
+              config: CPXConfig(
+                appID: _cpxAppId,
+                userID: user.id,
+                accentColor: AppColors.azulPrimario,
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.fondoCard,

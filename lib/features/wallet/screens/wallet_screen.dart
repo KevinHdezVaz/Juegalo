@@ -6,6 +6,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../home/widgets/daily_bonus_card.dart';
+import '../../home/widgets/daily_goal_bar.dart';
 
 // ── Provider: últimas 20 transacciones ───────────────────────────
 final transactionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
@@ -42,6 +44,12 @@ class WalletScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Meta diaria y bono ──────────────────────────────
+              DailyGoalBar(user: user),
+              const SizedBox(height: 10),
+              const DailyBonusCard(),
+              const SizedBox(height: 10),
+
               // Saldo principal
               Container(
                 width: double.infinity,
