@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/notification_service.dart';
 
@@ -122,6 +126,55 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
       accessToken: googleAuth.accessToken,
     );
 
+    await _applyReferral(referralCode);
+    await NotificationService.instance.requestAndSaveToken();
+  }
+
+  // Sign in con Apple
+  Future<void> signInWithApple({String? referralCode}) async {
+    final rawNonce = _generateNonce();
+    final nonce = _sha256(rawNonce);
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: nonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) throw Exception('No se pudo obtener el ID token de Apple');
+
+    await _db.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+
+    await _applyReferral(referralCode);
+    await NotificationService.instance.requestAndSaveToken();
+  }
+
+  String _generateNonce([int length = 32]) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  String _sha256(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  // Sign in con correo y contraseña
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+    String? referralCode,
+  }) async {
+    await _db.auth.signInWithPassword(email: email, password: password);
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
   }

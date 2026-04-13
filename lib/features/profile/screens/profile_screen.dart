@@ -1,12 +1,118 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../shared/providers/user_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  // ── Dialog de confirmación ────────────────────────────────────────
+  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+            SizedBox(width: 8),
+            Text('Eliminar cuenta',
+                style: TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17)),
+          ],
+        ),
+        content: const Text(
+          'Esta acción es irreversible.\n\n'
+          'Se eliminarán tu perfil, historial y saldo de monedas. '
+          'Las solicitudes de cobro pendientes se conservan 90 días '
+          'por obligación legal.\n\n'
+          '¿Estás seguro de que quieres continuar?',
+          style: TextStyle(
+              color: AppColors.textoSecundario,
+              fontSize: 14,
+              height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: AppColors.azulPrimario)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Sí, eliminar',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await _deleteAccount(context, ref);
+    }
+  }
+
+  // ── Llamada al API de Vercel para eliminar la cuenta ─────────────
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) return;
+
+    // Mostrar indicador de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.azulPrimario),
+      ),
+    );
+
+    try {
+      final dio = Dio();
+      final response = await dio.delete(
+        '${AppConstants.apiBaseUrl}/api/account/delete',
+        options: Options(
+          headers: {'Authorization': 'Bearer ${session.accessToken}'},
+          validateStatus: (_) => true,
+        ),
+      );
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // cerrar spinner
+
+      if (response.statusCode == 200) {
+        await Supabase.instance.client.auth.signOut();
+      } else {
+        final msg = (response.data as Map?)?['error'] ?? 'Error al eliminar la cuenta';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // cerrar spinner
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Error de conexión. Intenta de nuevo.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,6 +183,20 @@ class ProfileScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: const Text('Cerrar sesión'),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Eliminar cuenta ──────────────────────────────────
+              TextButton(
+                onPressed: () => _confirmDeleteAccount(context, ref),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textoSecundario,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                child: const Text(
+                  'Eliminar mi cuenta',
+                  style: TextStyle(fontSize: 13),
+                ),
               ),
               const SizedBox(height: 24),
             ],

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -54,6 +55,55 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     try {
       await ref.read(userNotifierProvider.notifier)
           .signInWithGoogle(referralCode: _refCode.isNotEmpty ? _refCode : null);
+      await _afterLogin();
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _openEmailDialog() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => _EmailLoginDialog(
+        onLogin: (email, password) async {
+          Navigator.of(ctx).pop();
+          setState(() => _loading = true);
+          try {
+            await ref.read(userNotifierProvider.notifier).signInWithEmail(
+                  email: email,
+                  password: password,
+                  referralCode: _refCode.isNotEmpty ? _refCode : null,
+                );
+            await _afterLogin();
+          } catch (e) {
+            setState(() => _loading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Correo o contraseña incorrectos'),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+              ));
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _signInApple() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(userNotifierProvider.notifier)
+          .signInWithApple(referralCode: _refCode.isNotEmpty ? _refCode : null);
       await _afterLogin();
     } catch (e) {
       setState(() => _loading = false);
@@ -384,7 +434,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                                       color: AppColors.azulPrimario),
                                 )
                               else ...[
-                                // Google
+                                // 1. Google
                                 SizedBox(
                                   width: double.infinity,
                                   height: 54,
@@ -395,77 +445,107 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                                       foregroundColor: Colors.white,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16)),
+                                          borderRadius: BorderRadius.circular(16)),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        // Google "G"
                                         Container(
                                           width: 26, height: 26,
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: const Center(
-                                            child: Text(
-                                              'G',
-                                              style: TextStyle(
-                                                color: Color(0xFF4285F4),
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 16,
-                                              ),
-                                            ),
+                                            child: Text('G',
+                                                style: TextStyle(
+                                                    color: Color(0xFF4285F4),
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 16)),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
-                                        const Text(
-                                          'Continuar con Google',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
+                                        const Text('Continuar con Google',
+                                            style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700)),
                                       ],
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
 
-                                // Anónimo
+                                // 2. Apple (solo en iOS)
+                                if (Platform.isIOS) ...[
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: ElevatedButton(
+                                      onPressed: _signInApple,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16)),
+                                      ),
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.apple, size: 22, color: Colors.white),
+                                          SizedBox(width: 10),
+                                          Text('Continuar con Apple',
+                                              style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.white)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                ],
+
+                                // 3. Correo — abre dialog
                                 SizedBox(
                                   width: double.infinity,
                                   height: 54,
                                   child: OutlinedButton(
-                                    onPressed: _signInAnonymous,
+                                    onPressed: _openEmailDialog,
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor:
-                                          AppColors.textoSecundario,
+                                      foregroundColor: AppColors.textoPrimario,
                                       side: const BorderSide(
                                           color: AppColors.fondoCardBorde,
                                           width: 1.5),
                                       shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16)),
+                                          borderRadius: BorderRadius.circular(16)),
                                     ),
                                     child: const Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.person_outline_rounded,
-                                            size: 20),
+                                        Icon(Icons.email_outlined, size: 20),
                                         SizedBox(width: 10),
-                                        Text(
-                                          'Jugar sin cuenta',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
+                                        Text('Continuar con correo',
+                                            style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600)),
                                       ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+
+                                // 3. Anónimo — al fondo, menos prominente
+                                Center(
+                                  child: GestureDetector(
+                                    onTap: _signInAnonymous,
+                                    child: const Text(
+                                      'Jugar sin cuenta',
+                                      style: TextStyle(
+                                        color: AppColors.textoSecundario,
+                                        fontSize: 13,
+                                        decoration: TextDecoration.underline,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -496,6 +576,195 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Dialog de login con correo ────────────────────────────────────
+class _EmailLoginDialog extends StatefulWidget {
+  final Future<void> Function(String email, String password) onLogin;
+  const _EmailLoginDialog({required this.onLogin});
+
+  @override
+  State<_EmailLoginDialog> createState() => _EmailLoginDialogState();
+}
+
+class _EmailLoginDialogState extends State<_EmailLoginDialog> {
+  final _emailCtrl = TextEditingController();
+  final _passCtrl  = TextEditingController();
+  bool _obscure    = true;
+  bool _loading    = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _emailCtrl.text.trim();
+    final pass  = _passCtrl.text;
+    if (email.isEmpty || pass.isEmpty) return;
+    setState(() => _loading = true);
+    await widget.onLogin(email, pass);
+    if (mounted) setState(() => _loading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.azulPrimario.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.email_outlined,
+                      color: AppColors.azulPrimario, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Iniciar sesión',
+                          style: TextStyle(
+                              color: AppColors.textoPrimario,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16)),
+                      Text('Correo y contraseña',
+                          style: TextStyle(
+                              color: AppColors.textoSecundario,
+                              fontSize: 12)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppColors.textoSecundario, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Correo
+            TextField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              style: const TextStyle(
+                  color: AppColors.textoPrimario, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Correo electrónico',
+                labelStyle: const TextStyle(
+                    color: AppColors.textoSecundario, fontSize: 13),
+                prefixIcon: const Icon(Icons.email_outlined,
+                    color: AppColors.textoSecundario, size: 18),
+                filled: true,
+                fillColor: AppColors.fondoPrincipal,
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 14),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppColors.fondoCardBorde)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppColors.fondoCardBorde)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: AppColors.azulPrimario, width: 1.5)),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Contraseña
+            TextField(
+              controller: _passCtrl,
+              obscureText: _obscure,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              style: const TextStyle(
+                  color: AppColors.textoPrimario, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Contraseña',
+                labelStyle: const TextStyle(
+                    color: AppColors.textoSecundario, fontSize: 13),
+                prefixIcon: const Icon(Icons.lock_outline_rounded,
+                    color: AppColors.textoSecundario, size: 18),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textoSecundario,
+                    size: 18,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+                filled: true,
+                fillColor: AppColors.fondoPrincipal,
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 14),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppColors.fondoCardBorde)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppColors.fondoCardBorde)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: AppColors.azulPrimario, width: 1.5)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Botón entrar
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.azulPrimario,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.azulPrimario.withValues(alpha: 0.5),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _loading
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5))
+                    : const Text('Entrar',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

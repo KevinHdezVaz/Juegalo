@@ -33,11 +33,10 @@ class AppConstants {
   static const String apiBaseUrl = 'https://juegalo-api.vercel.app';
 
   // ── AdMob ─────────────────────────────────────────────────────
-  // TODO: reemplazar con tus IDs reales de AdMob
-  static const String admobAppIdAndroid = 'ca-app-pub-XXXXXXXX~XXXXXXXX';
-  static const String admobAppIdIos = 'ca-app-pub-XXXXXXXX~XXXXXXXX';
-  static const String admobRewardedAndroid = 'ca-app-pub-XXXXXXXX/XXXXXXXX';
-  static const String admobRewardedIos = 'ca-app-pub-XXXXXXXX/XXXXXXXX';
+  static const String admobAppIdAndroid = 'ca-app-pub-5486388630970825~2374341538';
+  static const String admobAppIdIos = 'ca-app-pub-XXXXXXXX~XXXXXXXX'; // TODO: agregar cuando tengas iOS en AdMob
+  static const String admobRewardedAndroid = 'ca-app-pub-5486388630970825/4840288002';
+  static const String admobRewardedIos = 'ca-app-pub-XXXXXXXX/XXXXXXXX'; // TODO: agregar cuando tengas iOS en AdMob
 
   // ── Adjoe Offerwall ───────────────────────────────────────────
   // TODO: reemplazar con tu App ID de adjoe.io → Publishers
