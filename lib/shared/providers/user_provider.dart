@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/services/notification_service.dart';
 
 // Web OAuth client ID (para que Supabase verifique el token)
@@ -58,7 +59,7 @@ class AppUser {
       coins:              j['coins'] as int? ?? 0,
       totalEarned:        j['total_earned'] as int? ?? 0,
       dailyCoins:         j['daily_coins'] as int? ?? 0,
-      dailyGoal:          j['daily_goal'] as int? ?? 1500,
+      dailyGoal:          j['daily_goal'] as int? ?? AppConstants.dailyGoalStart,
       streakDays:         j['streak_days'] as int? ?? 0,
       referralCode:       j['referral_code'] as String? ?? '',
       referralsCount:     j['referrals_count'] as int? ?? 0,
@@ -68,7 +69,7 @@ class AppUser {
     );
   }
 
-  double get balanceUsd => coins / 1000.0;
+  double get balanceUsd => coins / AppConstants.coinsPerDollar;
   double get dailyProgressPct => (dailyCoins / dailyGoal).clamp(0.0, 1.0);
   bool   get dailyGoalReached => dailyCoins >= dailyGoal;
 }
@@ -184,6 +185,131 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await _db.auth.signInAnonymously();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
+  }
+
+  // ── Vinculación de cuenta anónima ─────────────────────────────────
+
+  /// True si el usuario actual juega sin cuenta registrada.
+  bool get isAnonymous {
+    final user = _db.auth.currentUser;
+    if (user == null) return false;
+    // Supabase marca anónimos sin email ni teléfono y sin identidades OAuth
+    return user.email == null &&
+        user.phone == null &&
+        (user.identities?.isEmpty ?? true);
+  }
+
+  /// Vincula email/contraseña a la sesión anónima.
+  /// El UID NO cambia → todas las monedas y progreso se conservan.
+  Future<void> linkWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    await _db.auth.updateUser(
+      UserAttributes(email: email, password: password),
+    );
+    ref.invalidateSelf();
+    await NotificationService.instance.requestAndSaveToken();
+  }
+
+  /// Vincula Google a la sesión anónima.
+  /// Guarda las monedas del anónimo y las migra si la cuenta Google es nueva.
+  Future<void> linkWithGoogle() async {
+    final anonId    = _db.auth.currentUser?.id;
+    final anonCoins = await _getAnonCoins(anonId);
+
+    final googleSignIn = GoogleSignIn(serverClientId: _webClientId);
+    final googleUser   = await googleSignIn.signIn();
+    if (googleUser == null) throw Exception('Sign-in cancelado');
+
+    final googleAuth = await googleUser.authentication;
+    final idToken    = googleAuth.idToken;
+    if (idToken == null) throw Exception('No se pudo obtener el ID token');
+
+    await _db.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: googleAuth.accessToken,
+    );
+
+    await _migrateAnonCoins(anonCoins);
+    await NotificationService.instance.requestAndSaveToken();
+    ref.invalidateSelf();
+  }
+
+  /// Vincula Apple a la sesión anónima (solo iOS).
+  /// Igual que Google: migra monedas si la cuenta Apple es nueva.
+  Future<void> linkWithApple() async {
+    final anonId    = _db.auth.currentUser?.id;
+    final anonCoins = await _getAnonCoins(anonId);
+
+    final rawNonce = _generateNonce();
+    final nonce    = _sha256(rawNonce);
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: nonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) throw Exception('No se pudo obtener el ID token de Apple');
+
+    await _db.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+
+    await _migrateAnonCoins(anonCoins);
+    await NotificationService.instance.requestAndSaveToken();
+    ref.invalidateSelf();
+  }
+
+  /// Devuelve las monedas del usuario anónimo antes de cambiar sesión.
+  Future<int> _getAnonCoins(String? uid) async {
+    if (uid == null) return 0;
+    try {
+      final row = await _db
+          .from('users')
+          .select('coins')
+          .eq('id', uid)
+          .maybeSingle();
+      return (row?['coins'] as int?) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Migra monedas del anónimo a la cuenta recién vinculada,
+  /// solo si la cuenta nueva tiene 0 monedas (primer acceso con Google/Apple).
+  Future<void> _migrateAnonCoins(int anonCoins) async {
+    if (anonCoins <= 0) return;
+    final newUid = _db.auth.currentUser?.id;
+    if (newUid == null) return;
+
+    try {
+      final row = await _db
+          .from('users')
+          .select('coins')
+          .eq('id', newUid)
+          .maybeSingle();
+      final currentCoins = (row?['coins'] as int?) ?? 0;
+
+      // Solo migrar si la cuenta nueva no tenía monedas previas
+      if (currentCoins == 0 && anonCoins > 0) {
+        await _db.rpc('credit_coins', params: {
+          'p_user_id'    : newUid,
+          'p_coins'      : anonCoins,
+          'p_source'     : 'migration',
+          'p_description': 'Monedas transferidas de cuenta de invitado',
+        });
+      }
+    } catch (_) {
+      // Fallar silenciosamente — el usuario ya tiene acceso a su cuenta
+    }
   }
 
   // Aplica código de referido si es la primera vez del usuario

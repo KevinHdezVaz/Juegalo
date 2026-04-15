@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 
 // ── AdGem Offerwall ──────────────────────────────────────────────
@@ -15,9 +15,9 @@ class GamesScreen extends ConsumerStatefulWidget {
 }
 
 class _GamesScreenState extends ConsumerState<GamesScreen> {
+  late final WebViewController _controller;
   bool _loading = true;
 
-  // playerid: solo minúsculas y números (requisito de AdGem)
   String get _playerId {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     return uid.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -25,6 +25,23 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
 
   String get _offerwallUrl =>
       'https://adunits.adgem.com/wall?appid=$_adgemAppId&playerid=$_playerId';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(AppColors.fondoPrincipal)
+      ..setUserAgent(
+          'Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => setState(() => _loading = true),
+        onPageFinished: (_) => setState(() => _loading = false),
+        onWebResourceError: (_) => setState(() => _loading = false),
+      ))
+      ..loadRequest(Uri.parse(_offerwallUrl));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,26 +54,8 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
 
     return Stack(
       children: [
-        // ── WebView AdGem ────────────────────────────────────────
-        InAppWebView(
-          initialUrlRequest: URLRequest(url: WebUri(_offerwallUrl)),
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            domStorageEnabled: true,
-            useWideViewPort: true,
-            loadWithOverviewMode: true,
-            supportZoom: false,
-            mediaPlaybackRequiresUserGesture: false,
-            userAgent:
-                'Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-          ),
-          onLoadStart: (_, __) => setState(() => _loading = true),
-          onLoadStop:  (_, __) => setState(() => _loading = false),
-          onReceivedError: (_, __, ___) => setState(() => _loading = false),
-        ),
+        WebViewWidget(controller: _controller),
 
-        // ── Spinner mientras carga ────────────────────────────────
         if (_loading)
           Container(
             color: AppColors.fondoPrincipal,

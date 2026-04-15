@@ -4,7 +4,8 @@
     <application
         android:label="JUEGALO"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:extractNativeLibs="false">
 
         <!-- AdMob App ID -->
         <meta-data

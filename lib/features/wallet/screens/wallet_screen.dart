@@ -39,7 +39,14 @@ class WalletScreen extends ConsumerWidget {
         if (user == null) return const SizedBox.shrink();
         final canCashout = user.coins >= AppConstants.minCashoutCoins;
 
-        return SingleChildScrollView(
+        return RefreshIndicator(
+          color: AppColors.azulPrimario,
+          onRefresh: () async {
+            ref.invalidate(userProvider);
+            ref.invalidate(transactionsProvider);
+          },
+          child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,18 +96,20 @@ class WalletScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: canCashout
-                            ? () => context.push(AppRoutes.cashout)
-                            : null,
+                        onPressed: () {
+                          if (canCashout) {
+                            context.push(AppRoutes.cashout);
+                          } else {
+                            _showInsufficientCoinsDialog(context, user.coins);
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.azulOscuro,
                           elevation: 0,
-                          disabledBackgroundColor: Colors.white30,
-                          disabledForegroundColor: Colors.white60,
                         ),
                         child: Text(
-                          canCashout ? 'Solicitar cobro' : 'Mínimo \$1.00 para cobrar',
+                          canCashout ? 'Solicitar cobro' : 'Casi llegas (\$1.00 min)',
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -119,26 +128,23 @@ class WalletScreen extends ConsumerWidget {
               _PaymentMethod(
                   icon: Icons.paypal_rounded,
                   name: 'PayPal',
-                  desc: 'Internacional — mínimo \$1.00',
-                  color: const Color(0xFF003087)),
+                  desc: 'Internacional · automático',
+                  color: const Color(0xFF003087),
+                  onTap: () {
+                    if (canCashout) {
+                      context.push(AppRoutes.cashout);
+                    } else {
+                      _showInsufficientCoinsDialog(context, user.coins);
+                    }
+                  }),
               const SizedBox(height: 10),
               _PaymentMethod(
                   icon: Icons.account_balance_rounded,
                   name: 'MercadoPago',
-                  desc: 'LatAm — mínimo \$1.00',
-                  color: const Color(0xFF009EE3)),
-              const SizedBox(height: 10),
-              _PaymentMethod(
-                  icon: Icons.store_rounded,
-                  name: 'OXXO Pay',
-                  desc: 'México — mínimo \$50 MXN',
-                  color: const Color(0xFFE2001A)),
-              const SizedBox(height: 10),
-              _PaymentMethod(
-                  icon: Icons.card_giftcard_rounded,
-                  name: 'Gift Cards',
-                  desc: 'Amazon, Steam, Google Play',
-                  color: AppColors.dorado),
+                  desc: 'México y LatAm · sin comisión',
+                  color: const Color(0xFF009EE3),
+                  comingSoon: true,
+                  onTap: null),
               const SizedBox(height: 24),
               // Historial
               const Text('Últimas transacciones',
@@ -169,7 +175,7 @@ class WalletScreen extends ConsumerWidget {
               ),
             ],
           ),
-        );
+        ));  // cierra SingleChildScrollView y RefreshIndicator
       },
     );
   }
@@ -239,20 +245,26 @@ class _PaymentMethod extends StatelessWidget {
   final String name;
   final String desc;
   final Color color;
+  final VoidCallback? onTap;
+  final bool comingSoon;
   const _PaymentMethod(
       {required this.icon,
       required this.name,
       required this.desc,
-      required this.color});
+      required this.color,
+      this.onTap,
+      this.comingSoon = false});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.fondoCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.fondoCardBorde),
+        border: Border.all(color: (!comingSoon && onTap != null) ? color.withValues(alpha: 0.3) : AppColors.fondoCardBorde),
       ),
       child: Row(
         children: [
@@ -260,10 +272,12 @@ class _PaymentMethod extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withValues(alpha: comingSoon ? 0.06 : 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(icon,
+                color: comingSoon ? AppColors.textoDeshabilitado : color,
+                size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -271,20 +285,70 @@ class _PaymentMethod extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
-                        color: AppColors.textoPrimario,
+                    style: TextStyle(
+                        color: comingSoon
+                            ? AppColors.textoDeshabilitado
+                            : AppColors.textoPrimario,
                         fontWeight: FontWeight.w600,
                         fontSize: 14)),
-                Text(desc,
+                Text(comingSoon ? 'Próximamente disponible' : desc,
                     style: const TextStyle(
                         color: AppColors.textoSecundario, fontSize: 12)),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right,
-              color: AppColors.textoDeshabilitado, size: 20),
+          if (comingSoon)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.fondoCardBorde,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('Próximamente',
+                  style: TextStyle(
+                      color: AppColors.textoSecundario,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700)),
+            )
+          else
+            Icon(Icons.chevron_right,
+                color: onTap != null ? color : AppColors.textoDeshabilitado,
+                size: 20),
         ],
       ),
-    );
+    ),
+  );
   }
+}
+
+void _showInsufficientCoinsDialog(BuildContext context, int currentCoins) {
+  final needed = AppConstants.minCashoutCoins - currentCoins;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.fondoElevado,
+      title: const Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: AppColors.azulPrimario),
+          SizedBox(width: 10),
+          Text('¡Casi llegas!',
+              style: TextStyle(
+                  color: AppColors.textoPrimario, fontWeight: FontWeight.bold)),
+        ],
+      ),
+      content: Text(
+        'Necesitas al menos ${AppConstants.minCashoutCoins} monedas (\$1.00 USD) para retirar por PayPal.\n\nTe faltan ${needed > 0 ? needed : 0} monedas.',
+        style: const TextStyle(color: AppColors.textoSecundario),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Entendido',
+              style: TextStyle(
+                  color: AppColors.azulPrimario, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
 }

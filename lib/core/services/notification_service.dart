@@ -92,6 +92,14 @@ class NotificationService {
   }
 
   Future<void> _saveToken(String token) async {
+    // Supabase puede no estar inicializado aún (race condition al arrancar)
+    try {
+      Supabase.instance.client;
+    } catch (_) {
+      debugPrint('⚠️ FCM token recibido antes de inicializar Supabase, ignorando');
+      return;
+    }
+
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 

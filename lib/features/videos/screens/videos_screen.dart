@@ -8,19 +8,15 @@ import '../../../core/constants/app_constants.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 
 // ── Ad Unit IDs reales ───────────────────────────────────────────
-const _realAdUnits = [
+const _adUnits = [
   'ca-app-pub-5486388630970825/4840288002',
   'ca-app-pub-5486388630970825/1584508626',
   'ca-app-pub-5486388630970825/1959913141',
   'ca-app-pub-5486388630970825/4277615994',
 ];
 
-// ── Ad Unit ID de prueba (Google test ID) ────────────────────────
-const _testAdUnit = 'ca-app-pub-3940256099942544/5224354917';
-
 const _kVideosKey     = 'videos_watched_today';
 const _kVideosDateKey = 'videos_watched_date';
-const _kTestModeKey   = 'admob_test_mode';
 
 final videosWatchedProvider = StateProvider<int>((ref) => 0);
 
@@ -40,21 +36,16 @@ class VideosScreen extends ConsumerStatefulWidget {
 
 class _VideosScreenState extends ConsumerState<VideosScreen> {
   late final List<_SlotState> _slots;
-  bool _testMode = true; // por defecto: anuncios de prueba
 
   @override
   void initState() {
     super.initState();
-    _slots = List.generate(_realAdUnits.length, (_) => _SlotState());
+    _slots = List.generate(_adUnits.length, (_) => _SlotState());
     _init();
   }
 
   Future<void> _init() async {
     final p = await SharedPreferences.getInstance();
-
-    // Cargar preferencia test/real
-    final savedTestMode = p.getBool(_kTestModeKey) ?? true;
-    setState(() => _testMode = savedTestMode);
 
     // Cargar contador diario
     final date  = p.getString(_kVideosDateKey) ?? '';
@@ -74,9 +65,6 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     }
   }
 
-  String _adUnitFor(int index) =>
-      _testMode ? _testAdUnit : _realAdUnits[index];
-
   void _loadAd(int index) {
     setState(() {
       _slots[index].loading = true;
@@ -84,7 +72,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     });
 
     RewardedAd.load(
-      adUnitId: _adUnitFor(index),
+      adUnitId: _adUnits[index],
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -104,23 +92,6 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         },
       ),
     );
-  }
-
-  Future<void> _toggleTestMode(bool value) async {
-    // Descartar anuncios actuales
-    for (final s in _slots) {
-      s.ad?.dispose();
-      s.ad      = null;
-      s.loading = false;
-      s.loaded  = false;
-    }
-    final p = await SharedPreferences.getInstance();
-    await p.setBool(_kTestModeKey, value);
-    setState(() => _testMode = value);
-    // Recargar con nuevo modo
-    for (int i = 0; i < _slots.length; i++) {
-      _loadAd(i);
-    }
   }
 
   Future<void> _showAd(int index) async {
@@ -207,69 +178,6 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         children: [
           // ── Progreso diario ──────────────────────────────────
           _DailyProgressCard(watched: watched, max: maxVideos),
-          const SizedBox(height: 16),
-
-          // ── Switch prueba/real ───────────────────────────────
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: _testMode
-                  ? AppColors.azulPrimario.withValues(alpha: 0.1)
-                  : AppColors.verdePrimario.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _testMode
-                    ? AppColors.azulPrimario.withValues(alpha: 0.3)
-                    : AppColors.verdePrimario.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  _testMode
-                      ? Icons.science_rounded
-                      : Icons.check_circle_rounded,
-                  size: 18,
-                  color: _testMode
-                      ? AppColors.azulPrimario
-                      : AppColors.verdePrimario,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _testMode ? 'Modo prueba' : 'Anuncios reales',
-                        style: TextStyle(
-                          color: _testMode
-                              ? AppColors.azulPrimario
-                              : AppColors.verdePrimario,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        _testMode
-                            ? 'Los anuncios son de prueba (no generan ingresos)'
-                            : 'Mostrando anuncios reales de AdMob',
-                        style: const TextStyle(
-                            color: AppColors.textoSecundario, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: !_testMode,
-                  onChanged: (v) => _toggleTestMode(!v),
-                  activeColor: AppColors.verdePrimario,
-                  inactiveThumbColor: AppColors.azulPrimario,
-                  inactiveTrackColor:
-                      AppColors.azulPrimario.withValues(alpha: 0.3),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 16),
 
           const Text(
