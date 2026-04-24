@@ -239,13 +239,13 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
                     text: 'Ve el anuncio completo para ganar monedas'),
                 _InfoRow(
                     icon: Icons.refresh,
-                    text: 'Límite de 20 anuncios por día'),
+                    text: 'Límite de 25 anuncios por día'),
                 _InfoRow(
                     icon: Icons.monetization_on_outlined,
-                    text: '50 monedas = \$0.05 USD por anuncio'),
+                    text: '30 monedas por anuncio completado'),
                 _InfoRow(
                     icon: Icons.account_balance_wallet_outlined,
-                    text: 'Acumula 1,000 monedas para cobrar \$1.00'),
+                    text: 'Acumula 10,000 monedas para cobrar \$1.00'),
               ],
             ),
           ),

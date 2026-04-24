@@ -88,7 +88,7 @@ final _slides = [
       _Item(
           icon: Icons.assignment_rounded,
           label: 'Encuestas',
-          value: 'hasta 500 monedas',
+          value: 'hasta 6,000 monedas',
           color: Color(0xFFC4B5FD)),
       _Item(
           icon: Icons.videogame_asset_rounded,
@@ -126,7 +126,7 @@ final _slides = [
     accentColor: Colors.white,
     icon: Icons.account_balance_wallet_rounded,
     title: 'Cobra cuando quieras',
-    subtitle: '1,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.',
+    subtitle: '10,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.',
     items: const [
       _Item(
           icon: Icons.credit_card_rounded,

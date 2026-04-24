@@ -16,8 +16,8 @@ class AppConstants {
   static const int dailyGoalMax = 20000;    // techo = $2.00
 
   // ── Recompensas ───────────────────────────────────────────────
-  static const int coinsPerVideo = 50;      // 50 monedas = $0.005 por video
-  static const int coinsPerVideoMax = 20;   // max 20 videos/día = $0.10
+  static const int coinsPerVideo = 30;      // 30 monedas = $0.003 por video
+  static const int coinsPerVideoMax = 25;   // max 25 videos/día = 750 monedas
   static const int coinsPerSurvey = 6000;   // ~$0.60 por encuesta (CPX paga ~$1, damos 60%)
   static const int coinsStreak7days = 1000; // bonus racha 7 días = $0.10
   static const int coinsStreak30days = 5000; // bonus racha 30 días = $0.50

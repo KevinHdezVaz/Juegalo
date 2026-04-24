@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
+import '../../../shared/providers/user_provider.dart';
 
 class SurveysScreen extends ConsumerStatefulWidget {
   const SurveysScreen({super.key});
@@ -65,6 +66,11 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       });
       // Marcar como pagada para no procesar de nuevo
       markTransactionAsPaid(transactionId, messageId);
+
+      // Refrescar saldo en la UI
+      ref.invalidate(userProvider);
+      ref.invalidate(userNotifierProvider);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
