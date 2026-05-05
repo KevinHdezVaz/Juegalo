@@ -1,2 +1,5 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+DWARF_DSYM_FOLDER_PATH = $(CONFIGURATION_BUILD_DIR)
+DWARF_DSYM_FILE_NAME = $(PRODUCT_NAME).app.dSYM
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym

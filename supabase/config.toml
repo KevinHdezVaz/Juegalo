@@ -1,0 +1,6 @@
+[project]
+id = "jqxfnvjdgxuqmyjymdnr"
+
+[functions.weekly-reset]
+verify_jwt = false
+schedule = "0 0 * * 1"

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -5,15 +6,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/l10n_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 
-// ── Ad Unit IDs reales ───────────────────────────────────────────
-const _adUnits = [
-  'ca-app-pub-5486388630970825/4840288002',
-  'ca-app-pub-5486388630970825/1584508626',
-  'ca-app-pub-5486388630970825/1959913141',
-  'ca-app-pub-5486388630970825/4277615994',
-];
+// ── Ad Unit IDs por plataforma ───────────────────────────────────
+final _adUnits = Platform.isIOS
+    ? const [
+        'ca-app-pub-5486388630970825/3159932254',
+        'ca-app-pub-5486388630970825/9729729552',
+        'ca-app-pub-5486388630970825/6037377039',
+        'ca-app-pub-5486388630970825/7103566216',
+      ]
+    : const [
+        'ca-app-pub-5486388630970825/4840288002',
+        'ca-app-pub-5486388630970825/1584508626',
+        'ca-app-pub-5486388630970825/1959913141',
+        'ca-app-pub-5486388630970825/4277615994',
+      ];
 
 const _kVideosKey     = 'videos_watched_today';
 const _kVideosDateKey = 'videos_watched_date';
@@ -136,7 +145,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-            '+${AppConstants.coinsPerVideo} monedas ganadas',
+            context.l10n.videosCoinsEarned(AppConstants.coinsPerVideo),
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           backgroundColor: AppColors.verdePrimario,
@@ -144,12 +153,13 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
           duration: const Duration(seconds: 2),
         ));
         await tryClaimDailyBonus(context, ref);
+        await tryClaimDailyGoalBonus(context, ref);
       }
     } catch (e) {
       debugPrint('❌ credit_coins error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error al acreditar monedas: $e'),
+          content: Text(context.l10n.videosErrorCredit(e.toString())),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ));
@@ -180,9 +190,9 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
           _DailyProgressCard(watched: watched, max: maxVideos),
           const SizedBox(height: 16),
 
-          const Text(
-            'Videos disponibles',
-            style: TextStyle(
+          Text(
+            context.l10n.videosTitle,
+            style: const TextStyle(
               color: AppColors.textoPrimario,
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -210,7 +220,35 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // ── Aviso disponibilidad de anuncios ─────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.30)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.schedule_rounded, color: Colors.amber, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.l10n.videosAvailabilityNote,
+                    style: const TextStyle(
+                      color: AppColors.textoSecundario,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // ── Info ─────────────────────────────────────────────
           Container(
@@ -220,32 +258,32 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.fondoCardBorde),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Icon(Icons.info_outline,
+                  const Icon(Icons.info_outline,
                       color: AppColors.textoSecundario, size: 16),
-                  SizedBox(width: 6),
-                  Text('Cómo funciona',
-                      style: TextStyle(
+                  const SizedBox(width: 6),
+                  Text(context.l10n.videosHowItWorks,
+                      style: const TextStyle(
                           color: AppColors.textoPrimario,
                           fontWeight: FontWeight.w600,
                           fontSize: 13)),
                 ]),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _InfoRow(
                     icon: Icons.play_circle_outline,
-                    text: 'Ve el anuncio completo para ganar monedas'),
+                    text: context.l10n.videosInfoFull),
                 _InfoRow(
                     icon: Icons.refresh,
-                    text: 'Límite de 25 anuncios por día'),
+                    text: context.l10n.videosInfoLimit),
                 _InfoRow(
                     icon: Icons.monetization_on_outlined,
-                    text: '30 monedas por anuncio completado'),
+                    text: context.l10n.videosInfoCoins),
                 _InfoRow(
                     icon: Icons.account_balance_wallet_outlined,
-                    text: 'Acumula 10,000 monedas para cobrar \$1.00'),
+                    text: context.l10n.videosInfoAccumulate),
               ],
             ),
           ),
@@ -313,7 +351,7 @@ class _VideoSlotCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Video ${index + 1}',
+                context.l10n.videosSlot(index + 1),
                 style: TextStyle(
                   color: isDisabled
                       ? AppColors.textoSecundario
@@ -349,8 +387,8 @@ class _VideoSlotCard extends StatelessWidget {
 
           // Botón / estado
           if (isDisabled)
-            const Text('Límite alcanzado',
-                style: TextStyle(
+            Text(context.l10n.videosLimitReached,
+                style: const TextStyle(
                     color: AppColors.textoDeshabilitado, fontSize: 10),
                 textAlign: TextAlign.center)
           else if (slot.loading)
@@ -362,14 +400,14 @@ class _VideoSlotCard extends StatelessWidget {
           else if (!slot.loaded)
             GestureDetector(
               onTap: onReload,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.refresh_rounded,
+                  const Icon(Icons.refresh_rounded,
                       color: AppColors.textoSecundario, size: 14),
-                  SizedBox(width: 4),
-                  Text('Reintentar',
-                      style: TextStyle(
+                  const SizedBox(width: 4),
+                  Text(context.l10n.videosRetry,
+                      style: const TextStyle(
                           color: AppColors.textoSecundario, fontSize: 11)),
                 ],
               ),
@@ -387,9 +425,9 @@ class _VideoSlotCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
                 ),
-                child: const Text('Ver',
+                child: Text(context.l10n.videosWatch,
                     style:
-                        TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
               ),
             ),
         ],
@@ -432,12 +470,12 @@ class _DailyProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(children: [
-                Icon(Icons.play_circle_fill_rounded,
+              Row(children: [
+                const Icon(Icons.play_circle_fill_rounded,
                     color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Videos de hoy',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(context.l10n.videosTodayTitle,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 15)),
@@ -463,7 +501,7 @@ class _DailyProgressCard extends StatelessWidget {
             const Icon(Icons.monetization_on_rounded,
                 color: Colors.white, size: 14),
             const SizedBox(width: 4),
-            Text('$earned monedas ganadas hoy',
+            Text(context.l10n.videosEarnedToday(earned),
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,

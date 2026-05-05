@@ -1,0 +1,562 @@
+{
+  "@@locale": "es",
+
+  "tutorialWelcomeTitle": "¡Bienvenido a JUEGALO!",
+  "tutorialWelcomeSubtitle": "La app donde juegas, haces\nencuestas y ganas dinero real.",
+  "tutorialWelcomeFree": "100% gratis para siempre",
+  "tutorialWelcomeFreeValue": "Sin cargos",
+  "tutorialWelcomeLatam": "Disponible en Latinoamérica",
+  "tutorialWelcomeLatamValue": "Desde hoy",
+  "tutorialWelcomeStart": "Empieza a ganar en 1 minuto",
+  "tutorialWelcomeStartValue": "Rápido",
+
+  "tutorialEarnTitle": "Gana monedas fácil",
+  "tutorialEarnSubtitle": "Tres formas de acumular\nmonedas cada día.",
+  "tutorialEarnVideos": "Videos cortos",
+  "tutorialEarnVideosValue": "+50 monedas c/u",
+  "tutorialEarnSurveys": "Encuestas",
+  "tutorialEarnSurveysValue": "hasta 500 monedas",
+  "tutorialEarnGames": "Juegos",
+  "tutorialEarnGamesValue": "hasta 2,000 monedas",
+
+  "tutorialRankingTitle": "Ranking semanal",
+  "tutorialRankingSubtitle": "Compite cada semana.\nLos mejores ganan premios extra.",
+  "tutorialRankingFirst": "Puesto #1",
+  "tutorialRankingFirstValue": "2,500 monedas",
+  "tutorialRankingSecond": "Puesto #2",
+  "tutorialRankingSecondValue": "1,000 monedas",
+  "tutorialRankingThird": "Puesto #3",
+  "tutorialRankingThirdValue": "500 monedas",
+
+  "tutorialCashoutTitle": "Cobra cuando quieras",
+  "tutorialCashoutSubtitle": "10,000 monedas = $1.00 USD.\nRetira desde $1 sin comisión.",
+  "tutorialCashoutPaypalValue": "Instantáneo",
+
+  "tutorialSkip": "Saltar",
+  "tutorialNext": "Siguiente",
+  "tutorialStartEarning": "¡Empezar a ganar!",
+
+  "onboardingTagline": "Juega. Gana. Cobra.",
+  "onboardingPaidBadge": "+$12,847 pagados",
+  "onboardingHowItWorks": "¿Cómo funciona?",
+  "onboardingFeaturePlay": "Juega",
+  "onboardingFeaturePlaySubtitle": "Instala juegos gratis y acumula monedas",
+  "onboardingFeatureSurveys": "Encuestas",
+  "onboardingFeatureSurveysSubtitle": "Gana monedas por cada encuesta completada",
+  "onboardingFeatureCashout": "Cobra",
+  "onboardingFeatureCashoutSubtitle": "Retira a PayPal desde $1 USD",
+  "onboardingStartNow": "Empieza ahora",
+  "onboardingContinueGoogle": "Continuar con Google",
+  "onboardingContinueApple": "Continuar con Apple",
+  "onboardingContinueEmail": "Continuar con correo",
+  "onboardingPlayGuest": "Jugar sin cuenta",
+  "onboardingLegal": "Al continuar aceptas los Términos de uso\ny la Política de privacidad",
+  "onboardingOr": "o",
+  "onboardingErrorWrongCredentials": "Correo o contraseña incorrectos",
+  "onboardingErrorGeneric": "Error al entrar: {msg}",
+  "@onboardingErrorGeneric": {
+    "placeholders": {
+      "msg": { "type": "String" }
+    }
+  },
+
+  "emailDialogTitle": "Iniciar sesión",
+  "emailDialogSubtitle": "Correo y contraseña",
+  "emailDialogEmail": "Correo electrónico",
+  "emailDialogPassword": "Contraseña",
+  "emailDialogSignIn": "Entrar",
+
+  "homeTabGames": "Juegos",
+  "homeTabSurveys": "Encuestas",
+  "homeTabVideos": "Videos",
+  "homeTabRanking": "Ranking",
+  "homeTabWallet": "Cobrar",
+
+  "balanceCardLabel": "Tu saldo",
+  "balanceCardCoins": "{coins} monedas",
+  "@balanceCardCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "balanceCardCashout": "Cobrar",
+
+  "dailyBonusTitle": "Bono diario",
+  "dailyBonusStreakZero": "Comienza tu racha hoy",
+  "dailyBonusStreakOne": "{count} día seguido",
+  "@dailyBonusStreakOne": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusStreakMany": "{count} días seguidos",
+  "@dailyBonusStreakMany": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusDays": "{count} días",
+  "@dailyBonusDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusClaimed": "Reclamado hoy",
+  "dailyBonusTodayPrize": "Premio de hoy",
+  "dailyBonusCoins": "+{coins} monedas",
+  "@dailyBonusCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "dailyBonusNextMilestone": "Día {day} → +{coins} monedas",
+  "@dailyBonusNextMilestone": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "coins": { "type": "String" }
+    }
+  },
+  "dailyBonusClaimedBadge": "Reclamado",
+  "dailyBonusDayMon": "Lun",
+  "dailyBonusDayTue": "Mar",
+  "dailyBonusDayWed": "Mié",
+  "dailyBonusDayThu": "Jue",
+  "dailyBonusDayFri": "Vie",
+  "dailyBonusDaySat": "Sáb",
+  "dailyBonusDaySun": "Dom",
+
+  "dailyGoalReached": "¡Meta! +1,500 🎯",
+  "dailyGoalLabel": "Meta de hoy",
+  "dailyGoalRemaining": "Faltan {coins} monedas para el bono de 1,500 monedas gratis.",
+  "@dailyGoalRemaining": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "profileTitle": "Mi perfil",
+  "profileCurrentCoins": "Monedas actuales",
+  "profileTotalEarned": "Total ganado (USD)",
+  "profileCurrentStreak": "Racha actual",
+  "profileStreakDays": "{days} días",
+  "@profileStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "profileSignOut": "Cerrar sesión",
+  "profileDeleteAccount": "Eliminar mi cuenta",
+  "profileIdCopied": "ID copiado al portapapeles",
+  "profilePhotoUpdated": "¡Foto actualizada!",
+  "profilePhotoError": "Error al subir foto: {error}",
+  "@profilePhotoError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "profileTakePhoto": "Tomar foto",
+  "profileChooseGallery": "Elegir de galería",
+  "profileDeleteTitle": "Eliminar cuenta",
+  "profileDeleteContent": "Esta acción es irreversible.\n\nSe eliminarán tu perfil, historial y saldo de monedas. Las solicitudes de cobro pendientes se conservan 90 días por obligación legal.\n\n¿Estás seguro de que quieres continuar?",
+  "profileDeleteConfirm": "Sí, eliminar",
+  "profileCancel": "Cancelar",
+  "profileConnectionError": "Error de conexión. Intenta de nuevo.",
+  "profileVerifiedAccount": "Cuenta verificada",
+  "profileNoEmail": "Sin correo registrado",
+  "profileGuestTitle": "Estás como invitado",
+  "profileGuestSubtitle": "Vincula tu cuenta para no perder tus monedas",
+  "profileLinkGoogle": "Vincular con Google",
+  "profileLinkApple": "Vincular con Apple",
+  "profileLinkEmail": "Vincular con correo",
+  "profileCoinsPreserved": "Tus monedas se conservan al vincular tu cuenta.",
+  "profileLinkEmailTitle": "Vincular con correo",
+  "profileLinkEmailSubtitle": "Tus monedas se conservan.",
+  "profileConfirmPassword": "Confirmar contraseña",
+  "profileLinkSave": "Vincular y guardar monedas",
+  "profilePasswordMismatch": "Las contraseñas no coinciden",
+  "profilePasswordTooShort": "Mínimo 6 caracteres",
+  "profileLinkedGoogle": "¡Cuenta vinculada con Google!",
+  "profileLinkedApple": "¡Cuenta vinculada con Apple!",
+  "profileLinkedEmail": "¡Cuenta creada! Tus monedas se conservaron.",
+
+  "referralInviteFriends": "Invita amigos",
+  "referralBothEarn": "Ganan 1,000 monedas los dos",
+  "referralYourCode": "Tu código",
+  "referralCopy": "Copiar",
+  "referralShare": "Compartir código",
+  "referralShareMessage": "¡Únete a JUEGALO y gana dinero real jugando, completando encuestas y viendo videos! 🎮💰\n\nUsa mi código al registrarte y los dos ganamos 1,000 monedas cuando hagas tu primer cobro.\n\n📱 Código: {code}\n\nDescarga la app: juegalo.app",
+  "@referralShareMessage": {
+    "placeholders": {
+      "code": { "type": "String" }
+    }
+  },
+  "referralShareSubject": "Gana dinero con JUEGALO",
+  "referralCodeCopied": "Código copiado al portapapeles",
+  "referralBonusPaid": "Bono de referido recibido",
+  "referralBonusPending": "Bono pendiente",
+  "referralBonusPaidDesc": "+1,000 monedas ya fueron agregadas a tu cuenta.",
+  "referralBonusPendingDesc": "Recibirás 1,000 monedas al hacer tu primer cobro.",
+  "referralRegisterCode": "¿Te invitó alguien? Registra su código",
+  "referralCount": "Referidos",
+  "referralEarnings": "Monedas ganadas",
+  "referralDialogTitle": "¿Te invitó alguien?",
+  "referralDialogSubtitle": "Ingresa el código de tu amigo.",
+  "referralBothGet": "Los dos reciben 1,000 monedas cuando hagas tu primer cobro.",
+  "referralApplyCode": "Aplicar código",
+  "referralHowTitle": "Cómo funciona el bono",
+  "referralHowStep1": "Ingresa el código de quien te invitó.",
+  "referralHowStep2": "Tú y tu amigo reciben 1,000 monedas cada uno.",
+  "referralHowStep3": "El bono se acredita cuando tú completes tu primer cobro exitoso.",
+  "referralHowStep4": "Solo puedes registrar un código una vez y antes de tu primer cobro.",
+  "referralHowGotIt": "Entendido",
+  "referralRegistered": "🎁 ¡Código registrado! El bono (1,000 monedas c/u) se acredita cuando hagas tu primer cobro.",
+
+  "rankingTitle": "Ranking Semanal",
+  "rankingSubtitle": "Top jugadores de la semana",
+  "rankingResetsMonday": "Se reinicia cada lunes",
+  "rankingBeFirst": "¡Sé el primero!",
+  "rankingEmptyDesc": "Nadie ha ganado monedas esta semana.\nEl ranking se llena conforme los jugadores compiten.",
+  "rankingMyPosition": "Tu posición actual",
+  "rankingEarnToClimb": "Gana monedas para subir",
+  "rankingTipGames": "Instala juegos y completa misiones",
+  "rankingSurveysTip": "Completa encuestas y gana rápido",
+  "rankingVideosTip": "Ve 20 videos diarios para acumular",
+  "rankingPositions": "POSICIONES 4 – {total}",
+  "@rankingPositions": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "rankingMyPositionBar": "Tu posición esta semana",
+  "rankingKeepPlaying": "¡Sigue jugando para subir!",
+  "rankingLoadError": "No se pudo cargar el ranking",
+  "rankingRetry": "Reintentar",
+  "rankingYou": "TÚ",
+
+  "surveysTitle": "Encuestas disponibles",
+  "surveysUpdated": "Actualizado {time}",
+  "@surveysUpdated": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "surveysCount": "{count} encuesta • {time}",
+  "@surveysCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "time": { "type": "String" }
+    }
+  },
+  "surveysCountPlural": "{count} encuestas • {time}",
+  "@surveysCountPlural": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "time": { "type": "String" }
+    }
+  },
+  "surveysRefresh": "Actualizar",
+  "surveysEarn": "Ganas ",
+  "surveysPerSurvey": " por cada encuesta completada",
+  "surveysEmpty": "No hay encuestas disponibles",
+  "surveysEmptySubtitle": "Vuelve más tarde o toca actualizar",
+  "surveysTimeAgoSeconds": "hace {sec}s",
+  "@surveysTimeAgoSeconds": {
+    "placeholders": {
+      "sec": { "type": "int" }
+    }
+  },
+  "surveysTimeAgoMinutes": "hace {min} min",
+  "@surveysTimeAgoMinutes": {
+    "placeholders": {
+      "min": { "type": "int" }
+    }
+  },
+  "surveysTimeAgoHours": "hace {hr}h",
+  "@surveysTimeAgoHours": {
+    "placeholders": {
+      "hr": { "type": "int" }
+    }
+  },
+  "surveysCoinsEarned": "+{coins} monedas — encuesta completada",
+  "@surveysCoinsEarned": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "videosTitle": "Videos disponibles",
+  "videosTodayTitle": "Videos de hoy",
+  "videosEarnedToday": "{coins} monedas ganadas hoy",
+  "@videosEarnedToday": {
+    "placeholders": {
+      "coins": { "type": "int" }
+    }
+  },
+  "videosLimitReached": "Límite alcanzado",
+  "videosRetry": "Reintentar",
+  "videosWatch": "Ver",
+  "videosHowItWorks": "Cómo funciona",
+  "videosInfoFull": "Ve el anuncio completo para ganar monedas",
+  "videosInfoLimit": "Límite de 50 anuncios por día",
+  "videosInfoCoins": "30 monedas por anuncio completado",
+  "videosInfoAccumulate": "Acumula 10,000 monedas para cobrar $1.00",
+  "videosAvailabilityNote": "Los anuncios se cargan según disponibilidad. Si no aparecen, toca \"Reintentar\" en unos segundos.",
+  "videosCoinsEarned": "+{coins} monedas ganadas",
+  "@videosCoinsEarned": {
+    "placeholders": {
+      "coins": { "type": "int" }
+    }
+  },
+  "videosErrorCredit": "Error al acreditar monedas: {error}",
+  "@videosErrorCredit": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "videosSlot": "Video {number}",
+  "@videosSlot": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "walletErrorLoading": "Error al cargar",
+  "walletCoinsAvailable": "{coins} monedas disponibles",
+  "@walletCoinsAvailable": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "walletRequestCashout": "Solicitar cobro",
+  "walletMinimumCashout": "Mínimo $1.00 para retirar",
+  "walletPaymentMethods": "Métodos de cobro",
+  "walletPaypalDesc": "Internacional · 1–3 días hábiles",
+  "walletMercadopagoDesc": "México y LatAm · sin comisión",
+  "walletComingSoon": "Próximamente",
+  "walletComingSoonFull": "Próximamente disponible",
+  "walletTransactions": "Últimas transacciones",
+  "walletNoTransactions": "Sin transacciones aún",
+  "walletAlmostThere": "¡Casi llegas!",
+  "walletNeedCoins": "Necesitas al menos {coins} monedas ($1.00 USD) para retirar.\n\nTe faltan {missing} monedas.",
+  "@walletNeedCoins": {
+    "placeholders": {
+      "coins": { "type": "String" },
+      "missing": { "type": "String" }
+    }
+  },
+  "walletGotIt": "Entendido",
+
+  "cashoutStepRequested": "Solicitado",
+  "cashoutStepRequestedSub": "Recibimos tu solicitud",
+  "cashoutStepReview": "En revisión",
+  "cashoutStepReviewSub": "Verificando los datos",
+  "cashoutStepProcessing": "Procesando",
+  "cashoutStepProcessingSub": "Enviando el pago",
+  "cashoutStepPaid": "Pagado",
+  "cashoutStepPaidSub": "¡Dinero enviado!",
+  "cashoutStatusPending": "Pendiente",
+  "cashoutStatusProcessing": "En proceso",
+  "cashoutStatusPaid": "Pagado",
+  "cashoutStatusRejected": "Rechazado",
+  "cashoutRequestHeader": "Cobro de ${amount} USD · {method}",
+  "@cashoutRequestHeader": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "method": { "type": "String" }
+    }
+  },
+  "cashoutPaidBanner": "¡Tu pago fue enviado!",
+  "cashoutPaidBannerSub": "Revisa tu cuenta de PayPal.",
+  "cashoutReferralBanner": "¡Código de referido cobrado!",
+  "cashoutReferralBannerSub": "Tú y tu amigo ya tienen sus 1,000 monedas.",
+  "cashoutTimePending": "Tiempo estimado: 1–3 días hábiles. Te avisaremos cuando sea enviado.",
+  "cashoutTimeProcessing": "Tu pago está siendo procesado. Llegará pronto a tu cuenta.",
+  "cashoutPaidOn": "Pagado el {date} a las {time}",
+  "@cashoutPaidOn": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "cashoutRequestedOn": "Solicitado el {date} a las {time}",
+  "@cashoutRequestedOn": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "cashoutAppTitle": "Solicitar cobro",
+  "cashoutAmountTitle": "Monto a cobrar",
+  "cashoutMethodTitle": "Método de cobro",
+  "cashoutAccountTitle": "Datos de tu cuenta",
+  "cashoutSummaryAmount": "Monto",
+  "cashoutSummaryCoins": "Monedas a descontar",
+  "cashoutSummaryMethod": "Método",
+  "cashoutConfirm": "Confirmar cobro de ${amount}",
+  "@cashoutConfirm": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "cashoutProcessingNote": "Procesamos tu pago en 1–3 días hábiles",
+  "cashoutEnterAccount": "Ingresa los datos de tu cuenta",
+  "cashoutSentSuccess": "¡Solicitud enviada! Procesamos en 1-3 días hábiles",
+  "cashoutUsdAvailable": "${usd} USD disponibles",
+  "@cashoutUsdAvailable": {
+    "placeholders": {
+      "usd": { "type": "String" }
+    }
+  },
+  "cashoutCoins": "{coins} monedas",
+  "@cashoutCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "cashoutNeedCoins": "Necesitas al menos {coins} monedas ($1.00 USD) para retirar por PayPal.\n\nTe faltan {missing} monedas.",
+  "@cashoutNeedCoins": {
+    "placeholders": {
+      "coins": { "type": "String" },
+      "missing": { "type": "String" }
+    }
+  },
+  "cashoutGuestTitle": "Crea una cuenta para cobrar",
+  "cashoutGuestSubtitle": "Estás jugando como invitado. Vincula tu cuenta\ny conserva todas las monedas que ganaste.",
+  "cashoutGuestCurrentCoins": "Tus monedas actuales",
+  "cashoutGuestCoins": "{coins} monedas",
+  "@cashoutGuestCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "cashoutGuestContinueGoogle": "Continuar con Google",
+  "cashoutGuestContinueApple": "Continuar con Apple",
+  "cashoutGuestCreateEmail": "Crear cuenta con correo",
+  "cashoutGuestNote": "Tus monedas se transferirán automáticamente\na tu cuenta nueva.",
+  "cashoutGuestLinked": "¡Cuenta vinculada! Tus monedas se conservaron.",
+  "cashoutGuestCreated": "¡Cuenta creada! Tus monedas se conservaron.",
+  "profileFirstName": "Nombre",
+  "profileLastName": "Apellido",
+  "cashoutMinLabel": "{usd} mín",
+  "@cashoutMinLabel": {
+    "placeholders": { "usd": { "type": "String" } }
+  },
+  "cashoutMaxLabel": "{usd} máx",
+  "@cashoutMaxLabel": {
+    "placeholders": { "usd": { "type": "String" } }
+  },
+  "cashoutGuestLinkedErrorGoogle": "Error al vincular con Google: {error}",
+  "@cashoutGuestLinkedErrorGoogle": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "cashoutGuestLinkedErrorApple": "Error al vincular con Apple: {error}",
+  "@cashoutGuestLinkedErrorApple": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "cashoutCreateEmailTitle": "Crear cuenta con correo",
+  "cashoutCreateEmailSubtitle": "Tus monedas se conservarán automáticamente.",
+  "cashoutCreateEmailButton": "Crear cuenta y conservar monedas",
+  "cashoutPasswordMismatch": "Las contraseñas no coinciden",
+  "cashoutPasswordTooShort": "La contraseña debe tener al menos 6 caracteres",
+  "cashoutPaypalSubtitle": "Internacional · procesamos en 1–3 días hábiles",
+  "cashoutMercadopagoSubtitle": "Próximamente disponible",
+
+  "gamesTitle": "Ofertas y Juegos",
+  "gamesAvailable": "🎮 ¡Ya disponible!",
+  "gamesSoon": "🚀 Próximamente",
+  "gamesDescription": "Instala juegos y apps para ganar\nmonedas extra sin ver anuncios.",
+  "gamesOpenButton": "Ver juegos y ofertas",
+  "gamesExploreSoon": "Explorar próximamente",
+  "gamesInstallGames": "Instala juegos",
+  "gamesInstallGamesDesc": "Gana monedas por instalar y jugar nuevos juegos.",
+  "gamesDownloadApps": "Descarga apps",
+  "gamesDownloadAppsDesc": "Completa tareas en apps y recibe monedas al instante.",
+  "gamesCompleteMissions": "Completa misiones",
+  "gamesCompleteMissionsDesc": "Llega a un nivel específico en un juego y gana mucho más.",
+  "gamesOpenCatalog": "Toca el botón de arriba para ver el catálogo completo de juegos y ofertas.",
+  "gamesComingNotify": "Te avisaremos cuando esta sección esté disponible.",
+  "gamesOpenError": "No se pudo abrir el catálogo. Inténtalo de nuevo.",
+  "gamesComingSoonTitle": "Próximamente",
+  "gamesComingSoonContent": "Esta sección estará disponible muy pronto.\n¡Te avisaremos cuando puedas ganar monedas instalando juegos!",
+  "gamesComingSoonButton": "Entendido",
+
+  "dailyBonusClaimedToast": "¡Bono diario reclamado!",
+  "dailyBonusCoinsAndStreak": "+{coins} monedas • Racha de {streak} {streakLabel}",
+  "@dailyBonusCoinsAndStreak": {
+    "placeholders": {
+      "coins": { "type": "int" },
+      "streak": { "type": "int" },
+      "streakLabel": { "type": "String" }
+    }
+  },
+  "dailyBonusStreakLabelOne": "día",
+  "dailyBonusStreakLabelMany": "días",
+  "dailyGoalReachedToast": "¡Meta diaria alcanzada!",
+  "dailyGoalBonusCoins": "+{coins} monedas de bono",
+  "@dailyGoalBonusCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "profileEditNameTitle": "Editar nombre",
+  "profileEditNameHint": "Tu nombre",
+  "profileSave": "Guardar",
+  "profileNameUpdated": "✅ Nombre actualizado",
+
+  "profileLanguageTitle": "Idioma",
+  "profileLanguageSubtitle": "Español / English / Português",
+  "profileLanguageDialogTitle": "Selecciona el idioma",
+  "profileLanguageEs": "🇲🇽  Español",
+  "profileLanguageEn": "🇺🇸  English",
+  "profileLanguagePt": "🇧🇷  Português",
+  "profileLanguageAuto": "Automático (dispositivo)",
+
+  "versionUpdateTitle": "¡Actualización requerida!",
+  "versionUpdateBody": "Para seguir ganando dinero con JUEGALO necesitas instalar la última versión. ¡Trae mejoras y más formas de ganar!",
+  "versionUpdateButton": "Actualizar ahora",
+  "versionUpdateNote": "La actualización es gratuita y solo toma unos segundos.",
+  "versionNewAvailable": "🚀 Nueva versión disponible",
+
+  "rankingPos1": "Puesto #1",
+  "rankingPos2": "Puesto #2",
+  "rankingPos3": "Puesto #3",
+  "rankingTop50": "TOP 50",
+  "rankingTop3Label": "TOP 3",
+  "rankingThisWeek": "esta semana",
+  "rankingStreakDays": "{days} días consecutivos",
+  "@rankingStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "rankingCelebFirst": "¡Primer lugar!",
+  "rankingCelebSecond": "¡Segundo lugar!",
+  "rankingCelebThird": "¡Tercer lugar!",
+  "rankingCelebSubtitle": "La semana pasada fuiste uno\nde los mejores jugadores.",
+  "rankingCelebCoinsLabel": "monedas acreditadas",
+  "rankingCelebButton": "¡Genial! 🎉",
+
+  "rankingInfoTitle": "¿Cómo funciona el ranking?",
+  "rankingInfoSubtitle": "Sé de los mejores jugadores de la semana\ny obtén recompensas en monedas.",
+  "rankingInfoFirst": "Primer lugar",
+  "rankingInfoFirstDesc": "El jugador con más monedas acumuladas en la semana gana",
+  "rankingInfoSecond": "Segundo lugar",
+  "rankingInfoSecondDesc": "Segundo puesto al cierre semanal gana",
+  "rankingInfoThird": "Tercer lugar",
+  "rankingInfoThirdDesc": "Tercer puesto al cierre semanal gana",
+  "rankingInfoHowToEarn": "💡 ¿Cómo acumular monedas?",
+  "rankingInfoTipGames": "Instala juegos y completa misiones",
+  "rankingInfoTipSurveys": "Completa encuestas diarias",
+  "rankingInfoTipVideos": "Ve hasta 20 videos al día",
+  "rankingInfoTipStreak": "Mantén tu racha diaria para bonos extra",
+  "rankingInfoGotIt": "¡Entendido!",
+
+  "rankingLastWinnersTitle": "🏆  GANADORES DE LA SEMANA PASADA",
+  "rankingLastWinnersPrize": "premio"
+}

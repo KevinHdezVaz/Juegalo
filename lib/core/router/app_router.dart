@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +43,10 @@ final _authNotifier = _AuthChangeNotifier();
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: _authNotifier, // ← re-evalúa redirect cuando cambia auth
+    refreshListenable: _authNotifier,
+    observers: [
+      FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+    ],
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isAuth  = session != null;

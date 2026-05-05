@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -25,11 +27,17 @@ class AppUser {
   final int dailyCoins;
   final int dailyGoal;
   final int streakDays;
-  final String referralCode;
-  final int referralsCount;
-  final int referralEarnings;
-  final bool reviewClaimed;
-  final bool dailyBonusClaimed;
+  final String  referralCode;
+  final int     referralsCount;
+  final int     referralEarnings;
+  final bool    reviewClaimed;
+  final bool    dailyBonusClaimed;
+  final bool    dailyGoalBonusClaimed;
+  final String? avatarUrl;
+  /// ID del usuario que lo refirió. null = nunca aplicó un código.
+  final String? referredBy;
+  /// true = el bono de referido ya fue pagado (primer cobro completado).
+  final bool referralBonusPaid;
 
   const AppUser({
     required this.id,
@@ -41,11 +49,15 @@ class AppUser {
     required this.dailyCoins,
     required this.dailyGoal,
     required this.streakDays,
+    this.avatarUrl,
     this.referralCode      = '',
     this.referralsCount    = 0,
     this.referralEarnings  = 0,
-    this.reviewClaimed     = false,
-    this.dailyBonusClaimed = false,
+    this.reviewClaimed          = false,
+    this.dailyBonusClaimed      = false,
+    this.dailyGoalBonusClaimed  = false,
+    this.referredBy,
+    this.referralBonusPaid = false,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) {
@@ -61,11 +73,15 @@ class AppUser {
       dailyCoins:         j['daily_coins'] as int? ?? 0,
       dailyGoal:          j['daily_goal'] as int? ?? AppConstants.dailyGoalStart,
       streakDays:         j['streak_days'] as int? ?? 0,
+      avatarUrl:          j['avatar_url'] as String?,
       referralCode:       j['referral_code'] as String? ?? '',
       referralsCount:     j['referrals_count'] as int? ?? 0,
       referralEarnings:   j['referral_earnings'] as int? ?? 0,
-      reviewClaimed:      j['review_claimed_at'] != null,
-      dailyBonusClaimed:  claimedAt != null && claimedAt.startsWith(today),
+      reviewClaimed:         j['review_claimed_at'] != null,
+      dailyBonusClaimed:     claimedAt != null && claimedAt.startsWith(today),
+      dailyGoalBonusClaimed: (j['daily_goal_claimed_at'] as String?)?.startsWith(today) ?? false,
+      referredBy:         j['referred_by']          as String?,
+      referralBonusPaid:  j['referral_bonus_paid']  as bool? ?? false,
     );
   }
 
@@ -83,21 +99,21 @@ final currentSessionProvider = Provider<Session?>((ref) {
   return _db.auth.currentSession;
 });
 
-// ── Usuario actual (fetch simple, sin realtime) ───────────────────
-// Se refresca cuando cambia el auth state (login/logout/token renovado).
-final userProvider = StreamProvider<AppUser?>((ref) async* {
-  ref.watch(authStateProvider);
+// ── Usuario actual con Realtime — se actualiza automáticamente ───────
+final userProvider = StreamProvider<AppUser?>((ref) {
+  final authAsync = ref.watch(authStateProvider);
 
   final userId = _db.auth.currentUser?.id;
-  if (userId == null) { yield null; return; }
+  if (userId == null) return Stream.value(null);
 
-  final row = await _db
+  // Ignorar el estado de auth si aún no hay sesión
+  if (authAsync is AsyncLoading) return Stream.value(null);
+
+  return _db
       .from('users')
-      .select()
+      .stream(primaryKey: ['id'])
       .eq('id', userId)
-      .maybeSingle();
-
-  yield row == null ? null : AppUser.fromJson(row);
+      .map((rows) => rows.isEmpty ? null : AppUser.fromJson(rows.first));
 });
 
 // ── Notifier para acciones del usuario ───────────────────────────
@@ -105,9 +121,26 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
   @override
   Future<AppUser?> build() async {
     final userId = _db.auth.currentUser?.id;
-    if (userId == null) return null;
-    final row = await _db.from('users').select().eq('id', userId).maybeSingle();
-    return row == null ? null : AppUser.fromJson(row);
+    if (userId == null) {
+      debugPrint('🔵 [UserNotifier.build] Sin sesión activa');
+      return null;
+    }
+    debugPrint('🔵 [UserNotifier.build] Cargando usuario uid: $userId');
+    try {
+      final row = await _db.from('users').select().eq('id', userId).maybeSingle();
+      if (row == null) {
+        debugPrint('🟡 [UserNotifier.build] Usuario no encontrado en public.users — uid: $userId');
+      } else {
+        debugPrint('🟢 [UserNotifier.build] Usuario cargado: coins=${row['coins']}, email=${row['email']}');
+      }
+      return row == null ? null : AppUser.fromJson(row);
+    } on PostgrestException catch (e) {
+      debugPrint('🔴 [UserNotifier.build] PostgrestException — code: ${e.code} | message: ${e.message} | details: ${e.details}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('🔴 [UserNotifier.build] Error inesperado: $e\n$st');
+      rethrow;
+    }
   }
 
   // Sign in con Google — nativo (sin abrir browser)
@@ -127,6 +160,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
       accessToken: googleAuth.accessToken,
     );
 
+    await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
   }
@@ -153,6 +187,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
       nonce: rawNonce,
     );
 
+    await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
   }
@@ -176,15 +211,82 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     String? referralCode,
   }) async {
     await _db.auth.signInWithPassword(email: email, password: password);
+    await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
   }
 
   // Sign in anónimo (jugar sin cuenta)
   Future<void> signInAnonymously({String? referralCode}) async {
-    await _db.auth.signInAnonymously();
+    debugPrint('🔵 [signInAnonymously] Iniciando login anónimo...');
+    try {
+      final response = await _db.auth.signInAnonymously();
+      debugPrint('🟢 [signInAnonymously] Auth OK — uid: ${response.user?.id} | isAnonymous: ${response.user?.isAnonymous}');
+    } on AuthException catch (e) {
+      debugPrint('🔴 [signInAnonymously] AuthException — status: ${e.statusCode} | message: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('🔴 [signInAnonymously] Error inesperado en auth.signInAnonymously: $e\n$st');
+      rethrow;
+    }
+
+    await _ensureUserRow();
     await _applyReferral(referralCode);
-    await NotificationService.instance.requestAndSaveToken();
+
+    debugPrint('🔵 [signInAnonymously] Solicitando FCM token...');
+    try {
+      await NotificationService.instance.requestAndSaveToken();
+      debugPrint('🟢 [signInAnonymously] FCM token OK');
+    } catch (e) {
+      debugPrint('🟡 [signInAnonymously] FCM token falló (no crítico): $e');
+    }
+    debugPrint('✅ [signInAnonymously] Flujo completo');
+  }
+
+  // Garantiza que exista una fila en public.users para el usuario actual.
+  // Safety net por si el trigger on_auth_user_created falla silenciosamente.
+  Future<void> _ensureUserRow() async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return;
+
+    debugPrint('🔵 [_ensureUserRow] Verificando fila en public.users para uid: $uid');
+    try {
+      final row = await _db.from('users').select('id, email').eq('id', uid).maybeSingle();
+      if (row != null) {
+        // Si la fila existe pero no tiene email, lo actualizamos
+        final storedEmail = row['email'] as String?;
+        final authEmail   = _db.auth.currentUser?.email;
+        if (storedEmail == null && authEmail != null) {
+          await _db.from('users').update({'email': authEmail}).eq('id', uid);
+          debugPrint('🟡 [_ensureUserRow] Email actualizado en fila existente');
+        } else {
+          debugPrint('🟢 [_ensureUserRow] Fila ya existe');
+        }
+        return;
+      }
+
+      debugPrint('🟡 [_ensureUserRow] Fila no existe — creando manualmente...');
+      final authUser = _db.auth.currentUser!;
+      final email = authUser.email;
+      final name  = authUser.userMetadata?['name'] as String?
+                 ?? authUser.userMetadata?['full_name'] as String?;
+      final referralCode = uid.replaceAll('-', '').substring(0, 8).toUpperCase();
+      final username = (name?.isNotEmpty == true)
+          ? name!
+          : (email?.isNotEmpty == true)
+              ? email!.split('@').first
+              : 'jugador_${uid.substring(0, 6)}';
+
+      await _db.from('users').upsert({
+        'id'           : uid,
+        'email'        : email,
+        'username'     : username,
+        'referral_code': referralCode,
+      }, onConflict: 'id');
+      debugPrint('🟢 [_ensureUserRow] Fila creada correctamente');
+    } catch (e, st) {
+      debugPrint('🔴 [_ensureUserRow] Error: $e\n$st');
+    }
   }
 
   // ── Vinculación de cuenta anónima ─────────────────────────────────
@@ -193,10 +295,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
   bool get isAnonymous {
     final user = _db.auth.currentUser;
     if (user == null) return false;
-    // Supabase marca anónimos sin email ni teléfono y sin identidades OAuth
-    return user.email == null &&
-        user.phone == null &&
-        (user.identities?.isEmpty ?? true);
+    return user.isAnonymous;
   }
 
   /// Vincula email/contraseña a la sesión anónima.
@@ -204,10 +303,18 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
   Future<void> linkWithEmail({
     required String email,
     required String password,
+    String? firstName,
+    String? lastName,
   }) async {
     await _db.auth.updateUser(
       UserAttributes(email: email, password: password),
     );
+    // Guardar nombre completo en public.users
+    final uid = _db.auth.currentUser?.id;
+    if (uid != null && firstName != null && firstName.isNotEmpty) {
+      final fullName = [firstName, lastName].where((s) => s != null && s.isNotEmpty).join(' ');
+      await _db.from('users').update({'username': fullName}).eq('id', uid);
+    }
     ref.invalidateSelf();
     await NotificationService.instance.requestAndSaveToken();
   }
@@ -325,6 +432,87 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     } catch (_) {
       // No bloquear el login si el código falla
     }
+  }
+
+  /// Aplica un código de referido y retorna null si fue exitoso,
+  /// o un mensaje de error si falló. Llamar después de haber iniciado sesión.
+  Future<String?> applyReferralCode(String code) async {
+    if (code.isEmpty) return null;
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return 'No hay sesión activa.';
+    try {
+      await _db.rpc('apply_referral_code', params: {
+        'p_user_id': uid,
+        'p_code'   : code,
+      });
+      return null; // éxito
+    } catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('already') || msg.contains('ya') || msg.contains('used')) {
+        return 'Este código ya fue utilizado.';
+      }
+      return 'Código inválido. Verifica e intenta de nuevo.';
+    }
+  }
+
+  /// Recarga el usuario desde Supabase y actualiza el estado.
+  Future<void> refreshUser() async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final row = await _db
+          .from('users')
+          .select()
+          .eq('id', uid)
+          .single();
+      state = AsyncData(AppUser.fromJson(row));
+    } catch (_) {}
+  }
+
+  // Subir foto de perfil a Supabase Storage y guardar URL
+  Future<void> uploadAvatar(String filePath) async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return;
+
+    debugPrint('🔵 [uploadAvatar] Comprimiendo imagen: $filePath');
+
+    // Comprimir a JPEG 80% calidad, máximo 400×400
+    final compressed = await FlutterImageCompress.compressWithFile(
+      filePath,
+      minWidth: 400,
+      minHeight: 400,
+      quality: 80,
+      format: CompressFormat.jpeg,
+    );
+
+    if (compressed == null) throw Exception('No se pudo comprimir la imagen');
+    debugPrint('🟢 [uploadAvatar] Comprimida: ${compressed.length} bytes');
+
+    final fileName = '$uid/avatar.jpg';
+
+    debugPrint('🔵 [uploadAvatar] Subiendo a storage bucket=avatars path=$fileName');
+    try {
+      await _db.storage.from('avatars').uploadBinary(
+        fileName,
+        compressed,
+        fileOptions: const FileOptions(
+          upsert: true,
+          contentType: 'image/jpeg',
+        ),
+      );
+    } on StorageException catch (e) {
+      debugPrint('🔴 [uploadAvatar] StorageException: statusCode=${e.statusCode} | error=${e.error} | message=${e.message}');
+      rethrow;
+    } catch (e) {
+      debugPrint('🔴 [uploadAvatar] Error inesperado en upload: $e');
+      rethrow;
+    }
+
+    final url = _db.storage.from('avatars').getPublicUrl(fileName);
+    debugPrint('🟢 [uploadAvatar] URL pública: $url');
+
+    await _db.from('users').update({'avatar_url': url}).eq('id', uid);
+    ref.invalidateSelf();
   }
 
   // Sign out

@@ -1,0 +1,562 @@
+{
+  "@@locale": "en",
+
+  "tutorialWelcomeTitle": "Welcome to JUEGALO!",
+  "tutorialWelcomeSubtitle": "The app where you play, take\nsurveys and earn real money.",
+  "tutorialWelcomeFree": "100% free forever",
+  "tutorialWelcomeFreeValue": "No charges",
+  "tutorialWelcomeLatam": "Available in Latin America",
+  "tutorialWelcomeLatamValue": "Starting today",
+  "tutorialWelcomeStart": "Start earning in 1 minute",
+  "tutorialWelcomeStartValue": "Fast",
+
+  "tutorialEarnTitle": "Earn coins easily",
+  "tutorialEarnSubtitle": "Three ways to accumulate\ncoins every day.",
+  "tutorialEarnVideos": "Short videos",
+  "tutorialEarnVideosValue": "+50 coins each",
+  "tutorialEarnSurveys": "Surveys",
+  "tutorialEarnSurveysValue": "up to 500 coins",
+  "tutorialEarnGames": "Games",
+  "tutorialEarnGamesValue": "up to 2,000 coins",
+
+  "tutorialRankingTitle": "Weekly Ranking",
+  "tutorialRankingSubtitle": "Compete every week.\nTop players win extra prizes.",
+  "tutorialRankingFirst": "Place #1",
+  "tutorialRankingFirstValue": "2,500 coins",
+  "tutorialRankingSecond": "Place #2",
+  "tutorialRankingSecondValue": "1,000 coins",
+  "tutorialRankingThird": "Place #3",
+  "tutorialRankingThirdValue": "500 coins",
+
+  "tutorialCashoutTitle": "Cash out anytime",
+  "tutorialCashoutSubtitle": "10,000 coins = $1.00 USD.\nWithdraw from $1 with no fee.",
+  "tutorialCashoutPaypalValue": "Instant",
+
+  "tutorialSkip": "Skip",
+  "tutorialNext": "Next",
+  "tutorialStartEarning": "Start earning!",
+
+  "onboardingTagline": "Play. Earn. Cash out.",
+  "onboardingPaidBadge": "+$12,847 paid",
+  "onboardingHowItWorks": "How does it work?",
+  "onboardingFeaturePlay": "Play",
+  "onboardingFeaturePlaySubtitle": "Install free games and accumulate coins",
+  "onboardingFeatureSurveys": "Surveys",
+  "onboardingFeatureSurveysSubtitle": "Earn coins for each completed survey",
+  "onboardingFeatureCashout": "Cash out",
+  "onboardingFeatureCashoutSubtitle": "Withdraw to PayPal from $1 USD",
+  "onboardingStartNow": "Get started now",
+  "onboardingContinueGoogle": "Continue with Google",
+  "onboardingContinueApple": "Continue with Apple",
+  "onboardingContinueEmail": "Continue with email",
+  "onboardingPlayGuest": "Play as guest",
+  "onboardingLegal": "By continuing you agree to the Terms of Use\nand Privacy Policy",
+  "onboardingOr": "or",
+  "onboardingErrorWrongCredentials": "Wrong email or password",
+  "onboardingErrorGeneric": "Error signing in: {msg}",
+  "@onboardingErrorGeneric": {
+    "placeholders": {
+      "msg": { "type": "String" }
+    }
+  },
+
+  "emailDialogTitle": "Sign in",
+  "emailDialogSubtitle": "Email and password",
+  "emailDialogEmail": "Email address",
+  "emailDialogPassword": "Password",
+  "emailDialogSignIn": "Sign in",
+
+  "homeTabGames": "Games",
+  "homeTabSurveys": "Surveys",
+  "homeTabVideos": "Videos",
+  "homeTabRanking": "Ranking",
+  "homeTabWallet": "Wallet",
+
+  "balanceCardLabel": "Your balance",
+  "balanceCardCoins": "{coins} coins",
+  "@balanceCardCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "balanceCardCashout": "Cash out",
+
+  "dailyBonusTitle": "Daily bonus",
+  "dailyBonusStreakZero": "Start your streak today",
+  "dailyBonusStreakOne": "{count} day in a row",
+  "@dailyBonusStreakOne": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusStreakMany": "{count} days in a row",
+  "@dailyBonusStreakMany": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusDays": "{count} days",
+  "@dailyBonusDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "dailyBonusClaimed": "Claimed today",
+  "dailyBonusTodayPrize": "Today's prize",
+  "dailyBonusCoins": "+{coins} coins",
+  "@dailyBonusCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "dailyBonusNextMilestone": "Day {day} → +{coins} coins",
+  "@dailyBonusNextMilestone": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "coins": { "type": "String" }
+    }
+  },
+  "dailyBonusClaimedBadge": "Claimed",
+  "dailyBonusDayMon": "Mon",
+  "dailyBonusDayTue": "Tue",
+  "dailyBonusDayWed": "Wed",
+  "dailyBonusDayThu": "Thu",
+  "dailyBonusDayFri": "Fri",
+  "dailyBonusDaySat": "Sat",
+  "dailyBonusDaySun": "Sun",
+
+  "dailyGoalReached": "Goal! +1,500 🎯",
+  "dailyGoalLabel": "Today's goal",
+  "dailyGoalRemaining": "Need {coins} more coins for the 1,500 free coins bonus.",
+  "@dailyGoalRemaining": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "profileTitle": "My profile",
+  "profileCurrentCoins": "Current coins",
+  "profileTotalEarned": "Total earned (USD)",
+  "profileCurrentStreak": "Current streak",
+  "profileStreakDays": "{days} days",
+  "@profileStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "profileSignOut": "Sign out",
+  "profileDeleteAccount": "Delete my account",
+  "profileIdCopied": "ID copied to clipboard",
+  "profilePhotoUpdated": "Photo updated!",
+  "profilePhotoError": "Error uploading photo: {error}",
+  "@profilePhotoError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "profileTakePhoto": "Take photo",
+  "profileChooseGallery": "Choose from gallery",
+  "profileDeleteTitle": "Delete account",
+  "profileDeleteContent": "This action is irreversible.\n\nYour profile, history and coin balance will be deleted. Pending cashout requests are kept for 90 days by legal obligation.\n\nAre you sure you want to continue?",
+  "profileDeleteConfirm": "Yes, delete",
+  "profileCancel": "Cancel",
+  "profileConnectionError": "Connection error. Please try again.",
+  "profileVerifiedAccount": "Verified account",
+  "profileNoEmail": "No email registered",
+  "profileGuestTitle": "You're a guest",
+  "profileGuestSubtitle": "Link your account to keep your coins",
+  "profileLinkGoogle": "Link with Google",
+  "profileLinkApple": "Link with Apple",
+  "profileLinkEmail": "Link with email",
+  "profileCoinsPreserved": "Your coins are preserved when you link your account.",
+  "profileLinkEmailTitle": "Link with email",
+  "profileLinkEmailSubtitle": "Your coins will be preserved.",
+  "profileConfirmPassword": "Confirm password",
+  "profileLinkSave": "Link and save coins",
+  "profilePasswordMismatch": "Passwords do not match",
+  "profilePasswordTooShort": "Minimum 6 characters",
+  "profileLinkedGoogle": "Account linked with Google!",
+  "profileLinkedApple": "Account linked with Apple!",
+  "profileLinkedEmail": "Account created! Your coins were preserved.",
+
+  "referralInviteFriends": "Invite friends",
+  "referralBothEarn": "Both of you earn 1,000 coins",
+  "referralYourCode": "Your code",
+  "referralCopy": "Copy",
+  "referralShare": "Share code",
+  "referralShareMessage": "Join JUEGALO and earn real money playing, completing surveys and watching videos! 🎮💰\n\nUse my code when signing up and we both earn 1,000 coins when you make your first cashout.\n\n📱 Code: {code}\n\nDownload the app: juegalo.app",
+  "@referralShareMessage": {
+    "placeholders": {
+      "code": { "type": "String" }
+    }
+  },
+  "referralShareSubject": "Earn money with JUEGALO",
+  "referralCodeCopied": "Code copied to clipboard",
+  "referralBonusPaid": "Referral bonus received",
+  "referralBonusPending": "Bonus pending",
+  "referralBonusPaidDesc": "+1,000 coins have been added to your account.",
+  "referralBonusPendingDesc": "You'll receive 1,000 coins when you make your first cashout.",
+  "referralRegisterCode": "Were you invited? Enter their code",
+  "referralCount": "Referrals",
+  "referralEarnings": "Coins earned",
+  "referralDialogTitle": "Were you invited?",
+  "referralDialogSubtitle": "Enter your friend's code.",
+  "referralBothGet": "You both receive 1,000 coins when you make your first cashout.",
+  "referralApplyCode": "Apply code",
+  "referralHowTitle": "How the bonus works",
+  "referralHowStep1": "Enter the code of the person who invited you.",
+  "referralHowStep2": "You and your friend each receive 1,000 coins.",
+  "referralHowStep3": "The bonus is credited when you complete your first successful cashout.",
+  "referralHowStep4": "You can only register a code once and before your first cashout.",
+  "referralHowGotIt": "Got it",
+  "referralRegistered": "🎁 Code registered! The bonus (1,000 coins each) will be credited when you make your first cashout.",
+
+  "rankingTitle": "Weekly Ranking",
+  "rankingSubtitle": "Top players of the week",
+  "rankingResetsMonday": "Resets every Monday",
+  "rankingBeFirst": "Be the first!",
+  "rankingEmptyDesc": "Nobody has earned coins this week.\nThe ranking fills up as players compete.",
+  "rankingMyPosition": "Your current position",
+  "rankingEarnToClimb": "Earn coins to climb",
+  "rankingTipGames": "Install games and complete missions",
+  "rankingSurveysTip": "Complete surveys and earn fast",
+  "rankingVideosTip": "Watch 20 daily videos to accumulate",
+  "rankingPositions": "POSITIONS 4 – {total}",
+  "@rankingPositions": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "rankingMyPositionBar": "Your position this week",
+  "rankingKeepPlaying": "Keep playing to climb!",
+  "rankingLoadError": "Could not load ranking",
+  "rankingRetry": "Retry",
+  "rankingYou": "YOU",
+
+  "surveysTitle": "Available surveys",
+  "surveysUpdated": "Updated {time}",
+  "@surveysUpdated": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "surveysCount": "{count} survey • {time}",
+  "@surveysCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "time": { "type": "String" }
+    }
+  },
+  "surveysCountPlural": "{count} surveys • {time}",
+  "@surveysCountPlural": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "time": { "type": "String" }
+    }
+  },
+  "surveysRefresh": "Refresh",
+  "surveysEarn": "You earn ",
+  "surveysPerSurvey": " per completed survey",
+  "surveysEmpty": "No surveys available",
+  "surveysEmptySubtitle": "Come back later or tap refresh",
+  "surveysTimeAgoSeconds": "{sec}s ago",
+  "@surveysTimeAgoSeconds": {
+    "placeholders": {
+      "sec": { "type": "int" }
+    }
+  },
+  "surveysTimeAgoMinutes": "{min} min ago",
+  "@surveysTimeAgoMinutes": {
+    "placeholders": {
+      "min": { "type": "int" }
+    }
+  },
+  "surveysTimeAgoHours": "{hr}h ago",
+  "@surveysTimeAgoHours": {
+    "placeholders": {
+      "hr": { "type": "int" }
+    }
+  },
+  "surveysCoinsEarned": "+{coins} coins — survey completed",
+  "@surveysCoinsEarned": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "videosTitle": "Available videos",
+  "videosTodayTitle": "Today's videos",
+  "videosEarnedToday": "{coins} coins earned today",
+  "@videosEarnedToday": {
+    "placeholders": {
+      "coins": { "type": "int" }
+    }
+  },
+  "videosLimitReached": "Limit reached",
+  "videosRetry": "Retry",
+  "videosWatch": "Watch",
+  "videosHowItWorks": "How it works",
+  "videosInfoFull": "Watch the full ad to earn coins",
+  "videosInfoLimit": "Limit of 50 ads per day",
+  "videosInfoCoins": "30 coins per completed ad",
+  "videosInfoAccumulate": "Accumulate 10,000 coins to cash out $1.00",
+  "videosAvailabilityNote": "Ads load based on availability. If they don't appear, tap \"Retry\" in a few seconds.",
+  "videosCoinsEarned": "+{coins} coins earned",
+  "@videosCoinsEarned": {
+    "placeholders": {
+      "coins": { "type": "int" }
+    }
+  },
+  "videosErrorCredit": "Error crediting coins: {error}",
+  "@videosErrorCredit": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "videosSlot": "Video {number}",
+  "@videosSlot": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "walletErrorLoading": "Error loading",
+  "walletCoinsAvailable": "{coins} coins available",
+  "@walletCoinsAvailable": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "walletRequestCashout": "Request cashout",
+  "walletMinimumCashout": "Minimum $1.00 to withdraw",
+  "walletPaymentMethods": "Payment methods",
+  "walletPaypalDesc": "International · 1–3 business days",
+  "walletMercadopagoDesc": "Mexico and LatAm · no fee",
+  "walletComingSoon": "Coming soon",
+  "walletComingSoonFull": "Coming soon",
+  "walletTransactions": "Recent transactions",
+  "walletNoTransactions": "No transactions yet",
+  "walletAlmostThere": "Almost there!",
+  "walletNeedCoins": "You need at least {coins} coins ($1.00 USD) to withdraw.\n\nYou're missing {missing} coins.",
+  "@walletNeedCoins": {
+    "placeholders": {
+      "coins": { "type": "String" },
+      "missing": { "type": "String" }
+    }
+  },
+  "walletGotIt": "Got it",
+
+  "cashoutStepRequested": "Requested",
+  "cashoutStepRequestedSub": "We received your request",
+  "cashoutStepReview": "In review",
+  "cashoutStepReviewSub": "Verifying details",
+  "cashoutStepProcessing": "Processing",
+  "cashoutStepProcessingSub": "Sending payment",
+  "cashoutStepPaid": "Paid",
+  "cashoutStepPaidSub": "Money sent!",
+  "cashoutStatusPending": "Pending",
+  "cashoutStatusProcessing": "Processing",
+  "cashoutStatusPaid": "Paid",
+  "cashoutStatusRejected": "Rejected",
+  "cashoutRequestHeader": "Cashout of ${amount} USD · {method}",
+  "@cashoutRequestHeader": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "method": { "type": "String" }
+    }
+  },
+  "cashoutPaidBanner": "Your payment was sent!",
+  "cashoutPaidBannerSub": "Check your PayPal account.",
+  "cashoutReferralBanner": "Referral code cashed out!",
+  "cashoutReferralBannerSub": "You and your friend each have 1,000 coins.",
+  "cashoutTimePending": "Estimated time: 1–3 business days. We'll notify you when it's sent.",
+  "cashoutTimeProcessing": "Your payment is being processed. It will arrive at your account soon.",
+  "cashoutPaidOn": "Paid on {date} at {time}",
+  "@cashoutPaidOn": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "cashoutRequestedOn": "Requested on {date} at {time}",
+  "@cashoutRequestedOn": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "cashoutAppTitle": "Request cashout",
+  "cashoutAmountTitle": "Amount to cash out",
+  "cashoutMethodTitle": "Payment method",
+  "cashoutAccountTitle": "Your account details",
+  "cashoutSummaryAmount": "Amount",
+  "cashoutSummaryCoins": "Coins to deduct",
+  "cashoutSummaryMethod": "Method",
+  "cashoutConfirm": "Confirm cashout of ${amount}",
+  "@cashoutConfirm": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "cashoutProcessingNote": "We process your payment in 1–3 business days",
+  "cashoutEnterAccount": "Enter your account details",
+  "cashoutSentSuccess": "Request sent! We'll process it in 1–3 business days",
+  "cashoutUsdAvailable": "${usd} USD available",
+  "@cashoutUsdAvailable": {
+    "placeholders": {
+      "usd": { "type": "String" }
+    }
+  },
+  "cashoutCoins": "{coins} coins",
+  "@cashoutCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "cashoutNeedCoins": "You need at least {coins} coins ($1.00 USD) to withdraw via PayPal.\n\nYou're missing {missing} coins.",
+  "@cashoutNeedCoins": {
+    "placeholders": {
+      "coins": { "type": "String" },
+      "missing": { "type": "String" }
+    }
+  },
+  "cashoutGuestTitle": "Create an account to cash out",
+  "cashoutGuestSubtitle": "You're playing as a guest. Link your account\nand keep all the coins you earned.",
+  "cashoutGuestCurrentCoins": "Your current coins",
+  "cashoutGuestCoins": "{coins} coins",
+  "@cashoutGuestCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+  "cashoutGuestContinueGoogle": "Continue with Google",
+  "cashoutGuestContinueApple": "Continue with Apple",
+  "cashoutGuestCreateEmail": "Create account with email",
+  "cashoutGuestNote": "Your coins will be automatically transferred\nto your new account.",
+  "cashoutGuestLinked": "Account linked! Your coins were preserved.",
+  "cashoutGuestCreated": "Account created! Your coins were saved.",
+  "profileFirstName": "First name",
+  "profileLastName": "Last name",
+  "cashoutMinLabel": "{usd} min",
+  "@cashoutMinLabel": {
+    "placeholders": { "usd": { "type": "String" } }
+  },
+  "cashoutMaxLabel": "{usd} max",
+  "@cashoutMaxLabel": {
+    "placeholders": { "usd": { "type": "String" } }
+  },
+  "cashoutGuestLinkedErrorGoogle": "Error linking with Google: {error}",
+  "@cashoutGuestLinkedErrorGoogle": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "cashoutGuestLinkedErrorApple": "Error linking with Apple: {error}",
+  "@cashoutGuestLinkedErrorApple": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "cashoutCreateEmailTitle": "Create account with email",
+  "cashoutCreateEmailSubtitle": "Your coins will be preserved automatically.",
+  "cashoutCreateEmailButton": "Create account and keep coins",
+  "cashoutPasswordMismatch": "Passwords do not match",
+  "cashoutPasswordTooShort": "Password must be at least 6 characters",
+  "cashoutPaypalSubtitle": "International · processed in 1–3 business days",
+  "cashoutMercadopagoSubtitle": "Coming soon",
+
+  "gamesTitle": "Offers & Games",
+  "gamesAvailable": "🎮 Now available!",
+  "gamesSoon": "🚀 Coming soon",
+  "gamesDescription": "Install games and apps to earn\nextra coins without watching ads.",
+  "gamesOpenButton": "See games and offers",
+  "gamesExploreSoon": "Explore coming soon",
+  "gamesInstallGames": "Install games",
+  "gamesInstallGamesDesc": "Earn coins by installing and playing new games.",
+  "gamesDownloadApps": "Download apps",
+  "gamesDownloadAppsDesc": "Complete tasks in apps and receive coins instantly.",
+  "gamesCompleteMissions": "Complete missions",
+  "gamesCompleteMissionsDesc": "Reach a specific level in a game and earn much more.",
+  "gamesOpenCatalog": "Tap the button above to see the full catalog of games and offers.",
+  "gamesComingNotify": "We'll notify you when this section is available.",
+  "gamesOpenError": "Could not open catalog. Please try again.",
+  "gamesComingSoonTitle": "Coming soon",
+  "gamesComingSoonContent": "This section will be available very soon.\nWe'll notify you when you can earn coins by installing games!",
+  "gamesComingSoonButton": "Got it",
+
+  "dailyBonusClaimedToast": "Daily bonus claimed!",
+  "dailyBonusCoinsAndStreak": "+{coins} coins • {streak}-{streakLabel} streak",
+  "@dailyBonusCoinsAndStreak": {
+    "placeholders": {
+      "coins": { "type": "int" },
+      "streak": { "type": "int" },
+      "streakLabel": { "type": "String" }
+    }
+  },
+  "dailyBonusStreakLabelOne": "day",
+  "dailyBonusStreakLabelMany": "day",
+  "dailyGoalReachedToast": "Daily goal reached!",
+  "dailyGoalBonusCoins": "+{coins} bonus coins",
+  "@dailyGoalBonusCoins": {
+    "placeholders": {
+      "coins": { "type": "String" }
+    }
+  },
+
+  "profileEditNameTitle": "Edit name",
+  "profileEditNameHint": "Your name",
+  "profileSave": "Save",
+  "profileNameUpdated": "✅ Name updated",
+
+  "profileLanguageTitle": "Language",
+  "profileLanguageSubtitle": "Español / English / Português",
+  "profileLanguageDialogTitle": "Select language",
+  "profileLanguageEs": "🇲🇽  Español",
+  "profileLanguageEn": "🇺🇸  English",
+  "profileLanguagePt": "🇧🇷  Português",
+  "profileLanguageAuto": "Automatic (device)",
+
+  "versionUpdateTitle": "Update required!",
+  "versionUpdateBody": "To keep earning money with JUEGALO you need to install the latest version. It brings improvements and more ways to earn!",
+  "versionUpdateButton": "Update now",
+  "versionUpdateNote": "The update is free and only takes a few seconds.",
+  "versionNewAvailable": "🚀 New version available",
+
+  "rankingPos1": "Place #1",
+  "rankingPos2": "Place #2",
+  "rankingPos3": "Place #3",
+  "rankingTop50": "TOP 50",
+  "rankingTop3Label": "TOP 3",
+  "rankingThisWeek": "this week",
+  "rankingStreakDays": "{days} consecutive days",
+  "@rankingStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "rankingCelebFirst": "First place!",
+  "rankingCelebSecond": "Second place!",
+  "rankingCelebThird": "Third place!",
+  "rankingCelebSubtitle": "Last week you were one\nof the top players.",
+  "rankingCelebCoinsLabel": "coins credited",
+  "rankingCelebButton": "Awesome! 🎉",
+
+  "rankingInfoTitle": "How does the ranking work?",
+  "rankingInfoSubtitle": "Be among the best players of the week\nand earn coin rewards.",
+  "rankingInfoFirst": "First place",
+  "rankingInfoFirstDesc": "The player with the most coins accumulated in the week wins",
+  "rankingInfoSecond": "Second place",
+  "rankingInfoSecondDesc": "Second place at weekly close wins",
+  "rankingInfoThird": "Third place",
+  "rankingInfoThirdDesc": "Third place at weekly close wins",
+  "rankingInfoHowToEarn": "💡 How to earn coins?",
+  "rankingInfoTipGames": "Install games and complete missions",
+  "rankingInfoTipSurveys": "Complete daily surveys",
+  "rankingInfoTipVideos": "Watch up to 20 videos a day",
+  "rankingInfoTipStreak": "Keep your daily streak for extra bonuses",
+  "rankingInfoGotIt": "Got it!",
+
+  "rankingLastWinnersTitle": "🏆  LAST WEEK'S WINNERS",
+  "rankingLastWinnersPrize": "prize"
+}

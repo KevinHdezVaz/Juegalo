@@ -1,13 +1,42 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/utils/l10n_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../tutorial/screens/tutorial_screen.dart';
 
+// ─────────────────────────────────────────────────────────────────
+// Coin particle data
+// ─────────────────────────────────────────────────────────────────
+class _CoinData {
+  final double x;
+  final double phaseOffset;
+  final double size;
+  final double opacity;
+  final double rotationDir;
+  final double speed;
+  final String emoji;
+
+  const _CoinData({
+    required this.x,
+    required this.phaseOffset,
+    required this.size,
+    required this.opacity,
+    required this.rotationDir,
+    required this.speed,
+    required this.emoji,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// OnboardingScreen
+// ─────────────────────────────────────────────────────────────────
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -16,35 +45,95 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  bool _loading     = false;
-  bool _showRefCode = false;
-  final _refCtrl    = TextEditingController();
-  late AnimationController _anim;
-  late Animation<double>   _fadeIn;
-  late Animation<Offset>   _slideUp;
+    with TickerProviderStateMixin {
+  bool _loading = false;
+
+  late AnimationController _entryCtrl;
+  late AnimationController _coinsCtrl;
+  late AnimationController _floatCtrl;
+  late AnimationController _featuresCtrl;
+
+  late Animation<double> _fadeIn;
+  late Animation<Offset> _slideUp;
+  late Animation<double> _logoFloat;
+  late List<Animation<Offset>> _featureSlides;
+  late List<Animation<double>> _featureFades;
+  late final List<_CoinData> _coins;
 
   @override
   void initState() {
     super.initState();
-    _anim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
-    _fadeIn  = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
+    final rng = math.Random();
+
+    const emojis = ['🪙', '🪙', '🪙', '💰', '⭐', '🪙', '🪙', '🪙'];
+    _coins = List.generate(
+        22,
+        (i) => _CoinData(
+              x: rng.nextDouble(),
+              phaseOffset: rng.nextDouble(),
+              size: 14 + rng.nextDouble() * 16,
+              opacity: 0.35 + rng.nextDouble() * 0.45,
+              rotationDir: rng.nextBool() ? 1.0 : -1.0,
+              speed: 0.12 + rng.nextDouble() * 0.18,
+              emoji: emojis[rng.nextInt(emojis.length)],
+            ));
+
+    _entryCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeIn = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
     _slideUp = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic));
-    _anim.forward();
+        .animate(
+            CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic));
+
+    _coinsCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 7))
+          ..repeat();
+
+    _floatCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2400))
+      ..repeat(reverse: true);
+    _logoFloat = Tween<double>(begin: -5.0, end: 5.0)
+        .animate(CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut));
+
+    _featuresCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
+    _featureSlides = List.generate(3, (i) {
+      final start = i * 0.20;
+      final end = (start + 0.65).clamp(0.0, 1.0);
+      return Tween<Offset>(begin: const Offset(0.4, 0), end: Offset.zero)
+          .animate(
+        CurvedAnimation(
+            parent: _featuresCtrl,
+            curve: Interval(start, end, curve: Curves.easeOutCubic)),
+      );
+    });
+    _featureFades = List.generate(3, (i) {
+      final start = i * 0.20;
+      final end = (start + 0.65).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+            parent: _featuresCtrl,
+            curve: Interval(start, end, curve: Curves.easeOut)),
+      );
+    });
+
+    _entryCtrl.forward();
+    Future.delayed(const Duration(milliseconds: 380), () {
+      if (mounted) _featuresCtrl.forward();
+    });
   }
 
   @override
   void dispose() {
-    _anim.dispose();
-    _refCtrl.dispose();
+    _entryCtrl.dispose();
+    _coinsCtrl.dispose();
+    _floatCtrl.dispose();
+    _featuresCtrl.dispose();
     super.dispose();
   }
 
-  String get _refCode => _refCtrl.text.trim().toUpperCase();
-
   Future<void> _afterLogin() async {
+    if (!mounted) return;
     final done = await isTutorialCompleted();
     if (!mounted) return;
     context.go(done ? AppRoutes.home : AppRoutes.tutorial);
@@ -53,20 +142,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Future<void> _signInGoogle() async {
     setState(() => _loading = true);
     try {
-      await ref.read(userNotifierProvider.notifier)
-          .signInWithGoogle(referralCode: _refCode.isNotEmpty ? _refCode : null);
+      await ref.read(userNotifierProvider.notifier).signInWithGoogle();
       await _afterLogin();
     } catch (e) {
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) _showError('Error: $e');
     }
   }
 
@@ -81,18 +161,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             await ref.read(userNotifierProvider.notifier).signInWithEmail(
                   email: email,
                   password: password,
-                  referralCode: _refCode.isNotEmpty ? _refCode : null,
                 );
             await _afterLogin();
           } catch (e) {
             setState(() => _loading = false);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Correo o contraseña incorrectos'),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ));
-            }
+            if (mounted) _showError(context.l10n.onboardingErrorWrongCredentials);
           }
         },
       ),
@@ -102,92 +175,130 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Future<void> _signInApple() async {
     setState(() => _loading = true);
     try {
-      await ref.read(userNotifierProvider.notifier)
-          .signInWithApple(referralCode: _refCode.isNotEmpty ? _refCode : null);
+      await ref.read(userNotifierProvider.notifier).signInWithApple();
       await _afterLogin();
     } catch (e) {
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) _showError('Error: $e');
     }
   }
 
   Future<void> _signInAnonymous() async {
     setState(() => _loading = true);
     try {
-      await ref.read(userNotifierProvider.notifier)
-          .signInAnonymously(referralCode: _refCode.isNotEmpty ? _refCode : null);
+      await ref.read(userNotifierProvider.notifier).signInAnonymously();
       await _afterLogin();
     } catch (e) {
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('🔴 [OnboardingScreen] Error en _signInAnonymous: $e');
+      if (mounted) _showError(context.l10n.onboardingErrorGeneric(msg));
     }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: AppColors.azulPrimario,
+      backgroundColor: const Color(0xFF0F2A9A),
       body: Stack(
         children: [
-          // ── Fondo degradado ──────────────────────────────────
+          // ── Gradient background ──────────────────────────────────
           Container(
-            height: h * 0.52,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF1A3FCC), Color(0xFF2563EB), Color(0xFF3B82F6)],
+                colors: [
+                  Color(0xFF0D1F8A),
+                  Color(0xFF1A3FCC),
+                  Color(0xFF2563EB)
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
 
-          // ── Círculos decorativos ─────────────────────────────
-          Positioned(
-            top: -60, right: -40,
-            child: Container(
-              width: 220, height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 40, left: -80,
-            child: Container(
-              width: 200, height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
+          // ── Falling coins ────────────────────────────────────────
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+              final w = constraints.maxWidth;
+              return AnimatedBuilder(
+                animation: _coinsCtrl,
+                builder: (_, __) => Stack(
+                  children: _coins.map((coin) {
+                    final phase =
+                        (_coinsCtrl.value * coin.speed + coin.phaseOffset) %
+                            1.0;
+                    final x = coin.x * w - coin.size / 2;
+                    final y = -coin.size * 2 + (h + coin.size * 3) * phase;
+                    double alpha = coin.opacity;
+                    if (phase < 0.06) alpha *= phase / 0.06;
+                    if (phase > 0.88) alpha *= (1.0 - phase) / 0.12;
+                    final angle = phase * math.pi * 2.0 * coin.rotationDir;
+                    return Positioned(
+                      left: x,
+                      top: y,
+                      child: Opacity(
+                        opacity: alpha.clamp(0.0, 1.0),
+                        child: Transform.rotate(
+                          angle: angle,
+                          child: coin.emoji == '🪙'
+                              ? Icon(Icons.monetization_on, color: Colors.amber, size: coin.size)
+                              : Text(coin.emoji, style: TextStyle(fontSize: coin.size, height: 1)),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
           ),
 
-          // ── Contenido principal ──────────────────────────────
+          // ── Decorative circles ───────────────────────────────────
+          Positioned(
+              top: -80,
+              right: -50,
+              child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05)))),
+          Positioned(
+              top: 50,
+              left: -90,
+              child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.04)))),
+          Positioned(
+              top: 160,
+              right: 20,
+              child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.amber.withValues(alpha: 0.06)))),
+
+          // ── Main content ─────────────────────────────────────────
           SafeArea(
             child: Column(
               children: [
-                // ── Hero section ──────────────────────────────
+                // ── HERO ──────────────────────────────────────────
                 Expanded(
-                  flex: 5,
+                  flex: 46,
                   child: FadeTransition(
                     opacity: _fadeIn,
                     child: Padding(
@@ -195,74 +306,93 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Logo
-                          Container(
-                            width: 90, height: 90,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(22),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
+                          // Floating app icon
+                          AnimatedBuilder(
+                            animation: _logoFloat,
+                            builder: (_, child) => Transform.translate(
+                              offset: Offset(0, _logoFloat.value),
+                              child: child,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(22),
-                              child: Image.asset(
-                                'assets/icons/app_icon.png',
-                                width: 90, height: 90,
-                                fit: BoxFit.cover,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(26),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.amber.withValues(alpha: 0.40),
+                                    blurRadius: 36,
+                                    spreadRadius: 4,
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.30),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(26),
+                                child: Image.asset(
+                                  'assets/icons/app_icon.png',
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
 
-                          // Título
+                          // App name
                           Text(
                             AppConstants.appName,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 38,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5,
+                              letterSpacing: 2.0,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text(
-                            'Juega. Gana. Cobra.',
+                            context.l10n.onboardingTagline,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.80),
-                              fontSize: 16,
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
+                              letterSpacing: 1.4,
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 12),
 
-                          // Stats badge
+                          // Social proof badge
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
+                                horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: Colors.white.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(30),
                               border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.25)),
+                                  color: Colors.white.withValues(alpha: 0.22)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.monetization_on_rounded,
-                                    color: Colors.amber, size: 18),
+                                // Stars
+                                const Text('⭐⭐⭐⭐⭐',
+                                    style: TextStyle(fontSize: 11)),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 1,
+                                  height: 14,
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '+\$12,847 pagados a usuarios',
+                                  context.l10n.onboardingPaidBadge,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.95),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
                                   ),
                                 ),
                               ],
@@ -274,9 +404,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ),
                 ),
 
-                // ── Tarjeta inferior ───────────────────────────
+                // ── CARD ──────────────────────────────────────────
                 Expanded(
-                  flex: 7,
+                  flex: 54,
                   child: SlideTransition(
                     position: _slideUp,
                     child: FadeTransition(
@@ -284,20 +414,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       child: Container(
                         width: double.infinity,
                         decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(32)),
+                          color: AppColors.fondoPrincipal,
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(32)),
                         ),
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(28, 28, 28, 16),
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // Handle
                               Center(
                                 child: Container(
-                                  width: 40, height: 4,
-                                  margin: const EdgeInsets.only(bottom: 24),
+                                  width: 36,
+                                  height: 4,
+                                  margin: const EdgeInsets.only(bottom: 16),
                                   decoration: BoxDecoration(
                                     color: AppColors.fondoCardBorde,
                                     borderRadius: BorderRadius.circular(2),
@@ -305,262 +436,205 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                                 ),
                               ),
 
-                              // Propuestas de valor — chips horizontales
-                              const Text(
-                                '¿Cómo funciona?',
-                                style: TextStyle(
-                                  color: AppColors.textoPrimario,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              Row(children: [
-                                _FeatureChip(
-                                    icon: Icons.sports_esports_rounded,
-                                    label: 'Juegos',
-                                    color: AppColors.colorJuegos),
-                                const SizedBox(width: 8),
-                                _FeatureChip(
-                                    icon: Icons.assignment_outlined,
-                                    label: 'Encuestas',
-                                    color: AppColors.colorEncuestas),
-                                const SizedBox(width: 8),
-                                _FeatureChip(
-                                    icon: Icons.play_circle_outline_rounded,
-                                    label: 'Videos',
-                                    color: AppColors.colorVideos),
-                              ]),
-                              const SizedBox(height: 8),
-                              Row(children: [
-                                _FeatureChip(
-                                    icon: Icons.account_balance_wallet_outlined,
-                                    label: 'PayPal / MP',
-                                    color: AppColors.azulPrimario),
-                                const SizedBox(width: 8),
-                                _FeatureChip(
-                                    icon: Icons.leaderboard_rounded,
-                                    label: 'Ranking',
-                                    color: AppColors.dorado),
-                                const SizedBox(width: 8),
-                                _FeatureChip(
-                                    icon: Icons.local_fire_department_rounded,
-                                    label: 'Racha x2',
-                                    color: Colors.orange),
-                              ]),
-
-                              const SizedBox(height: 20),
-
-                              // Código referido
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _showRefCode = !_showRefCode),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.card_giftcard_rounded,
-                                      color: AppColors.dorado, size: 16),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      '¿Tienes un código de referido?',
-                                      style: TextStyle(
-                                        color: AppColors.textoSecundario,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Icon(
-                                      _showRefCode
-                                          ? Icons.expand_less_rounded
-                                          : Icons.expand_more_rounded,
-                                      color: AppColors.textoSecundario,
-                                      size: 18,
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              if (_showRefCode) ...[
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _refCtrl,
-                                  textCapitalization:
-                                      TextCapitalization.characters,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: AppColors.dorado,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 5,
-                                    fontSize: 20,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'XXXXXXXX',
-                                    hintStyle: const TextStyle(
-                                        color: AppColors.textoDeshabilitado,
-                                        letterSpacing: 3,
-                                        fontSize: 16),
-                                    filled: true,
-                                    fillColor: const Color(0xFFFFFBEB),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide(
-                                          color: AppColors.dorado
-                                              .withValues(alpha: 0.4)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide(
-                                          color: AppColors.dorado
-                                              .withValues(alpha: 0.3)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: const BorderSide(
-                                          color: AppColors.dorado, width: 2),
+                              // Section title
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 3,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.azulPrimario,
+                                      borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    context.l10n.onboardingHowItWorks,
+                                    style: const TextStyle(
+                                      color: AppColors.textoPrimario,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
 
-                              const SizedBox(height: 20),
+                              // Feature rows (staggered)
+                              ...List.generate(3, (i) {
+                                final features = [
+                                  (
+                                    num: '1',
+                                    emoji: '🎮',
+                                    title: context.l10n.onboardingFeaturePlay,
+                                    subtitle: context.l10n.onboardingFeaturePlaySubtitle,
+                                    color: AppColors.colorJuegos,
+                                  ),
+                                  (
+                                    num: '2',
+                                    emoji: '📋',
+                                    title: context.l10n.onboardingFeatureSurveys,
+                                    subtitle: context.l10n.onboardingFeatureSurveysSubtitle,
+                                    color: AppColors.colorEncuestas,
+                                  ),
+                                  (
+                                    num: '3',
+                                    emoji: '💸',
+                                    title: context.l10n.onboardingFeatureCashout,
+                                    subtitle: context.l10n.onboardingFeatureCashoutSubtitle,
+                                    color: AppColors.verdePrimario,
+                                  ),
+                                ];
+                                final f = features[i];
+                                return SlideTransition(
+                                  position: _featureSlides[i],
+                                  child: FadeTransition(
+                                    opacity: _featureFades[i],
+                                    child: _FeatureRow(
+                                      number: f.num,
+                                      emoji: f.emoji,
+                                      title: f.title,
+                                      subtitle: f.subtitle,
+                                      color: f.color,
+                                    ),
+                                  ),
+                                );
+                              }),
 
-                              // ── Botones ──────────────────────
+                              const SizedBox(height: 4),
+
+                              // Divider con texto
+                              _Divider(label: context.l10n.onboardingStartNow),
+                              const SizedBox(height: 10),
+
+                              // ── Botones ────────────────────────
                               if (_loading)
                                 const Center(
-                                  child: CircularProgressIndicator(
-                                      color: AppColors.azulPrimario),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    child: CircularProgressIndicator(
+                                        color: AppColors.azulPrimario),
+                                  ),
                                 )
                               else ...[
-                                // 1. Google
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 54,
-                                  child: ElevatedButton(
-                                    onPressed: _signInGoogle,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.azulPrimario,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16)),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          width: 26, height: 26,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Center(
-                                            child: Text('G',
-                                                style: TextStyle(
-                                                    color: Color(0xFF4285F4),
-                                                    fontWeight: FontWeight.w900,
-                                                    fontSize: 16)),
-                                          ),
+                                // Google
+                                _AuthButton(
+                                  onTap: _signInGoogle,
+                                  backgroundColor: AppColors.azulPrimario,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 26,
+                                        height: 26,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                         ),
-                                        const SizedBox(width: 12),
-                                        const Text('Continuar con Google',
-                                            style: TextStyle(
+                                        padding: const EdgeInsets.all(4),
+                                        child: SvgPicture.asset(
+                                          'assets/icons/google_logo.svg',
+                                          width: 18,
+                                          height: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(context.l10n.onboardingContinueGoogle,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Apple (iOS only)
+                                if (Platform.isIOS) ...[
+                                  _AuthButton(
+                                    onTap: _signInApple,
+                                    backgroundColor: const Color(0xFF1C1C1E),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.apple,
+                                            size: 22, color: Colors.white),
+                                        const SizedBox(width: 10),
+                                        Text(context.l10n.onboardingContinueApple,
+                                            style: const TextStyle(
+                                                color: Colors.white,
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w700)),
                                       ],
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-
-                                // 2. Apple (solo en iOS)
-                                if (Platform.isIOS) ...[
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 54,
-                                    child: ElevatedButton(
-                                      onPressed: _signInApple,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.black,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16)),
-                                      ),
-                                      child: const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.apple, size: 22, color: Colors.white),
-                                          SizedBox(width: 10),
-                                          Text('Continuar con Apple',
-                                              style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.white)),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 8),
                                 ],
 
-                                // 3. Correo — abre dialog
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 54,
-                                  child: OutlinedButton(
-                                    onPressed: _openEmailDialog,
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.textoPrimario,
-                                      side: const BorderSide(
-                                          color: AppColors.fondoCardBorde,
-                                          width: 1.5),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16)),
-                                    ),
-                                    child: const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.email_outlined, size: 20),
-                                        SizedBox(width: 10),
-                                        Text('Continuar con correo',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600)),
-                                      ],
-                                    ),
+                                // Separador
+                                _OrDivider(),
+                                const SizedBox(height: 8),
+
+                                // Email
+                                _AuthButton(
+                                  onTap: _openEmailDialog,
+                                  backgroundColor: Colors.white,
+                                  border: Border.all(
+                                      color: AppColors.fondoCardBorde,
+                                      width: 1.5),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.email_outlined,
+                                          size: 20,
+                                          color: AppColors.textoPrimario),
+                                      const SizedBox(width: 10),
+                                      Text(context.l10n.onboardingContinueEmail,
+                                          style: const TextStyle(
+                                              color: AppColors.textoPrimario,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 8),
 
-                                // 3. Anónimo — al fondo, menos prominente
-                                Center(
-                                  child: GestureDetector(
-                                    onTap: _signInAnonymous,
-                                    child: const Text(
-                                      'Jugar sin cuenta',
-                                      style: TextStyle(
-                                        color: AppColors.textoSecundario,
-                                        fontSize: 13,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
+                                // Jugar sin cuenta
+                                _AuthButton(
+                                  onTap: _signInAnonymous,
+                                  backgroundColor: Colors.transparent,
+                                  border: Border.all(
+                                      color: AppColors.textoDeshabilitado,
+                                      width: 1.2),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.play_circle_outline_rounded,
+                                          size: 20,
+                                          color: AppColors.textoSecundario),
+                                      const SizedBox(width: 8),
+                                      Text(context.l10n.onboardingPlayGuest,
+                                          style: TextStyle(
+                                              color: AppColors.textoSecundario,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
                                   ),
                                 ),
                               ],
 
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
 
                               // Legal
                               Center(
                                 child: Text(
-                                  'Al continuar aceptas los Términos de uso\ny la Política de privacidad',
+                                  context.l10n.onboardingLegal,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: AppColors.textoDeshabilitado,
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     height: 1.5,
                                   ),
                                 ),
@@ -581,7 +655,188 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 }
 
-// ── Dialog de login con correo ────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// Feature row (horizontal)
+// ─────────────────────────────────────────────────────────────────
+class _FeatureRow extends StatelessWidget {
+  final String number;
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  const _FeatureRow({
+    required this.number,
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: AppColors.fondoCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.fondoCardBorde),
+      ),
+      child: Row(
+        children: [
+          // Number badge
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Emoji
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 10),
+          // Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13.5,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textoSecundario,
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Arrow
+          Icon(Icons.arrow_forward_ios_rounded,
+              size: 13, color: color.withValues(alpha: 0.5)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Auth button
+// ─────────────────────────────────────────────────────────────────
+class _AuthButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final Color backgroundColor;
+  final Widget child;
+  final BoxBorder? border;
+
+  const _AuthButton({
+    required this.onTap,
+    required this.backgroundColor,
+    required this.child,
+    this.border,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          border: border,
+          boxShadow: backgroundColor != Colors.transparent
+              ? [
+                  BoxShadow(
+                    color: backgroundColor.withValues(alpha: 0.18),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Dividers
+// ─────────────────────────────────────────────────────────────────
+class _Divider extends StatelessWidget {
+  final String label;
+  const _Divider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: AppColors.fondoCardBorde, height: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textoSecundario,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: AppColors.fondoCardBorde, height: 1)),
+      ],
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: AppColors.fondoCardBorde, height: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            AppLocalizations.of(context)?.onboardingOr ?? 'o',
+            style: const TextStyle(
+              color: AppColors.textoDeshabilitado,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: AppColors.fondoCardBorde, height: 1)),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Email login dialog
+// ─────────────────────────────────────────────────────────────────
 class _EmailLoginDialog extends StatefulWidget {
   final Future<void> Function(String email, String password) onLogin;
   const _EmailLoginDialog({required this.onLogin});
@@ -592,9 +847,9 @@ class _EmailLoginDialog extends StatefulWidget {
 
 class _EmailLoginDialogState extends State<_EmailLoginDialog> {
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  bool _obscure    = true;
-  bool _loading    = false;
+  final _passCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -605,7 +860,7 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
 
   Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
-    final pass  = _passCtrl.text;
+    final pass = _passCtrl.text;
     if (email.isEmpty || pass.isEmpty) return;
     setState(() => _loading = true);
     await widget.onLogin(email, pass);
@@ -623,11 +878,11 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.azulPrimario.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
@@ -636,19 +891,18 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
                       color: AppColors.azulPrimario, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Iniciar sesión',
-                          style: TextStyle(
+                      Text(context.l10n.emailDialogTitle,
+                          style: const TextStyle(
                               color: AppColors.textoPrimario,
                               fontWeight: FontWeight.w800,
                               fontSize: 16)),
-                      Text('Correo y contraseña',
-                          style: TextStyle(
-                              color: AppColors.textoSecundario,
-                              fontSize: 12)),
+                      Text(context.l10n.emailDialogSubtitle,
+                          style: const TextStyle(
+                              color: AppColors.textoSecundario, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -660,24 +914,22 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // Correo
             TextField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(
-                  color: AppColors.textoPrimario, fontSize: 14),
+              style:
+                  const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Correo electrónico',
+                labelText: AppLocalizations.of(context)?.emailDialogEmail ?? 'Correo electrónico',
                 labelStyle: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 13),
                 prefixIcon: const Icon(Icons.email_outlined,
                     color: AppColors.textoSecundario, size: 18),
                 filled: true,
                 fillColor: AppColors.fondoPrincipal,
-                contentPadding: const EdgeInsets.symmetric(
-                    vertical: 14, horizontal: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide:
@@ -693,17 +945,15 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Contraseña
             TextField(
               controller: _passCtrl,
               obscureText: _obscure,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(),
-              style: const TextStyle(
-                  color: AppColors.textoPrimario, fontSize: 14),
+              style:
+                  const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Contraseña',
+                labelText: AppLocalizations.of(context)?.emailDialogPassword ?? 'Contraseña',
                 labelStyle: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 13),
                 prefixIcon: const Icon(Icons.lock_outline_rounded,
@@ -720,8 +970,8 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
                 ),
                 filled: true,
                 fillColor: AppColors.fondoPrincipal,
-                contentPadding: const EdgeInsets.symmetric(
-                    vertical: 14, horizontal: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide:
@@ -737,8 +987,6 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Botón entrar
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -755,49 +1003,13 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
                 ),
                 child: _loading
                     ? const SizedBox(
-                        width: 20, height: 20,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2.5))
-                    : const Text('Entrar',
-                        style: TextStyle(
+                    : Text(AppLocalizations.of(context)?.emailDialogSignIn ?? 'Entrar',
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Chip de característica ────────────────────────────────────────
-class _FeatureChip extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  final Color    color;
-  const _FeatureChip(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.20)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ],

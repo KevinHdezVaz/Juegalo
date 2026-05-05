@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/utils/l10n_ext.dart';
+import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 
 class BalanceCard extends ConsumerWidget {
@@ -35,8 +37,8 @@ class BalanceCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tu saldo',
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(context.l10n.balanceCardLabel,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -58,7 +60,7 @@ class BalanceCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${user.coins} monedas',
+                  context.l10n.balanceCardCoins(user.coins.formatted),
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -77,8 +79,8 @@ class BalanceCard extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
             ),
-            child: const Text('Cobrar',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(context.l10n.balanceCardCashout,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),

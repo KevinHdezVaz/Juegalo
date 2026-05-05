@@ -1,4 +1,6 @@
-platform :ios, '13.0'
+source 'https://github.com/adjoeio/PlaytimeSpecExternal.git'
+source 'https://cdn.cocoapods.org/'
+platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -31,6 +33,7 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  pod 'PlaytimeMonetize', '= 4.3.0'
   target 'RunnerTests' do
     inherit! :search_paths
   end

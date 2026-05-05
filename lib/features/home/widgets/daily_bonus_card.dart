@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/l10n_ext.dart';
+import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 
 // Monedas por nivel de racha
@@ -107,17 +109,20 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Bono diario',
-                            style: TextStyle(
+                          Text(
+                            context.l10n.dailyBonusTitle,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
                             ),
                           ),
                           Text(
-                            streak == 0 ? 'Comienza tu racha hoy'
-                                : '$streak ${streak == 1 ? "día" : "días"} seguidos',
+                            streak == 0
+                                ? context.l10n.dailyBonusStreakZero
+                                : streak == 1
+                                    ? context.l10n.dailyBonusStreakOne(streak)
+                                    : context.l10n.dailyBonusStreakMany(streak),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.80),
                               fontSize: 11,
@@ -140,7 +145,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                               color: Colors.orange, size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            '$streak días',
+                            context.l10n.dailyBonusDays(streak),
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -165,8 +170,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            claimed ? 'Reclamado hoy' : 'Premio de hoy',
-                            style: TextStyle(
+                            claimed ? context.l10n.dailyBonusClaimed : context.l10n.dailyBonusTodayPrize,
+                            style: const TextStyle(
                               color: AppColors.textoSecundario,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -178,7 +183,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                                 color: AppColors.dorado, size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              '+$todayCoins monedas',
+                              context.l10n.dailyBonusCoins(todayCoins.formatted),
                               style: const TextStyle(
                                 color: AppColors.textoPrimario,
                                 fontWeight: FontWeight.w800,
@@ -188,7 +193,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                           ]),
                           const SizedBox(height: 2),
                           Text(
-                            'Día $nextMile → +$mileCoins monedas',
+                            context.l10n.dailyBonusNextMilestone(nextMile, mileCoins.formatted),
                             style: TextStyle(
                               color: AppColors.azulPrimario.withValues(alpha: 0.70),
                               fontSize: 10,
@@ -215,9 +220,9 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                             const Icon(Icons.check_circle_rounded,
                                 color: AppColors.verdePrimario, size: 22),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Reclamado',
-                              style: TextStyle(
+                            Text(
+                              context.l10n.dailyBonusClaimedBadge,
+                              style: const TextStyle(
                                 color: AppColors.verdePrimario,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -318,7 +323,7 @@ class _DayCircle extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          _dayLabel(day),
+          _dayLabel(context, day),
           style: TextStyle(
             color: isActive || isToday
                 ? AppColors.textoPrimario
@@ -331,8 +336,17 @@ class _DayCircle extends StatelessWidget {
     );
   }
 
-  String _dayLabel(int d) {
-    const labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  String _dayLabel(BuildContext context, int d) {
+    final l = context.l10n;
+    final labels = [
+      l.dailyBonusDayMon,
+      l.dailyBonusDayTue,
+      l.dailyBonusDayWed,
+      l.dailyBonusDayThu,
+      l.dailyBonusDayFri,
+      l.dailyBonusDaySat,
+      l.dailyBonusDaySun,
+    ];
     return labels[(d - 1) % 7];
   }
 }

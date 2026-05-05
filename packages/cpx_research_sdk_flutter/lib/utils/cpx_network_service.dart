@@ -125,6 +125,14 @@ class CPXNetworkService {
 
   /// [fetchSurveysAndTransactions] requests surveys and transactions from the api
   void fetchSurveysAndTransactions() async {
+    // Guard: si el config aún no fue inicializado (CPXResearch no montado),
+    // ignoramos silenciosamente. CPXResearch hará el fetch al montarse.
+    try {
+      controller.config; // lanza LateInitializationError si no está listo
+    } catch (_) {
+      CPXLogger.log("CPX config not initialized yet, skipping fetch");
+      return;
+    }
     Uri url = Uri.https(API_URL, _surveyEndpoint, _defaultRequestParameter);
     CPXLogger.log("Fetch surveys from api with url: $url");
     await http.post(url).then(

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUEGALO — One-Pager Adjoe</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f4ff;
+    color: #0f172a;
+    padding: 32px 16px;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; right: 80px;
+    width: 180px; height: 180px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .app-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .header-text p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 4px;
+  }
+  .badge-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+  .badge.green { background: rgba(34,197,94,0.25); border-color: rgba(34,197,94,0.4); }
+  .badge.yellow { background: rgba(251,191,36,0.25); border-color: rgba(251,191,36,0.4); }
+
+  /* ── BODY ── */
+  .body { padding: 40px 48px; }
+
+  /* ── STAT STRIP ── */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .stat-card {
+    background: #f8faff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1e3a8a;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2563eb;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+  }
+
+  /* ── TWO COL ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  /* ── MARKET PILLS ── */
+  .market-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .market-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .market-pill.primary { background: #eff6ff; color: #1e40af; border: 1.5px solid #bfdbfe; }
+  .market-pill.secondary { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; }
+  .market-pill.tertiary { background: #fafafa; color: #475569; border: 1.5px solid #e2e8f0; }
+
+  /* ── TABLE ── */
+  .mono-table { width: 100%; border-collapse: collapse; }
+  .mono-table th {
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .mono-table td {
+    padding: 11px 14px;
+    font-size: 13px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .mono-table tr:last-child td { border-bottom: none; }
+  .status-dot {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.green { background: #22c55e; }
+  .dot.blue { background: #3b82f6; }
+
+  /* ── WHY BOX ── */
+  .why-box {
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    border: 1.5px solid #bfdbfe;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .why-item {
+    display: flex; gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .why-item:last-child { margin-bottom: 0; }
+  .why-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: #2563eb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .why-text strong { font-size: 13px; color: #0f172a; display: block; margin-bottom: 3px; }
+  .why-text span { font-size: 12px; color: #475569; line-height: 1.6; }
+
+  /* ── TIMELINE ── */
+  .timeline { display: flex; }
+  .tl-step {
+    flex: 1; text-align: center; position: relative;
+  }
+  .tl-step::after {
+    content: '';
+    position: absolute;
+    top: 18px; right: -1px;
+    width: 50%; height: 2px;
+    background: #bfdbfe; z-index: 0;
+  }
+  .tl-step:last-child::after { display: none; }
+  .tl-step::before {
+    content: '';
+    position: absolute;
+    top: 18px; left: -1px;
+    width: 50%; height: 2px;
+    background: #bfdbfe; z-index: 0;
+  }
+  .tl-step:first-child::before { display: none; }
+  .tl-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #2563eb; color: #fff;
+    font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px;
+    position: relative; z-index: 1;
+  }
+  .tl-week { font-size: 11px; font-weight: 700; color: #2563eb; margin-bottom: 4px; }
+  .tl-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #0f172a;
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-left { display: flex; align-items: center; gap: 14px; }
+  .footer-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .footer-name { color: #fff; font-weight: 700; font-size: 15px; }
+  .footer-title { color: #64748b; font-size: 12px; margin-top: 2px; }
+  .footer-right { text-align: right; }
+  .footer-contact { color: #94a3b8; font-size: 12px; margin-bottom: 4px; }
+  .footer-email { color: #60a5fa; font-size: 13px; font-weight: 600; }
+  .footer-tag { margin-top: 4px; font-size: 11px; color: #475569; }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #92400e;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="app-icon">🏆</div>
+      <div class="header-text">
+        <h1>JUEGALO — Gana Dinero Real</h1>
+        <p>App de recompensas móvil · Latinoamérica · Android + iOS · Flutter</p>
+      </div>
+    </div>
+    <div class="badge-row">
+      <span class="badge green">✅ Android en Google Play</span>
+      <span class="badge yellow">🔜 iOS en revisión App Store</span>
+      <span class="badge">📍 México · LatAm</span>
+      <span class="badge">💳 Retiro por PayPal</span>
+      <span class="badge">🚀 Fase de crecimiento</span>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- STATS -->
+    <div class="stat-strip">
+      <div class="stat-card">
+        <div class="stat-icon">🌎</div>
+        <div class="stat-value">6+</div>
+        <div class="stat-label">Países LatAm</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value">~13 min</div>
+        <div class="stat-label">Uso diario por usuario</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🪙</div>
+        <div class="stat-value">10,000</div>
+        <div class="stat-label">Monedas = $1 USD</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value">~10 días</div>
+        <div class="stat-label">Para primer retiro</div>
+      </div>
+    </div>
+
+    <!-- MERCADOS + RETENCIÓN -->
+    <div class="two-col" style="margin-bottom:32px;">
+
+      <div class="section">
+        <div class="section-title">🌎 Mercados objetivo</div>
+        <div class="market-list">
+          <div class="market-pill primary">🇲🇽 México — Principal</div>
+          <div class="market-pill secondary">🇨🇴 Colombia</div>
+          <div class="market-pill secondary">🇦🇷 Argentina</div>
+          <div class="market-pill secondary">🇨🇱 Chile</div>
+          <div class="market-pill tertiary">🇵🇪 Perú</div>
+          <div class="market-pill tertiary">🌐 Resto de LatAm</div>
+        </div>
+        <p style="font-size:12px;color:#64748b;margin-top:12px;line-height:1.6;">
+          App en español, optimizada para dispositivos de gama media. Alta demanda de ingresos accesibles desde el móvil en toda la región.
+        </p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🔥 Mecánicas de retención</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#334155;">
+            <span style="font-size:16px;">🔥</span> Bono diario de login + sistema de rachas
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#334155;">
+            <span style="font-size:16px;">🏆</span> Ranking semanal con premios en monedas
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#334155;">
+            <span style="font-size:16px;">👥</span> Sistema de referidos (1,000 monedas por referido)
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#334155;">
+            <span style="font-size:16px;">🎯</span> Metas diarias con dificultad progresiva
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#334155;">
+            <span style="font-size:16px;">🔔</span> Notificaciones push (rachas, bonos, ranking)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONETIZACIÓN -->
+    <div class="section">
+      <div class="section-title">💰 Stack de monetización actual</div>
+      <table class="mono-table">
+        <thead>
+          <tr>
+            <th>Canal</th>
+            <th>Socio</th>
+            <th>Acción del usuario</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Videos con recompensa</td>
+            <td>Google AdMob</td>
+            <td>Ve un anuncio de 30 seg → gana monedas</td>
+            <td><span class="status-dot"><span class="dot green"></span>Activo</span></td>
+          </tr>
+          <tr>
+            <td>Encuestas remuneradas</td>
+            <td>CPX Research</td>
+            <td>Completa encuesta → gana monedas</td>
+            <td><span class="status-dot"><span class="dot green"></span>Activo</span></td>
+          </tr>
+          <tr>
+            <td><strong>Offerwall — Juegos</strong></td>
+            <td><strong>Adjoe (objetivo)</strong></td>
+            <td>Instala y juega juegos → gana monedas</td>
+            <td><span class="status-dot"><span class="dot blue"></span>Planificado</span></td>
+          </tr>
+          <tr>
+            <td>Retiro de ganancias</td>
+            <td>PayPal</td>
+            <td>Canjea monedas por dinero real</td>
+            <td><span class="status-dot"><span class="dot green"></span>Activo</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- POR QUÉ ADJOE -->
+    <div class="section">
+      <div class="section-title">🤝 Por qué Adjoe</div>
+      <div class="why-box">
+        <div class="why-item">
+          <div class="why-icon">🎮</div>
+          <div class="why-text">
+            <strong>Sección "Juegos" lista para activar</strong>
+            <span>JUEGALO ya tiene una pestaña de Juegos marcada como "Próximamente". Integrar Adjoe la activa de inmediato sin rediseño. Es el paso natural en la experiencia de usuario.</span>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon">🎯</div>
+          <div class="why-text">
+            <strong>Usuarios altamente motivados</strong>
+            <span>Nuestros usuarios ya completan tareas multi-paso (encuestas de 10+ min, ver 25 videos/día). El modelo Playtime de Adjoe es una extensión directa de ese comportamiento.</span>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon">📈</div>
+          <div class="why-text">
+            <strong>Mayor ARPU y diversificación de ingresos</strong>
+            <span>Los CPIs de offerwall en LatAm ($0.50–$3.00) superan con creces nuestro eCPM actual de video, representando una oportunidad de crecimiento significativa en ingresos por usuario.</span>
+          </div>
+        </div>
+      </div>
+      <div class="highlight">
+        💡 <strong>Dato clave:</strong> El 78% de los usuarios de apps de recompensas en LatAm afirman estar dispuestos a instalar juegos a cambio de recompensas monetarias (Sensor Tower, 2025).
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="section">
+      <div class="section-title">🔧 Plan de integración</div>
+      <div class="timeline">
+        <div class="tl-step">
+          <div class="tl-circle">1</div>
+          <div class="tl-week">Semana 1–2</div>
+          <div class="tl-desc">Integración SDK<br>Flutter wrapper</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">2</div>
+          <div class="tl-week">Semana 3</div>
+          <div class="tl-desc">QA y pruebas<br>Lanzamiento interno</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">3</div>
+          <div class="tl-week">Semana 4</div>
+          <div class="tl-desc">Lanzamiento completo<br>Todos los usuarios</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">4</div>
+          <div class="tl-week">Mes 2+</div>
+          <div class="tl-desc">Optimización<br>Escalar y crecer</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <div class="footer-icon">🏆</div>
+      <div>
+        <div class="footer-name">Kevin Hernandez Vazquez</div>
+        <div class="footer-title">Fundador y Desarrollador · JUEGALO</div>
+      </div>
+    </div>
+    <div class="footer-right">
+      <div class="footer-contact">📧 kevinhdezvaz@gmail.com</div>
+      <div class="footer-email">juegalo-api.vercel.app/privacidad</div>
+      <div class="footer-tag">Bundle ID: com.kevinhv.juegalo · Flutter · Google Play Live · Q1 2026</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

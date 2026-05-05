@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/l10n_ext.dart';
+import '../../../core/utils/number_format_ext.dart';
+import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,9 +21,9 @@ extension PaymentMethodX on PaymentMethod {
     PaymentMethod.paypal      => 'correo@ejemplo.com',
     PaymentMethod.mercadopago => 'Correo, teléfono o CVU/alias',
   };
-  String get subtitle => switch (this) {
-    PaymentMethod.paypal      => 'Internacional · 2% comisión · automático',
-    PaymentMethod.mercadopago => 'Próximamente disponible',
+  String subtitle(BuildContext context) => switch (this) {
+    PaymentMethod.paypal      => context.l10n.cashoutPaypalSubtitle,
+    PaymentMethod.mercadopago => context.l10n.walletComingSoonFull,
   };
   IconData get icon => switch (this) {
     PaymentMethod.paypal      => Icons.paypal_rounded,
@@ -47,9 +50,14 @@ class CashoutScreen extends ConsumerStatefulWidget {
 
 class _CashoutScreenState extends ConsumerState<CashoutScreen> {
   PaymentMethod _method = PaymentMethod.paypal;
-  final _detailCtrl = TextEditingController();
-  double _amount     = 1.0;
-  bool _loading      = false;
+  final _detailCtrl     = TextEditingController();
+  int _coins            = -1; // -1 = no inicializado → se setea al máximo en el primer build
+  bool _loading         = false;
+  _Currency _currency   = _Currency.usd;
+
+  // Convierte monedas a USD exacto (sin trailing zeros)
+  static String _usd(int coins) =>
+      (coins / AppConstants.coinsPerDollar).fmtUsd;
 
   @override
   void initState() {
@@ -64,7 +72,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
   }
 
   Future<void> _submit(int availableCoins) async {
-    final coinsToSpend = (_amount * AppConstants.coinsPerDollar).round();
+    final coinsToSpend = _coins;
     debugPrint('🟡 [Cashout] _submit llamado | coinsToSpend: $coinsToSpend | disponibles: $availableCoins');
 
     if (coinsToSpend > availableCoins) {
@@ -88,18 +96,19 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
 
       await Supabase.instance.client.rpc('request_cashout', params: {
         'p_user_id'       : uid,
-        'p_amount_usd'    : _amount,
+        'p_amount_usd'    : coinsToSpend / AppConstants.coinsPerDollar,
         'p_coins'         : coinsToSpend,
         'p_method'        : _method.name,
-        'p_payment_detail': detail,
+        'p_payment_detail': '$detail | ${_currency.code}',
         'p_account'       : detail,
       });
 
       if (mounted) {
-        // Refrescar saldo del usuario
+        // Refrescar saldo y solicitudes
         ref.invalidate(userProvider);
         ref.invalidate(userNotifierProvider);
-        _snack('¡Solicitud enviada! Procesamos en 1-3 días hábiles');
+        ref.invalidate(cashoutRequestsProvider);
+        _snack(context.l10n.cashoutSentSuccess);
         Navigator.of(context).pop();
       }
     } catch (e, stack) {
@@ -126,21 +135,24 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: AppColors.fondoElevado,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: AppColors.azulPrimario),
-            SizedBox(width: 10),
-            Text('¡Casi llegas!', style: TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.bold)),
+            const Icon(Icons.info_outline_rounded, color: AppColors.azulPrimario),
+            const SizedBox(width: 10),
+            Text(context.l10n.walletAlmostThere, style: const TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          'Necesitas al menos ${AppConstants.minCashoutCoins} monedas (\$1.00 USD) para retirar por PayPal.\n\nTe faltan ${needed > 0 ? needed : 0} monedas.',
+          context.l10n.walletNeedCoins(
+            AppConstants.minCashoutCoins.formatted,
+            (needed > 0 ? needed : 0).formatted,
+          ),
           style: const TextStyle(color: AppColors.textoSecundario),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Entendido', style: TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.bold)),
+            child: Text(context.l10n.walletGotIt, style: const TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -185,9 +197,9 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
             debugPrint('🔴 [Cashout] user es NULL → pantalla vacía');
             return const SizedBox.shrink();
           }
-          final maxUsd   = user.coins / AppConstants.coinsPerDollar;
-          final maxSlider = maxUsd.clamp(1.0, 100.0);
-          if (_amount > maxSlider) _amount = maxSlider;
+          final maxCoins = user.coins.clamp(AppConstants.minCashoutCoins, 1000000);
+          // Primera vez o si el saldo bajó → seleccionar el máximo disponible
+          if (_coins < 0 || _coins > maxCoins) _coins = maxCoins;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -195,16 +207,16 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Saldo disponible ───────────────────────────────
-                _BalanceChip(coins: user.coins, usd: maxUsd),
+                _BalanceChip(coins: user.coins),
                 const SizedBox(height: 24),
 
                 // ── Monto ──────────────────────────────────────────
                 const _SectionTitle('Monto a cobrar'),
                 const SizedBox(height: 8),
                 _AmountSelector(
-                  amount: _amount,
-                  max: maxSlider,
-                  onChanged: (v) => setState(() => _amount = v),
+                  coins: _coins,
+                  maxCoins: maxCoins,
+                  onChanged: (v) => setState(() => _coins = v),
                 ),
                 const SizedBox(height: 24),
 
@@ -258,13 +270,22 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // ── Moneda ─────────────────────────────────────────
+                const _SectionTitle('Moneda de pago'),
+                const SizedBox(height: 8),
+                _CurrencySelector(
+                  selected: _currency,
+                  onChanged: (c) => setState(() => _currency = c),
+                ),
                 const SizedBox(height: 28),
 
                 // ── Resumen ────────────────────────────────────────
                 _SummaryBox(
-                  amount: _amount,
-                  coins: (_amount * AppConstants.coinsPerDollar).round(),
+                  coins: _coins,
                   method: _method.label,
+                  currency: _currency,
                 ),
                 const SizedBox(height: 20),
 
@@ -273,7 +294,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _loading ? null : () {
-                    debugPrint('🟢 [Cashout] Botón Confirmar tocado | _loading: $_loading | coins: ${user.coins} | amount: $_amount');
+                    debugPrint('🟢 [Cashout] Botón Confirmar tocado | _loading: $_loading | coins: ${user.coins} | _coins: $_coins');
                     _submit(user.coins);
                   },
                     style: ElevatedButton.styleFrom(
@@ -289,16 +310,16 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2.5))
                         : Text(
-                            'Confirmar cobro de \$${_amount.toStringAsFixed(2)}',
+                            'Confirmar cobro de ${_CashoutScreenState._usd(_coins)}',
                             style: const TextStyle(
                                 fontWeight: FontWeight.w800, fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Center(
+                Center(
                   child: Text(
-                    'Procesamos tu pago en 1–3 días hábiles',
-                    style: TextStyle(
+                    context.l10n.cashoutProcessingNote,
+                    style: const TextStyle(
                         color: AppColors.textoSecundario, fontSize: 12),
                   ),
                 ),
@@ -316,11 +337,11 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
 
 class _BalanceChip extends StatelessWidget {
   final int coins;
-  final double usd;
-  const _BalanceChip({required this.coins, required this.usd});
+  const _BalanceChip({required this.coins});
 
   @override
   Widget build(BuildContext context) {
+    final usdStr = _CashoutScreenState._usd(coins);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -344,12 +365,12 @@ class _BalanceChip extends StatelessWidget {
             color: Colors.white, size: 28),
         const SizedBox(width: 14),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('\$${usd.toStringAsFixed(2)} USD disponibles',
+          Text('$usdStr USD disponibles',
               style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 18)),
-          Text('$coins monedas',
+          Text(context.l10n.cashoutCoins(coins.formatted),
               style: const TextStyle(
                   color: Colors.white70, fontSize: 12)),
         ]),
@@ -372,14 +393,22 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _AmountSelector extends StatelessWidget {
-  final double amount;
-  final double max;
-  final ValueChanged<double> onChanged;
+  final int coins;
+  final int maxCoins;
+  final ValueChanged<int> onChanged;
   const _AmountSelector(
-      {required this.amount, required this.max, required this.onChanged});
+      {required this.coins, required this.maxCoins, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
+    final minCoins   = AppConstants.minCashoutCoins;
+    final sliderMax  = maxCoins.toDouble();
+    final sliderMin  = minCoins.toDouble();
+    final divisions  = (maxCoins - minCoins).clamp(1, 100000);
+    final usdStr     = _CashoutScreenState._usd(coins);
+    final usdMaxStr  = _CashoutScreenState._usd(maxCoins);
+    final usdMinStr  = _CashoutScreenState._usd(minCoins);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -388,13 +417,21 @@ class _AmountSelector extends StatelessWidget {
         border: Border.all(color: AppColors.fondoCardBorde),
       ),
       child: Column(children: [
+        // USD grande
         Text(
-          '\$${amount.toStringAsFixed(2)}',
+          '$usdStr USD',
           style: const TextStyle(
               color: AppColors.azulPrimario,
               fontSize: 36,
               fontWeight: FontWeight.w900),
         ),
+        // Monedas equivalentes
+        Text(
+          context.l10n.cashoutCoins(coins.formatted),
+          style: const TextStyle(
+              color: AppColors.textoSecundario, fontSize: 13),
+        ),
+        const SizedBox(height: 4),
         SliderTheme(
           data: SliderThemeData(
             activeTrackColor: AppColors.azulPrimario,
@@ -403,20 +440,20 @@ class _AmountSelector extends StatelessWidget {
             overlayColor: AppColors.azulPrimario.withValues(alpha: 0.2),
           ),
           child: Slider(
-            value: amount,
-            min: 1.0, 
-            max: max < 1.0 ? 1.0 : max,
-            divisions: max > 1.0 ? ((max - 1.0) * 100).round().clamp(1, 990) : 1,
-            onChanged: onChanged,
+            value: coins.toDouble().clamp(sliderMin, sliderMax),
+            min: sliderMin,
+            max: sliderMax,
+            divisions: divisions,
+            onChanged: (v) => onChanged(v.round()),
           ),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('\$1.00',
-                style: TextStyle(
+            Text(context.l10n.cashoutMinLabel(usdMinStr),
+                style: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 12)),
-            Text('\$${max.toStringAsFixed(2)}',
+            Text(context.l10n.cashoutMaxLabel(usdMaxStr),
                 style: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 12)),
           ],
@@ -476,7 +513,7 @@ class _MethodCard extends StatelessWidget {
                             : AppColors.textoDeshabilitado,
                         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14)),
-                Text(method.subtitle,
+                Text(method.subtitle(context),
                     style: TextStyle(
                         color: available
                             ? (selected ? method.color : AppColors.textoDeshabilitado)
@@ -493,8 +530,8 @@ class _MethodCard extends StatelessWidget {
                 color: AppColors.fondoCardBorde,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('Próximamente',
-                  style: TextStyle(
+              child: Text(context.l10n.walletComingSoon,
+                  style: const TextStyle(
                       color: AppColors.textoSecundario,
                       fontSize: 10,
                       fontWeight: FontWeight.w700)),
@@ -508,14 +545,14 @@ class _MethodCard extends StatelessWidget {
 }
 
 class _SummaryBox extends StatelessWidget {
-  final double amount;
   final int coins;
   final String method;
-  const _SummaryBox(
-      {required this.amount, required this.coins, required this.method});
+  final _Currency currency;
+  const _SummaryBox({required this.coins, required this.method, required this.currency});
 
   @override
   Widget build(BuildContext context) {
+    final usdStr = _CashoutScreenState._usd(coins);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -524,11 +561,13 @@ class _SummaryBox extends StatelessWidget {
         border: Border.all(color: AppColors.fondoCardBorde),
       ),
       child: Column(children: [
-        _Row('Monto', '\$${amount.toStringAsFixed(2)} USD'),
+        _Row('Monto', '$usdStr USD'),
         const SizedBox(height: 6),
-        _Row('Monedas a descontar', '$coins monedas'),
+        _Row(context.l10n.cashoutSummaryCoins, context.l10n.cashoutCoins(coins.formatted)),
         const SizedBox(height: 6),
         _Row('Método', method),
+        const SizedBox(height: 6),
+        _Row('Moneda', '${currency.flag}  ${currency.code} — ${currency.label}'),
       ]),
     );
   }
@@ -578,7 +617,7 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
     setState(() => _loading = true);
     try {
       await widget.notifier.linkWithGoogle();
-      if (mounted) _snack('¡Cuenta vinculada! Tus monedas se conservaron.');
+      if (mounted) _snack(context.l10n.cashoutGuestLinked);
     } catch (e) {
       if (mounted) _snack('Error al vincular con Google: $e', error: true);
     } finally {
@@ -590,7 +629,7 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
     setState(() => _loading = true);
     try {
       await widget.notifier.linkWithApple();
-      if (mounted) _snack('¡Cuenta vinculada! Tus monedas se conservaron.');
+      if (mounted) _snack(context.l10n.cashoutGuestLinked);
     } catch (e) {
       if (mounted) _snack('Error al vincular con Apple: $e', error: true);
     } finally {
@@ -604,13 +643,17 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _EmailLinkSheet(
-        onLink: (email, password) async {
+        onLink: (email, password, firstName, lastName) async {
           Navigator.of(context).pop();
           setState(() => _loading = true);
           try {
-            // updateUser vincula email SIN cambiar el UID — monedas 100% preservadas
-            await widget.notifier.linkWithEmail(email: email, password: password);
-            if (mounted) _snack('¡Cuenta creada! Tus monedas se conservaron.');
+            await widget.notifier.linkWithEmail(
+              email: email,
+              password: password,
+              firstName: firstName,
+              lastName: lastName,
+            );
+            if (mounted) _snack(context.l10n.cashoutGuestCreated);
           } catch (e) {
             if (mounted) _snack('Error: $e', error: true);
           } finally {
@@ -652,10 +695,10 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Estás jugando como invitado. Vincula tu cuenta\ny conserva todas las monedas que ganaste.',
+          Text(
+            context.l10n.cashoutGuestSubtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textoSecundario,
               fontSize: 14,
               height: 1.5,
@@ -678,12 +721,12 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                   color: Colors.amber, size: 28),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Tus monedas actuales',
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
-                Consumer(builder: (_, ref, __) {
+                Text(context.l10n.cashoutGuestCurrentCoins,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                Consumer(builder: (ctx, ref, __) {
                   final user = ref.watch(userProvider).valueOrNull;
                   return Text(
-                    '${user?.coins ?? 0} monedas',
+                    ctx.l10n.cashoutGuestCoins((user?.coins ?? 0).formatted),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -790,10 +833,10 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
           ],
 
           const SizedBox(height: 24),
-          const Text(
-            'Tus monedas se transferirán automáticamente\na tu cuenta nueva.',
+          Text(
+            context.l10n.cashoutGuestNote,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
                 color: AppColors.textoSecundario,
                 fontSize: 12,
                 height: 1.5),
@@ -806,7 +849,7 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
 
 // ── Bottom sheet de creación de cuenta con email ─────────────────
 class _EmailLinkSheet extends StatefulWidget {
-  final Future<void> Function(String email, String password) onLink;
+  final Future<void> Function(String email, String password, String firstName, String lastName) onLink;
   const _EmailLinkSheet({required this.onLink});
 
   @override
@@ -814,14 +857,18 @@ class _EmailLinkSheet extends StatefulWidget {
 }
 
 class _EmailLinkSheetState extends State<_EmailLinkSheet> {
-  final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  final _pass2Ctrl = TextEditingController();
-  bool _obscure    = true;
-  bool _loading    = false;
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl  = TextEditingController();
+  final _emailCtrl     = TextEditingController();
+  final _passCtrl      = TextEditingController();
+  final _pass2Ctrl     = TextEditingController();
+  bool _obscure        = true;
+  bool _loading        = false;
 
   @override
   void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _pass2Ctrl.dispose();
@@ -829,22 +876,33 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
   }
 
   Future<void> _submit() async {
-    final email = _emailCtrl.text.trim();
-    final pass  = _passCtrl.text;
-    final pass2 = _pass2Ctrl.text;
+    final firstName = _firstNameCtrl.text.trim();
+    final lastName  = _lastNameCtrl.text.trim();
+    final email     = _emailCtrl.text.trim();
+    final pass      = _passCtrl.text;
+    final pass2     = _pass2Ctrl.text;
+
+    if (firstName.isEmpty || lastName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Ingresa tu nombre y apellido'),
+        backgroundColor: AppColors.colorVideos,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
 
     if (email.isEmpty || pass.isEmpty) return;
     if (pass != pass2) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Las contraseñas no coinciden'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.l10n.profilePasswordMismatch),
         backgroundColor: AppColors.colorVideos,
         behavior: SnackBarBehavior.floating,
       ));
       return;
     }
     if (pass.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('La contraseña debe tener al menos 6 caracteres'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.l10n.profilePasswordTooShort),
         backgroundColor: AppColors.colorVideos,
         behavior: SnackBarBehavior.floating,
       ));
@@ -852,7 +910,7 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
     }
 
     setState(() => _loading = true);
-    await widget.onLink(email, pass);
+    await widget.onLink(email, pass, firstName, lastName);
     if (mounted) setState(() => _loading = false);
   }
 
@@ -886,15 +944,41 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
                   fontSize: 18,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          const Text('Tus monedas se conservarán automáticamente.',
-              style: TextStyle(
+          Text(context.l10n.cashoutCreateEmailSubtitle,
+              style: const TextStyle(
                   color: AppColors.textoSecundario, fontSize: 13)),
           const SizedBox(height: 20),
+
+          // Nombre y Apellido en fila
+          Row(
+            children: [
+              Expanded(
+                child: _Field(
+                  controller: _firstNameCtrl,
+                  label: context.l10n.profileFirstName,
+                  icon: Icons.person_outline_rounded,
+                  type: TextInputType.name,
+                  action: TextInputAction.next,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Field(
+                  controller: _lastNameCtrl,
+                  label: context.l10n.profileLastName,
+                  icon: Icons.person_outline_rounded,
+                  type: TextInputType.name,
+                  action: TextInputAction.next,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
 
           // Email
           _Field(
               controller: _emailCtrl,
-              label: 'Correo electrónico',
+              label: context.l10n.emailDialogEmail,
               icon: Icons.email_outlined,
               type: TextInputType.emailAddress),
           const SizedBox(height: 12),
@@ -906,7 +990,7 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
             keyboardType: TextInputType.visiblePassword,
             style: const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
             decoration: InputDecoration(
-              labelText: 'Contraseña',
+              labelText: context.l10n.emailDialogPassword,
               labelStyle: const TextStyle(
                   color: AppColors.textoSecundario, fontSize: 13),
               prefixIcon: const Icon(Icons.lock_outline_rounded,
@@ -944,7 +1028,7 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
           // Confirmar contraseña
           _Field(
               controller: _pass2Ctrl,
-              label: 'Confirmar contraseña',
+              label: context.l10n.profileConfirmPassword,
               icon: Icons.lock_outline_rounded,
               type: TextInputType.visiblePassword,
               obscure: true),
@@ -967,8 +1051,8 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
                       width: 20, height: 20,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2.5))
-                  : const Text('Crear cuenta y conservar monedas',
-                      style: TextStyle(
+                  : Text(context.l10n.cashoutCreateEmailButton,
+                      style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 15)),
             ),
           ),
@@ -984,12 +1068,14 @@ class _Field extends StatelessWidget {
   final IconData icon;
   final TextInputType type;
   final bool obscure;
+  final TextInputAction action;
   const _Field({
     required this.controller,
     required this.label,
     required this.icon,
     required this.type,
     this.obscure = false,
+    this.action = TextInputAction.next,
   });
 
   @override
@@ -997,6 +1083,7 @@ class _Field extends StatelessWidget {
         controller: controller,
         obscureText: obscure,
         keyboardType: type,
+        textInputAction: action,
         style:
             const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
         decoration: InputDecoration(
@@ -1023,4 +1110,119 @@ class _Field extends StatelessWidget {
                   color: AppColors.azulPrimario, width: 1.5)),
         ),
       );
+}
+
+// ── Monedas disponibles ───────────────────────────────────────────
+enum _Currency {
+  usd('USD', 'Dólares estadounidenses', '🇺🇸'),
+  mxn('MXN', 'Pesos mexicanos',         '🇲🇽'),
+  ars('ARS', 'Pesos argentinos',         '🇦🇷'),
+  cop('COP', 'Pesos colombianos',        '🇨🇴'),
+  brl('BRL', 'Reales brasileños',        '🇧🇷'),
+  pen('PEN', 'Soles peruanos',           '🇵🇪'),
+  clp('CLP', 'Pesos chilenos',           '🇨🇱'),
+  eur('EUR', 'Euros',                    '🇪🇺');
+
+  final String code;
+  final String label;
+  final String flag;
+  const _Currency(this.code, this.label, this.flag);
+}
+
+// ── Selector de moneda ────────────────────────────────────────────
+class _CurrencySelector extends StatelessWidget {
+  final _Currency selected;
+  final ValueChanged<_Currency> onChanged;
+  const _CurrencySelector({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showPicker(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.fondoElevado,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.fondoCardBorde),
+        ),
+        child: Row(
+          children: [
+            Text(selected.flag, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(selected.code,
+                      style: const TextStyle(
+                          color: AppColors.textoPrimario,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14)),
+                  Text(selected.label,
+                      style: const TextStyle(
+                          color: AppColors.textoSecundario, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.expand_more_rounded,
+                color: AppColors.textoDeshabilitado, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.fondoCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.fondoCardBorde,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 14),
+            const Text('Selecciona la moneda',
+                style: TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16)),
+            const SizedBox(height: 8),
+            ..._Currency.values.map((c) => ListTile(
+              onTap: () {
+                onChanged(c);
+                Navigator.pop(ctx);
+              },
+              leading: Text(c.flag, style: const TextStyle(fontSize: 22)),
+              title: Text('${c.code} — ${c.label}',
+                  style: TextStyle(
+                      color: c == selected
+                          ? AppColors.azulPrimario
+                          : AppColors.textoPrimario,
+                      fontWeight: c == selected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      fontSize: 14)),
+              trailing: c == selected
+                  ? const Icon(Icons.check_rounded,
+                      color: AppColors.azulPrimario, size: 20)
+                  : null,
+            )),
+            const SizedBox(height: 8),
+          ],
+        ),
+        ),
+      ),
+    );
+  }
 }

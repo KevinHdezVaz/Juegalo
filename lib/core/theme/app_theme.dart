@@ -43,7 +43,7 @@ class AppTheme {
     ),
 
     // ── Cards ─────────────────────────────────────────────────
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color:     AppColors.fondoCard,
       elevation: 0,
       shadowColor: AppColors.sombra,

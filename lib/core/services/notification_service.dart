@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +15,36 @@ class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  final _fcm = FirebaseMessaging.instance;
+  final _fcm   = FirebaseMessaging.instance;
   final _local = FlutterLocalNotificationsPlugin();
+
+  // Stream que emite rutas cuando el usuario toca una notificación
+  final _routeController = StreamController<String>.broadcast();
+  Stream<String> get onNavigate => _routeController.stream;
+
+  // Stream que emite cuando el usuario toca una notificación de pago
+  final _paymentController = StreamController<void>.broadcast();
+  Stream<void> get onPaymentTapped => _paymentController.stream;
+
+  void _handleMessage(RemoteMessage? message) {
+    if (message == null) return;
+    final screen = message.data['screen'] as String?;
+    if (screen == null) return;
+    final route = switch (screen) {
+      'wallet'  => '/home/cashout',
+      'home'    => '/home',
+      'profile' => '/profile',
+      _         => '/home',
+    };
+    debugPrint('🔔 [Notification] Navegando a: $route');
+    _routeController.add(route);
+
+    // Si es una notificación de pago, emitir señal para reseña
+    if (screen == 'wallet') {
+      debugPrint('🔔 [Notification] Pago recibido — activando señal de reseña');
+      _paymentController.add(null);
+    }
+  }
 
   // Canal Android
   static const _androidChannel = AndroidNotificationChannel(
@@ -50,8 +79,29 @@ class NotificationService {
     // Escuchar mensajes en foreground → mostrar notificación local
     FirebaseMessaging.onMessage.listen(_handleForeground);
 
+    // App en background → usuario toca la notificación
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+
     // Guardar token cuando se renueva
     _fcm.onTokenRefresh.listen(_saveToken);
+  }
+
+  /// Llamar desde el splash después de que el router esté listo.
+  /// Maneja el caso de app cerrada → usuario toca notificación.
+  Future<void> checkInitialMessage() async {
+    try {
+      // En iOS simulator / dispositivos sin APNS puede colgarse indefinidamente
+      final message = await _fcm.getInitialMessage().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('⚠️ [Notification] getInitialMessage timeout, continuando...');
+          return null;
+        },
+      );
+      _handleMessage(message);
+    } catch (e) {
+      debugPrint('⚠️ [Notification] checkInitialMessage error: $e');
+    }
   }
 
   /// Pide permisos y guarda el token en Supabase.

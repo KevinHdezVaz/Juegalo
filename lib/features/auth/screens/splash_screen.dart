@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/version_check_service.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../tutorial/screens/tutorial_screen.dart';
 
@@ -19,6 +23,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late AnimationController _ctrl;
   late Animation<double> _fade;
   late Animation<double> _scale;
+  StreamSubscription<String>? _notifSub;
 
   @override
   void initState() {
@@ -35,24 +40,66 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (!mounted) return;
+    try {
+      await Future.delayed(const Duration(milliseconds: 2000));
+      if (!mounted) return;
 
-    // Primera vez: mostrar tutorial antes del login
-    final tutorialDone = await isTutorialCompleted();
-    if (!mounted) return;
-    if (!tutorialDone) {
-      context.go(AppRoutes.tutorial);
-      return;
+      debugPrint('🚀 [Splash] Verificando actualización...');
+
+      // Verificar si hay actualización forzada
+      final needsUpdate =
+          await VersionCheckService.instance.checkAndPromptUpdate(context);
+      if (needsUpdate) return;
+      if (!mounted) return;
+
+      debugPrint('🚀 [Splash] Revisando notificación inicial...');
+
+      // Verificar si la app fue abierta desde una notificación (app cerrada)
+      await NotificationService.instance.checkInitialMessage();
+
+      if (!mounted) return;
+
+      debugPrint('🚀 [Splash] Leyendo sesión...');
+
+      // Escuchar navegación por notificación (solo si hay sesión activa)
+      final session = ref.read(currentSessionProvider);
+      if (session != null) {
+        _notifSub = NotificationService.instance.onNavigate.listen((route) {
+          if (mounted) context.go(route);
+        });
+      }
+
+      debugPrint('🚀 [Splash] Verificando tutorial...');
+
+      // Primera vez: mostrar tutorial antes del login
+      final tutorialDone = await isTutorialCompleted();
+      if (!mounted) return;
+
+      debugPrint('🚀 [Splash] tutorialDone=$tutorialDone, session=${session != null}');
+
+      if (!tutorialDone) {
+        context.go(AppRoutes.tutorial);
+        return;
+      }
+
+      // Tutorial ya visto: ir al home (si hay sesión) o al login
+      context.go(session != null ? AppRoutes.home : AppRoutes.onboarding);
+    } catch (e, st) {
+      // Nunca quedarse atascado en el splash — fallback garantizado
+      debugPrint('❌ [Splash] Error en _navigate: $e\n$st');
+      if (!mounted) return;
+      try {
+        final session = Supabase.instance.client.auth.currentSession;
+        context.go(session != null ? AppRoutes.home : AppRoutes.onboarding);
+      } catch (_) {
+        context.go(AppRoutes.onboarding);
+      }
     }
-
-    // Tutorial ya visto: ir al home (si hay sesión) o al login
-    final session = ref.read(currentSessionProvider);
-    context.go(session != null ? AppRoutes.home : AppRoutes.onboarding);
   }
 
   @override
   void dispose() {
+    _notifSub?.cancel();
     _ctrl.dispose();
     super.dispose();
   }

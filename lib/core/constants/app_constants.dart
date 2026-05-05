@@ -17,7 +17,7 @@ class AppConstants {
 
   // ── Recompensas ───────────────────────────────────────────────
   static const int coinsPerVideo = 30;      // 30 monedas = $0.003 por video
-  static const int coinsPerVideoMax = 25;   // max 25 videos/día = 750 monedas
+  static const int coinsPerVideoMax = 50;   // max 50 videos/día = 1,500 monedas
   static const int coinsPerSurvey = 6000;   // ~$0.60 por encuesta (CPX paga ~$1, damos 60%)
   static const int coinsStreak7days = 1000; // bonus racha 7 días = $0.10
   static const int coinsStreak30days = 5000; // bonus racha 30 días = $0.50
@@ -34,9 +34,9 @@ class AppConstants {
 
   // ── AdMob ─────────────────────────────────────────────────────
   static const String admobAppIdAndroid = 'ca-app-pub-5486388630970825~2374341538';
-  static const String admobAppIdIos = 'ca-app-pub-XXXXXXXX~XXXXXXXX'; // TODO: agregar cuando tengas iOS en AdMob
+  static const String admobAppIdIos = 'ca-app-pub-5486388630970825~4509192467';
   static const String admobRewardedAndroid = 'ca-app-pub-5486388630970825/4840288002';
-  static const String admobRewardedIos = 'ca-app-pub-XXXXXXXX/XXXXXXXX'; // TODO: agregar cuando tengas iOS en AdMob
+  static const String admobRewardedIos = 'ca-app-pub-5486388630970825/3159932254';
 
   // ── Adjoe Offerwall ───────────────────────────────────────────
   // TODO: reemplazar con tu App ID de adjoe.io → Publishers

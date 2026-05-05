@@ -1,19 +1,85 @@
+import 'package:adjoe/sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/l10n_ext.dart';
 
-class GamesScreen extends ConsumerWidget {
+class GamesScreen extends ConsumerStatefulWidget {
   const GamesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GamesScreen> createState() => _GamesScreenState();
+}
+
+class _GamesScreenState extends ConsumerState<GamesScreen> {
+  bool _loading = false;
+
+  bool get _adjoeReady => AppConstants.adjoeAppId != 'ADJOE_APP_ID';
+
+  Future<void> _openOfferwall() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+
+    if (!_adjoeReady) {
+      _showComingSoon();
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      final options = PlaytimeOptions(
+        userId: uid,
+        sdkHash: AppConstants.adjoeAppId,
+        params: PlaytimeParams(placement: 'games_tab'),
+      );
+      await Playtime.showCatalogWithOptions(options);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.gamesOpenError),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _showComingSoon() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.fondoElevado,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(context.l10n.gamesComingSoonTitle,
+            style: const TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.w700)),
+        content: Text(
+          context.l10n.gamesComingSoonContent,
+          style: const TextStyle(color: AppColors.textoSecundario, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.gamesComingSoonButton,
+                style: const TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           const SizedBox(height: 32),
 
-          // Ícono
           Container(
             width: 100, height: 100,
             decoration: BoxDecoration(
@@ -36,10 +102,9 @@ class GamesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 28),
 
-          // Título
-          const Text(
-            'Ofertas y Juegos',
-            style: TextStyle(
+          Text(
+            context.l10n.gamesTitle,
+            style: const TextStyle(
               color: AppColors.textoPrimario,
               fontSize: 24,
               fontWeight: FontWeight.w800,
@@ -47,18 +112,22 @@ class GamesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // Badge próximamente
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.colorJuegos.withValues(alpha: 0.12),
+              color: _adjoeReady
+                  ? AppColors.colorJuegos.withValues(alpha: 0.15)
+                  : AppColors.colorJuegos.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: AppColors.colorJuegos.withValues(alpha: 0.3)),
+                color: _adjoeReady
+                    ? AppColors.colorJuegos
+                    : AppColors.colorJuegos.withValues(alpha: 0.3),
+              ),
             ),
-            child: const Text(
-              '🚀 Próximamente',
-              style: TextStyle(
+            child: Text(
+              _adjoeReady ? context.l10n.gamesAvailable : context.l10n.gamesSoon,
+              style: const TextStyle(
                 color: AppColors.colorJuegos,
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
@@ -67,41 +136,70 @@ class GamesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          const Text(
-            'Instala juegos y apps para ganar\nmonedas extra sin ver anuncios.',
+          Text(
+            context.l10n.gamesDescription,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textoSecundario,
               fontSize: 15,
               height: 1.6,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
-          // Cards de lo que viene
-          _ComingSoonCard(
+          // CTA Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _openOfferwall,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.colorJuegos,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              child: _loading
+                  ? const SizedBox(
+                      width: 22, height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.white),
+                    )
+                  : Text(
+                      _adjoeReady ? context.l10n.gamesOpenButton : context.l10n.gamesExploreSoon,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          _FeatureCard(
             icon: Icons.videogame_asset_rounded,
-            title: 'Instala juegos',
-            description: 'Gana monedas por instalar y jugar nuevos juegos.',
+            title: context.l10n.gamesInstallGames,
+            description: context.l10n.gamesInstallGamesDesc,
             color: const Color(0xFF7C3AED),
+            available: _adjoeReady,
           ),
           const SizedBox(height: 12),
-          _ComingSoonCard(
+          _FeatureCard(
             icon: Icons.download_rounded,
-            title: 'Descarga apps',
-            description: 'Completa tareas en apps y recibe monedas al instante.',
+            title: context.l10n.gamesDownloadApps,
+            description: context.l10n.gamesDownloadAppsDesc,
             color: const Color(0xFF5B21B6),
+            available: _adjoeReady,
           ),
           const SizedBox(height: 12),
-          _ComingSoonCard(
+          _FeatureCard(
             icon: Icons.star_rounded,
-            title: 'Completa misiones',
-            description: 'Llega a un nivel específico en un juego y gana mucho más.',
+            title: context.l10n.gamesCompleteMissions,
+            description: context.l10n.gamesCompleteMissionsDesc,
             color: const Color(0xFF4C1D95),
+            available: _adjoeReady,
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
-          // Aviso
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -110,14 +208,21 @@ class GamesScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.fondoCardBorde),
             ),
-            child: const Row(children: [
-              Icon(Icons.notifications_outlined,
-                  color: AppColors.azulPrimario, size: 20),
-              SizedBox(width: 12),
+            child: Row(children: [
+              Icon(
+                _adjoeReady
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.notifications_outlined,
+                color: AppColors.azulPrimario,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Te avisaremos cuando esta sección esté disponible.',
-                  style: TextStyle(
+                  _adjoeReady
+                      ? context.l10n.gamesOpenCatalog
+                      : context.l10n.gamesComingNotify,
+                  style: const TextStyle(
                     color: AppColors.textoSecundario,
                     fontSize: 13,
                     height: 1.4,
@@ -132,17 +237,19 @@ class GamesScreen extends ConsumerWidget {
   }
 }
 
-class _ComingSoonCard extends StatelessWidget {
+class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
   final Color color;
+  final bool available;
 
-  const _ComingSoonCard({
+  const _FeatureCard({
     required this.icon,
     required this.title,
     required this.description,
     required this.color,
+    required this.available,
   });
 
   @override
@@ -180,8 +287,11 @@ class _ComingSoonCard extends StatelessWidget {
             ],
           ),
         ),
-        const Icon(Icons.lock_outline_rounded,
-            color: AppColors.textoDeshabilitado, size: 18),
+        Icon(
+          available ? Icons.chevron_right_rounded : Icons.lock_outline_rounded,
+          color: available ? AppColors.colorJuegos : AppColors.textoDeshabilitado,
+          size: 18,
+        ),
       ]),
     );
   }

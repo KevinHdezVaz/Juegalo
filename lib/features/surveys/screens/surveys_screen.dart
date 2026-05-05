@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/l10n_ext.dart';
+import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 import '../../../shared/providers/user_provider.dart';
 
@@ -24,10 +26,13 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     super.initState();
     // Escuchar transacciones completadas → acreditar monedas
     _cpxData.transactions.addListener(_onTransactions);
-    // Fetch inicial (CPXResearch en HomeScreen ya arranca el timer,
-    // pero hacemos uno manual para respuesta inmediata al entrar al tab)
-    fetchCPXSurveysAndTransactions();
-    _lastUpdated = DateTime.now();
+    // Fetch inicial — si CPXResearch aún no montó, el guard en
+    // CPXNetworkService lo ignora silenciosamente y lo hará él mismo.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      fetchCPXSurveysAndTransactions();
+      _lastUpdated = DateTime.now();
+    });
   }
 
   @override
@@ -74,7 +79,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-            '+${AppConstants.coinsPerSurvey} monedas — encuesta completada',
+            context.l10n.surveysCoinsEarned(AppConstants.coinsPerSurvey.formatted),
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           backgroundColor: AppColors.verdePrimario,
@@ -82,23 +87,25 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           duration: const Duration(seconds: 3),
         ));
         await tryClaimDailyBonus(context, ref);
+        await tryClaimDailyGoalBonus(context, ref);
       }
     } catch (e) {
       debugPrint('❌ credit_coins (survey): $e');
     }
   }
 
-  void _refresh() {
+  Future<void> _refresh() async {
     fetchCPXSurveysAndTransactions();
+    await ref.read(userNotifierProvider.notifier).refreshUser();
     setState(() => _lastUpdated = DateTime.now());
   }
 
-  String _timeAgo() {
+  String _timeAgo(BuildContext context) {
     if (_lastUpdated == null) return '';
     final diff = DateTime.now().difference(_lastUpdated!);
-    if (diff.inSeconds < 60) return 'hace ${diff.inSeconds}s';
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
-    return 'hace ${diff.inHours}h';
+    if (diff.inSeconds < 60) return context.l10n.surveysTimeAgoSeconds(diff.inSeconds);
+    if (diff.inMinutes < 60) return context.l10n.surveysTimeAgoMinutes(diff.inMinutes);
+    return context.l10n.surveysTimeAgoHours(diff.inHours);
   }
 
   // ── Builder personalizado para cada tarjeta de encuesta ──────────
@@ -155,9 +162,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Encuestas disponibles',
-                        style: TextStyle(
+                      Text(
+                        context.l10n.surveysTitle,
+                        style: const TextStyle(
                           color: AppColors.textoPrimario,
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -165,12 +172,14 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                       ),
                       ValueListenableBuilder<List<Survey>?>(
                         valueListenable: _cpxData.surveys,
-                        builder: (_, surveys, __) {
+                        builder: (ctx, surveys, __) {
                           final count = surveys?.length ?? 0;
                           return Text(
                             count > 0
-                                ? '$count ${count == 1 ? 'encuesta' : 'encuestas'} • ${_timeAgo()}'
-                                : 'Actualizado ${_timeAgo()}',
+                                ? (count == 1
+                                    ? ctx.l10n.surveysCount(count, _timeAgo(ctx))
+                                    : ctx.l10n.surveysCountPlural(count, _timeAgo(ctx)))
+                                : ctx.l10n.surveysUpdated(_timeAgo(ctx)),
                             style: const TextStyle(
                               color: AppColors.textoSecundario,
                               fontSize: 12,
@@ -188,7 +197,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                     Icons.refresh_rounded,
                     color: AppColors.textoPrimario,
                   ),
-                  tooltip: 'Actualizar',
+                  tooltip: context.l10n.surveysRefresh,
                 ),
               ],
             ),
@@ -221,15 +230,15 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                           color: AppColors.textoSecundario,
                         ),
                         children: [
-                          const TextSpan(text: 'Ganas '),
+                          TextSpan(text: context.l10n.surveysEarn),
                           TextSpan(
-                            text: '+${AppConstants.coinsPerSurvey} monedas',
+                            text: '+${AppConstants.coinsPerSurvey.formatted} monedas',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               color: AppColors.verdePrimario,
                             ),
                           ),
-                          const TextSpan(text: ' por cada encuesta completada'),
+                          TextSpan(text: context.l10n.surveysPerSurvey),
                         ],
                       ),
                     ),
@@ -445,18 +454,18 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No hay encuestas disponibles',
-              style: TextStyle(
+            Text(
+              context.l10n.surveysEmpty,
+              style: const TextStyle(
                 color: AppColors.textoPrimario,
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Vuelve más tarde o toca actualizar',
-              style: TextStyle(
+            Text(
+              context.l10n.surveysEmptySubtitle,
+              style: const TextStyle(
                 color: AppColors.textoSecundario,
                 fontSize: 13,
               ),
@@ -466,9 +475,9 @@ class _EmptyState extends StatelessWidget {
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh_rounded,
                   color: AppColors.textoPrimario),
-              label: const Text(
-                'Actualizar',
-                style: TextStyle(color: AppColors.textoPrimario),
+              label: Text(
+                context.l10n.surveysRefresh,
+                style: const TextStyle(color: AppColors.textoPrimario),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.textoPrimario),

@@ -44,7 +44,7 @@ CREATE OR REPLACE FUNCTION public.award_weekly_winners()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
   winner   RECORD;
-  prizes   INT[] := ARRAY[5000, 2000, 1000]; -- 🥇$5  🥈$2  🥉$1
+  prizes   INT[] := ARRAY[2500, 1000, 500]; -- 🥇$2.50  🥈$1  🥉$0.50
   pos      INT   := 1;
   awarded  jsonb := '[]'::jsonb;
 BEGIN
