@@ -293,6 +293,7 @@
     }
   },
   "videosLimitReached": "Limite atingido",
+  "videosResetsIn": "Vídeos disponíveis em",
   "videosRetry": "Tentar novamente",
   "videosWatch": "Assistir",
   "videosHowItWorks": "Como funciona",
@@ -558,5 +559,21 @@
   "rankingInfoGotIt": "Entendi!",
 
   "rankingLastWinnersTitle": "🏆  VENCEDORES DA SEMANA PASSADA",
-  "rankingLastWinnersPrize": "prêmio"
+  "rankingLastWinnersPrize": "prêmio",
+
+  "txHistoryTitle": "Histórico completo",
+  "txFilterAll": "Todos",
+  "txFilterVideos": "Vídeos",
+  "txFilterSurveys": "Pesquisas",
+  "txFilterBonus": "Bônus",
+  "txFilterCashout": "Saques",
+  "txGroupToday": "Hoje",
+  "txGroupYesterday": "Ontem",
+  "txGroupThisWeek": "Esta semana",
+  "txGroupThisMonth": "Este mês",
+  "txGroupOlder": "Anterior",
+  "txLoadMore": "Carregar mais",
+  "txEmpty": "Sem transações ainda",
+  "txEmptyFilter": "Sem transações deste tipo",
+  "txSeeAll": "Ver tudo"
 }

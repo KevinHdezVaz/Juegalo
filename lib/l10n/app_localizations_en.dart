@@ -591,6 +591,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videosLimitReached => 'Limit reached';
 
   @override
+  String get videosResetsIn => 'Videos available in';
+
+  @override
   String get videosRetry => 'Retry';
 
   @override
@@ -1109,4 +1112,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankingLastWinnersPrize => 'prize';
+
+  @override
+  String get txHistoryTitle => 'Full history';
+
+  @override
+  String get txFilterAll => 'All';
+
+  @override
+  String get txFilterVideos => 'Videos';
+
+  @override
+  String get txFilterSurveys => 'Surveys';
+
+  @override
+  String get txFilterBonus => 'Bonuses';
+
+  @override
+  String get txFilterCashout => 'Cashouts';
+
+  @override
+  String get txGroupToday => 'Today';
+
+  @override
+  String get txGroupYesterday => 'Yesterday';
+
+  @override
+  String get txGroupThisWeek => 'This week';
+
+  @override
+  String get txGroupThisMonth => 'This month';
+
+  @override
+  String get txGroupOlder => 'Older';
+
+  @override
+  String get txLoadMore => 'Load more';
+
+  @override
+  String get txEmpty => 'No transactions yet';
+
+  @override
+  String get txEmptyFilter => 'No transactions of this type';
+
+  @override
+  String get txSeeAll => 'See all';
 }

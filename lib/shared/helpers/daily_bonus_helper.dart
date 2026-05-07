@@ -10,7 +10,8 @@ import '../providers/user_provider.dart';
 /// Si el bono del día no fue reclamado aún, lo reclama automáticamente
 /// y muestra una notificación.
 Future<void> tryClaimDailyBonus(BuildContext context, WidgetRef ref) async {
-  final user = ref.read(userProvider).value;
+  // valueOrNull: null si está loading/error — no bloquear la actividad
+  final user = ref.read(userProvider).valueOrNull;
   if (user == null || user.dailyBonusClaimed) return;
 
   final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -75,7 +76,7 @@ Future<void> tryClaimDailyBonus(BuildContext context, WidgetRef ref) async {
 /// Llama a esto después de cualquier actividad.
 /// Si el usuario acaba de alcanzar su meta diaria, otorga 1,500 monedas y notifica.
 Future<void> tryClaimDailyGoalBonus(BuildContext context, WidgetRef ref) async {
-  final user = ref.read(userProvider).value;
+  final user = ref.read(userProvider).valueOrNull;
   if (user == null || user.dailyGoalBonusClaimed) return;
 
   final uid = Supabase.instance.client.auth.currentUser?.id;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,9 +159,14 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     } catch (e) {
       debugPrint('❌ credit_coins error: $e');
       if (mounted) {
+        final isLimitError = e.toString().contains('daily_video_limit_reached');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.l10n.videosErrorCredit(e.toString())),
-          backgroundColor: AppColors.error,
+          content: Text(
+            isLimitError
+                ? context.l10n.videosLimitReached
+                : context.l10n.videosErrorCredit(e.toString()),
+          ),
+          backgroundColor: isLimitError ? Colors.orange : AppColors.error,
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -437,15 +443,54 @@ class _VideoSlotCard extends StatelessWidget {
 }
 
 // ── Progreso diario ──────────────────────────────────────────────
-class _DailyProgressCard extends StatelessWidget {
+class _DailyProgressCard extends StatefulWidget {
   final int watched;
   final int max;
   const _DailyProgressCard({required this.watched, required this.max});
 
   @override
+  State<_DailyProgressCard> createState() => _DailyProgressCardState();
+}
+
+class _DailyProgressCardState extends State<_DailyProgressCard> {
+  Timer? _timer;
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateRemaining();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) _updateRemaining();
+    });
+  }
+
+  void _updateRemaining() {
+    final now      = DateTime.now().toUtc();
+    final midnight = DateTime.utc(now.year, now.month, now.day + 1);
+    setState(() => _remaining = midnight.difference(now));
+  }
+
+  String get _countdown {
+    final h = _remaining.inHours.toString().padLeft(2, '0');
+    final m = (_remaining.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (_remaining.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final pct    = (watched / max).clamp(0.0, 1.0);
-    final earned = watched * AppConstants.coinsPerVideo;
+    final watched       = widget.watched;
+    final max           = widget.max;
+    final pct           = (watched / max).clamp(0.0, 1.0);
+    final earned        = watched * AppConstants.coinsPerVideo;
+    final limitReached  = watched >= max;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -497,16 +542,56 @@ class _DailyProgressCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.monetization_on_rounded,
-                color: Colors.white, size: 14),
-            const SizedBox(width: 4),
-            Text(context.l10n.videosEarnedToday(earned),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
-          ]),
+          if (limitReached) ...[
+            // ── Countdown hasta medianoche UTC ──────────────────
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.timer_outlined,
+                      color: Colors.white70, size: 14),
+                  const SizedBox(width: 6),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.videosResetsIn,
+                        style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        _countdown,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Row(children: [
+              const Icon(Icons.monetization_on_rounded,
+                  color: Colors.white, size: 14),
+              const SizedBox(width: 4),
+              Text(context.l10n.videosEarnedToday(earned),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ]),
+          ],
         ],
       ),
     );

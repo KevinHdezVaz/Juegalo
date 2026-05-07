@@ -12,7 +12,7 @@ import '../../../shared/providers/user_provider.dart';
 import '../../home/widgets/daily_bonus_card.dart';
 import '../../home/widgets/daily_goal_bar.dart';
 
-// ── Provider: últimas 20 transacciones ───────────────────────────
+// ── Provider: últimas 5 transacciones (preview) ──────────────────
 final transactionsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -22,7 +22,7 @@ final transactionsProvider =
       .select()
       .eq('user_id', uid)
       .order('created_at', ascending: false)
-      .limit(20);
+      .limit(5);
   return List<Map<String, dynamic>>.from(rows);
 });
 
@@ -181,12 +181,28 @@ class WalletScreen extends ConsumerWidget {
                       comingSoon: true,
                       onTap: null),
                   const SizedBox(height: 24),
-                  // Historial
-                  Text(context.l10n.walletTransactions,
-                      style: const TextStyle(
-                          color: AppColors.textoPrimario,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16)),
+                  // ── Historial (preview) ─────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(context.l10n.walletTransactions,
+                          style: const TextStyle(
+                              color: AppColors.textoPrimario,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16)),
+                      GestureDetector(
+                        onTap: () => context.push(AppRoutes.transactions),
+                        child: Text(
+                          context.l10n.txSeeAll,
+                          style: const TextStyle(
+                            color: AppColors.azulPrimario,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   ref.watch(transactionsProvider).when(
                         loading: () => const Center(
@@ -205,9 +221,31 @@ class WalletScreen extends ConsumerWidget {
                                 ),
                               )
                             : Column(
-                                children: txs
-                                    .map((tx) => _TransactionRow(tx: tx))
-                                    .toList(),
+                                children: [
+                                  ...txs.map((tx) => _TransactionRow(tx: tx)),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => context
+                                          .push(AppRoutes.transactions),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor:
+                                            AppColors.azulPrimario,
+                                        side: const BorderSide(
+                                            color: AppColors.azulPrimario),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
+                                      ),
+                                      icon: const Icon(
+                                          Icons.history_rounded,
+                                          size: 18),
+                                      label:
+                                          Text(context.l10n.txSeeAll),
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                 ],

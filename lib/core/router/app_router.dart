@@ -10,6 +10,7 @@ import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/tutorial/screens/tutorial_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/wallet/screens/cashout_screen.dart';
+import '../../features/wallet/screens/transactions_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 
 class AppRoutes {
@@ -17,8 +18,9 @@ class AppRoutes {
   static const String onboarding  = '/onboarding';
   static const String tutorial    = '/tutorial';
   static const String home        = '/home';
-  static const String cashout     = '/home/cashout';
-  static const String profile     = '/profile';
+  static const String cashout      = '/home/cashout';
+  static const String transactions = '/home/transactions';
+  static const String profile      = '/profile';
 }
 
 // Escucha cambios de auth de Supabase y notifica al GoRouter
@@ -80,6 +82,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'cashout',
             builder: (_, __) => const CashoutScreen(),
+          ),
+          GoRoute(
+            path: 'transactions',
+            builder: (_, __) => const TransactionsScreen(),
           ),
         ],
       ),

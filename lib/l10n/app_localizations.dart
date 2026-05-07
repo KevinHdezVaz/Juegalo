@@ -1144,6 +1144,12 @@ abstract class AppLocalizations {
   /// **'Límite alcanzado'**
   String get videosLimitReached;
 
+  /// No description provided for @videosResetsIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Vídeos disponibles en'**
+  String get videosResetsIn;
+
   /// No description provided for @videosRetry.
   ///
   /// In es, this message translates to:
@@ -2055,6 +2061,96 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'premio'**
   String get rankingLastWinnersPrize;
+
+  /// No description provided for @txHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial completo'**
+  String get txHistoryTitle;
+
+  /// No description provided for @txFilterAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos'**
+  String get txFilterAll;
+
+  /// No description provided for @txFilterVideos.
+  ///
+  /// In es, this message translates to:
+  /// **'Videos'**
+  String get txFilterVideos;
+
+  /// No description provided for @txFilterSurveys.
+  ///
+  /// In es, this message translates to:
+  /// **'Encuestas'**
+  String get txFilterSurveys;
+
+  /// No description provided for @txFilterBonus.
+  ///
+  /// In es, this message translates to:
+  /// **'Bonos'**
+  String get txFilterBonus;
+
+  /// No description provided for @txFilterCashout.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobros'**
+  String get txFilterCashout;
+
+  /// No description provided for @txGroupToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get txGroupToday;
+
+  /// No description provided for @txGroupYesterday.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayer'**
+  String get txGroupYesterday;
+
+  /// No description provided for @txGroupThisWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta semana'**
+  String get txGroupThisWeek;
+
+  /// No description provided for @txGroupThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get txGroupThisMonth;
+
+  /// No description provided for @txGroupOlder.
+  ///
+  /// In es, this message translates to:
+  /// **'Anterior'**
+  String get txGroupOlder;
+
+  /// No description provided for @txLoadMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargar más'**
+  String get txLoadMore;
+
+  /// No description provided for @txEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin transacciones aún'**
+  String get txEmpty;
+
+  /// No description provided for @txEmptyFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin transacciones de este tipo'**
+  String get txEmptyFilter;
+
+  /// No description provided for @txSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todo'**
+  String get txSeeAll;
 }
 
 class _AppLocalizationsDelegate

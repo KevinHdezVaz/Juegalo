@@ -1,26 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 
-// Monedas por nivel de racha
+// Monedas exactas que paga claim_daily_bonus según el día de racha
 int _coinsForStreak(int streak) {
-  if (streak >= 30) return 1000;
-  if (streak >= 14) return 700;
-  if (streak >= 7)  return 500;
-  if (streak >= 3)  return 250;
+  // Mes 1: hitos semanales escalados
+  if (streak == 7)  return 200;
+  if (streak == 14) return 300;
+  if (streak == 21) return 400;
+  if (streak == 30) return 500;
+  // Después del día 30: cada 7 días da 200, resto 100
+  if (streak > 30 && streak % 7 == 0) return 200;
   return 100;
 }
 
-// Próximo hito de racha
+// Próximo hito donde hay bono extra
 int _nextMilestone(int streak) {
-  if (streak < 3)  return 3;
   if (streak < 7)  return 7;
   if (streak < 14) return 14;
+  if (streak < 21) return 21;
   if (streak < 30) return 30;
-  return streak + 1;
+  // Después del día 30: siguiente múltiplo de 7
+  return ((streak ~/ 7) + 1) * 7;
 }
 
 class DailyBonusCard extends ConsumerStatefulWidget {
@@ -34,6 +39,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulse;
   late Animation<double> _scale;
+  bool _claiming    = false;
+  bool _justClaimed = false; // bloqueo local inmediato post-reclamo
 
   @override
   void initState() {
@@ -53,6 +60,81 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
     super.dispose();
   }
 
+  Future<void> _claimBonus() async {
+    if (_claiming || _justClaimed) return;
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+
+    setState(() => _claiming = true);
+    try {
+      final result = await Supabase.instance.client
+          .rpc('claim_daily_bonus', params: {'p_user_id': uid});
+
+      final success = result['success'] as bool? ?? false;
+      ref.invalidate(userProvider);
+
+      if (!mounted) return;
+      if (success) {
+        setState(() => _justClaimed = true); // bloqueo inmediato
+        final coins  = result['coins']  as int? ?? 0;
+        final streak = result['streak'] as int? ?? 1;
+        // Reutilizamos el helper para mostrar el snackbar estándar
+        // Llamamos tryClaimDailyBonus con el userProvider ya invalidado —
+        // como ya marcamos éxito, mostramos snackbar directamente aquí
+        final streakLabel = streak == 1
+            ? context.l10n.dailyBonusStreakLabelOne
+            : context.l10n.dailyBonusStreakLabelMany;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Text('🔥', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.dailyBonusClaimedToast,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    ),
+                    Text(
+                      context.l10n.dailyBonusCoinsAndStreak(coins, streak, streakLabel),
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            backgroundColor: AppColors.azulPrimario,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        // Ya fue reclamado hoy (race condition)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.l10n.dailyBonusClaimed),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } catch (e) {
+      debugPrint('❌ _claimBonus error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('Error al reclamar el bono. Intenta de nuevo.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _claiming = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProvider);
@@ -63,7 +145,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
       data: (user) {
         if (user == null) return const SizedBox.shrink();
 
-        final claimed     = user.dailyBonusClaimed;
+        final claimed     = user.dailyBonusClaimed || _justClaimed;
         final streak      = user.streakDays;
         final nextStreak  = streak + 1;
         final todayCoins  = _coinsForStreak(claimed ? streak : nextStreak);
@@ -232,19 +314,30 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                         ),
                       )
                     else
-                      ScaleTransition(
-                        scale: _scale,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.azulPrimario.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: AppColors.azulPrimario.withValues(alpha: 0.40)),
+                      GestureDetector(
+                        onTap: _claimBonus,
+                        child: ScaleTransition(
+                          scale: _claiming ? const AlwaysStoppedAnimation(1.0) : _scale,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.azulPrimario.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.azulPrimario.withValues(alpha: 0.50)),
+                            ),
+                            child: _claiming
+                                ? const SizedBox(
+                                    width: 22, height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.azulPrimario,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Icon(Icons.card_giftcard_rounded,
+                                    color: AppColors.azulPrimario, size: 24),
                           ),
-                          child: const Icon(Icons.play_circle_outline_rounded,
-                              color: AppColors.azulPrimario, size: 22),
                         ),
                       ),
                   ],

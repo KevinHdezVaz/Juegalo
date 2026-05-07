@@ -293,6 +293,7 @@
     }
   },
   "videosLimitReached": "Limit reached",
+  "videosResetsIn": "Videos available in",
   "videosRetry": "Retry",
   "videosWatch": "Watch",
   "videosHowItWorks": "How it works",
@@ -558,5 +559,21 @@
   "rankingInfoGotIt": "Got it!",
 
   "rankingLastWinnersTitle": "🏆  LAST WEEK'S WINNERS",
-  "rankingLastWinnersPrize": "prize"
+  "rankingLastWinnersPrize": "prize",
+
+  "txHistoryTitle": "Full history",
+  "txFilterAll": "All",
+  "txFilterVideos": "Videos",
+  "txFilterSurveys": "Surveys",
+  "txFilterBonus": "Bonuses",
+  "txFilterCashout": "Cashouts",
+  "txGroupToday": "Today",
+  "txGroupYesterday": "Yesterday",
+  "txGroupThisWeek": "This week",
+  "txGroupThisMonth": "This month",
+  "txGroupOlder": "Older",
+  "txLoadMore": "Load more",
+  "txEmpty": "No transactions yet",
+  "txEmptyFilter": "No transactions of this type",
+  "txSeeAll": "See all"
 }

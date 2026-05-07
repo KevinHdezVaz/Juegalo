@@ -61,7 +61,8 @@ class AppUser {
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) {
-    final today = DateTime.now().toIso8601String().substring(0, 10);
+    // Siempre UTC para coincidir con los timestamps del servidor
+    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
     final claimedAt = j['daily_bonus_claimed_at'] as String?;
     return AppUser(
       id:                 j['id'] as String,
@@ -79,7 +80,7 @@ class AppUser {
       referralEarnings:   j['referral_earnings'] as int? ?? 0,
       reviewClaimed:         j['review_claimed_at'] != null,
       dailyBonusClaimed:     claimedAt != null && claimedAt.startsWith(today),
-      dailyGoalBonusClaimed: (j['daily_goal_claimed_at'] as String?)?.startsWith(today) ?? false,
+      dailyGoalBonusClaimed: (j['daily_goal_claimed_at'] as String? ?? '').startsWith(today),
       referredBy:         j['referred_by']          as String?,
       referralBonusPaid:  j['referral_bonus_paid']  as bool? ?? false,
     );
