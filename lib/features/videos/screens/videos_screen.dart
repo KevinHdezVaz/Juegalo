@@ -33,8 +33,11 @@ final videosWatchedProvider = StateProvider<int>((ref) => 0);
 // ── Estado de cada slot ──────────────────────────────────────────
 class _SlotState {
   RewardedAd? ad;
-  bool loading = false;
-  bool loaded  = false;
+  bool loading    = false;
+  bool loaded     = false;
+  bool unavailable = false; // sin inventario tras N reintentos
+  int  retries    = 0;
+  Timer? retryTimer;
 }
 
 class VideosScreen extends ConsumerStatefulWidget {
@@ -75,11 +78,27 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     }
   }
 
-  void _loadAd(int index) {
-    setState(() {
-      _slots[index].loading = true;
-      _slots[index].loaded  = false;
-    });
+  static const _maxRetries = 3;
+  static const _retryDelay = Duration(seconds: 4);
+
+  void _loadAd(int index, {bool isRetry = false}) {
+    final slot = _slots[index];
+    slot.retryTimer?.cancel();
+
+    if (!isRetry) {
+      // Reset completo al cargar manualmente
+      setState(() {
+        slot.loading     = true;
+        slot.loaded      = false;
+        slot.unavailable = false;
+        slot.retries     = 0;
+      });
+    } else {
+      setState(() {
+        slot.loading = true;
+        slot.loaded  = false;
+      });
+    }
 
     RewardedAd.load(
       adUnitId: _adUnits[index],
@@ -88,17 +107,34 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         onAdLoaded: (ad) {
           if (!mounted) return;
           setState(() {
-            _slots[index].ad      = ad;
-            _slots[index].loading = false;
-            _slots[index].loaded  = true;
+            slot.ad          = ad;
+            slot.loading     = false;
+            slot.loaded      = true;
+            slot.unavailable = false;
+            slot.retries     = 0;
           });
         },
         onAdFailedToLoad: (_) {
           if (!mounted) return;
-          setState(() {
-            _slots[index].loading = false;
-            _slots[index].loaded  = false;
-          });
+          slot.retries++;
+          if (slot.retries < _maxRetries) {
+            // Auto-retry silencioso con delay
+            setState(() => slot.loading = false);
+            slot.retryTimer = Timer(_retryDelay, () {
+              if (mounted) _loadAd(index, isRetry: true);
+            });
+          } else {
+            // Sin inventario — mostrar mensaje informativo
+            setState(() {
+              slot.loading     = false;
+              slot.loaded      = false;
+              slot.unavailable = true;
+            });
+            // Volver a intentar automáticamente en 2 minutos
+            slot.retryTimer = Timer(const Duration(minutes: 2), () {
+              if (mounted) _loadAd(index);
+            });
+          }
         },
       ),
     );
@@ -177,6 +213,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
   void dispose() {
     for (final s in _slots) {
       s.ad?.dispose();
+      s.retryTimer?.cancel();
     }
     super.dispose();
   }
@@ -403,20 +440,30 @@ class _VideoSlotCard extends StatelessWidget {
               child: CircularProgressIndicator(
                   color: AppColors.colorVideos, strokeWidth: 2),
             )
-          else if (!slot.loaded)
+          else if (slot.unavailable)
+            // Sin inventario — mensaje claro, no parece error
             GestureDetector(
               onTap: onReload,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  const Icon(Icons.refresh_rounded,
-                      color: AppColors.textoSecundario, size: 14),
-                  const SizedBox(width: 4),
-                  Text(context.l10n.videosRetry,
-                      style: const TextStyle(
-                          color: AppColors.textoSecundario, fontSize: 11)),
+                  const Icon(Icons.access_time_rounded,
+                      color: Colors.amber, size: 18),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.videosUnavailable,
+                    style: const TextStyle(
+                        color: AppColors.textoSecundario, fontSize: 10),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
+            )
+          else if (!slot.loaded)
+            // Cargando silencioso (retry automático en curso)
+            const SizedBox(
+              width: 18, height: 18,
+              child: CircularProgressIndicator(
+                  color: AppColors.textoSecundario, strokeWidth: 1.5),
             )
           else
             SizedBox(
