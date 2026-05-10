@@ -7,8 +7,6 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
-import '../../../shared/providers/feature_flags_provider.dart';
-import '../../../shared/widgets/feature_disabled_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ── Métodos de pago ───────────────────────────────────────────────
@@ -165,27 +163,8 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProvider);
     final notifier  = ref.read(userNotifierProvider.notifier);
-    final flags     = ref.watch(featureFlagsProvider).valueOrNull;
 
     debugPrint('🔵 [Cashout] build | isAnonymous: ${notifier.isAnonymous} | _loading: $_loading');
-
-    // Verificar flag de cashout
-    if (flags != null && !flags.cashoutEnabled) {
-      return Scaffold(
-        backgroundColor: AppColors.fondoPrincipal,
-        appBar: AppBar(
-          title: const Text('Solicitar cobro'),
-          backgroundColor: AppColors.fondoPrincipal,
-          foregroundColor: AppColors.textoPrimario,
-        ),
-        body: const FeatureDisabledScreen(
-          title: 'Cobros no disponibles',
-          subtitle: 'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
-          icon: Icons.account_balance_wallet_rounded,
-          theme: FeatureTheme.cashout,
-        ),
-      );
-    }
 
     // Detectar anónimo
     if (notifier.isAnonymous) {

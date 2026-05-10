@@ -9,6 +9,8 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/feature_disabled_screen.dart';
 import '../../home/widgets/daily_bonus_card.dart';
 import '../../home/widgets/daily_goal_bar.dart';
 
@@ -32,6 +34,17 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userProvider);
+    final flags     = ref.watch(featureFlagsProvider).valueOrNull;
+
+    // Flag: cobros desactivados → bloquear todo el tab de Cobrar
+    if (flags != null && !flags.cashoutEnabled) {
+      return const FeatureDisabledScreen(
+        title: 'Cobros no disponibles',
+        subtitle: 'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
+        icon: Icons.account_balance_wallet_rounded,
+        theme: FeatureTheme.cashout,
+      );
+    }
 
     return userAsync.when(
       loading: () => const Center(
