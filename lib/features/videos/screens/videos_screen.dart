@@ -9,6 +9,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
+import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/feature_disabled_screen.dart';
 
 // ── Ad Unit IDs por plataforma ───────────────────────────────────
 final _adUnits = Platform.isIOS
@@ -220,6 +222,15 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flags = ref.watch(featureFlagsProvider).valueOrNull;
+    if (flags != null && !flags.videosEnabled) {
+      return const FeatureDisabledScreen(
+        title: 'Videos temporalmente desactivados',
+        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        icon: Icons.play_circle_rounded,
+      );
+    }
+
     final watched      = ref.watch(videosWatchedProvider);
     final maxVideos    = AppConstants.coinsPerVideoMax;
     final limitReached = watched >= maxVideos;

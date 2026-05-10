@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
+import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/feature_disabled_screen.dart';
 
 class GamesScreen extends ConsumerStatefulWidget {
   const GamesScreen({super.key});
@@ -74,6 +76,15 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flags = ref.watch(featureFlagsProvider).valueOrNull;
+    if (flags != null && !flags.gamesEnabled) {
+      return const FeatureDisabledScreen(
+        title: 'Juegos temporalmente desactivados',
+        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        icon: Icons.sports_esports_rounded,
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(

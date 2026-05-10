@@ -9,6 +9,8 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/feature_disabled_screen.dart';
 
 class SurveysScreen extends ConsumerStatefulWidget {
   const SurveysScreen({super.key});
@@ -132,6 +134,15 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flags = ref.watch(featureFlagsProvider).valueOrNull;
+    if (flags != null && !flags.surveysEnabled) {
+      return const FeatureDisabledScreen(
+        title: 'Encuestas temporalmente desactivadas',
+        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        icon: Icons.poll_rounded,
+      );
+    }
+
     return RefreshIndicator(
       color: AppColors.azulPrimario,
       onRefresh: () async => _refresh(),

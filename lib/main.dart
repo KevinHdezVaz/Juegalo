@@ -13,6 +13,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'shared/providers/locale_provider.dart';
+import 'shared/providers/feature_flags_provider.dart';
+import 'shared/widgets/maintenance_screen.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/version_check_service.dart';
 import 'core/theme/app_theme.dart';
@@ -66,8 +68,36 @@ class JuegaloApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(appRouterProvider);
-    final locale = ref.watch(localeProvider);
+    final router     = ref.watch(appRouterProvider);
+    final locale     = ref.watch(localeProvider);
+    final flagsAsync = ref.watch(featureFlagsProvider);
+
+    // Mientras se cargan los flags mostramos la app normalmente.
+    // Si hay error de red, featureFlagsProvider devuelve defaults seguros (no lanza).
+    final inMaintenance = flagsAsync.valueOrNull?.maintenanceMode ?? false;
+
+    // MaterialApp base — se usa en ambos modos para tener localizaciones y tema.
+    if (inMaintenance) {
+      return MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        themeMode: ThemeMode.light,
+        locale: locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es'),
+          Locale('en'),
+          Locale('pt'),
+        ],
+        home: const MaintenanceScreen(),
+      );
+    }
 
     return MaterialApp.router(
       title: AppConstants.appName,

@@ -7,6 +7,8 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/feature_disabled_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ── Métodos de pago ───────────────────────────────────────────────
@@ -163,8 +165,26 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProvider);
     final notifier  = ref.read(userNotifierProvider.notifier);
+    final flags     = ref.watch(featureFlagsProvider).valueOrNull;
 
     debugPrint('🔵 [Cashout] build | isAnonymous: ${notifier.isAnonymous} | _loading: $_loading');
+
+    // Verificar flag de cashout
+    if (flags != null && !flags.cashoutEnabled) {
+      return Scaffold(
+        backgroundColor: AppColors.fondoPrincipal,
+        appBar: AppBar(
+          title: const Text('Solicitar cobro'),
+          backgroundColor: AppColors.fondoPrincipal,
+          foregroundColor: AppColors.textoPrimario,
+        ),
+        body: const FeatureDisabledScreen(
+          title: 'Cobros temporalmente desactivados',
+          message: 'Estamos procesando pagos pendientes. Vuelve pronto.',
+          icon: Icons.account_balance_wallet_rounded,
+        ),
+      );
+    }
 
     // Detectar anónimo
     if (notifier.isAnonymous) {
@@ -189,13 +209,59 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
       body: userAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.azulPrimario)),
-        error: (_, __) => const Center(
-            child: Text('Error', style: TextStyle(color: AppColors.textoSecundario))),
+        error: (e, __) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textoSecundario),
+                const SizedBox(height: 16),
+                Text('No se pudo cargar tu información',
+                    style: const TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.w700, fontSize: 16),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text('Verifica tu conexión e intenta de nuevo',
+                    style: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(userProvider),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.azulPrimario,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (user) {
           debugPrint('🔵 [Cashout] userProvider data | user: ${user?.id} | coins: ${user?.coins}');
           if (user == null) {
-            debugPrint('🔴 [Cashout] user es NULL → pantalla vacía');
-            return const SizedBox.shrink();
+            debugPrint('🔴 [Cashout] user es NULL → mostrando reintento');
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: AppColors.azulPrimario),
+                    const SizedBox(height: 20),
+                    const Text('Cargando tu cuenta...',
+                        style: TextStyle(color: AppColors.textoSecundario, fontSize: 14)),
+                    const SizedBox(height: 24),
+                    TextButton(
+                      onPressed: () => ref.invalidate(userProvider),
+                      child: const Text('Reintentar',
+                          style: TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
           final maxCoins = user.coins.clamp(AppConstants.minCashoutCoins, 1000000);
           // Primera vez o si el saldo bajó → seleccionar el máximo disponible
