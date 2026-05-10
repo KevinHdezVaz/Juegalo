@@ -137,9 +137,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.surveysEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Encuestas temporalmente desactivadas',
-        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        title: 'Encuestas no disponibles',
+        subtitle: 'Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.',
         icon: Icons.poll_rounded,
+        theme: FeatureTheme.surveys,
       );
     }
 

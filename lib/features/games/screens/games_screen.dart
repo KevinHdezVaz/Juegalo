@@ -79,9 +79,10 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.gamesEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Juegos temporalmente desactivados',
-        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        title: 'Juegos no disponibles',
+        subtitle: 'Estamos preparando algo increíble.\nVuelve en unas horas.',
         icon: Icons.sports_esports_rounded,
+        theme: FeatureTheme.games,
       );
     }
 

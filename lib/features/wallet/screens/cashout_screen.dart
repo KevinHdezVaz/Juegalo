@@ -179,9 +179,10 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
           foregroundColor: AppColors.textoPrimario,
         ),
         body: const FeatureDisabledScreen(
-          title: 'Cobros temporalmente desactivados',
-          message: 'Estamos procesando pagos pendientes. Vuelve pronto.',
+          title: 'Cobros no disponibles',
+          subtitle: 'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
           icon: Icons.account_balance_wallet_rounded,
+          theme: FeatureTheme.cashout,
         ),
       );
     }

@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/feature_flags_provider.dart';
 
 /// Pantalla de mantenimiento premium con:
-/// - Engranajes animados girando
-/// - Puntos de carga pulsantes
-/// - Mensaje de "regresamos en unas horas"
-/// - Contador de auto-reintento (cada 60 s)
+/// - Logo de la app con glow pulsante
+/// - Puntos de carga animados
+/// - Mensaje "regresamos en unas horas"
+/// - Auto-reintento con contador de 60 s
 class MaintenanceScreen extends ConsumerStatefulWidget {
   const MaintenanceScreen({super.key});
 
@@ -18,14 +18,11 @@ class MaintenanceScreen extends ConsumerStatefulWidget {
 
 class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
     with TickerProviderStateMixin {
-  // ── Animaciones ───────────────────────────────────────────────────
-  late final AnimationController _gearBig;
-  late final AnimationController _gearSmall;
   late final AnimationController _pulse;
   late final AnimationController _fadeIn;
+  late final AnimationController _float;
 
-  // ── Contador de auto-reintento ────────────────────────────────────
-  static const _retryEvery = 60; // segundos
+  static const _retryEvery = 60;
   int _secondsLeft = _retryEvery;
   Timer? _countdownTimer;
 
@@ -33,25 +30,20 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
   void initState() {
     super.initState();
 
-    _gearBig = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
-
-    _gearSmall = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 5),
-    )..repeat(reverse: false);
-
     _pulse = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
     _fadeIn = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     )..forward();
+
+    _float = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
 
     _startCountdown();
   }
@@ -59,7 +51,6 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
   void _startCountdown() {
     _countdownTimer?.cancel();
     setState(() => _secondsLeft = _retryEvery);
-
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
@@ -80,10 +71,9 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
 
   @override
   void dispose() {
-    _gearBig.dispose();
-    _gearSmall.dispose();
     _pulse.dispose();
     _fadeIn.dispose();
+    _float.dispose();
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -96,9 +86,9 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0F1B3D), Color(0xFF1A2F6B), Color(0xFF0F1B3D)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F1B3D), Color(0xFF1E3A7B), Color(0xFF0F1B3D)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: SafeArea(
@@ -108,43 +98,91 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
               children: [
                 const Spacer(flex: 2),
 
-                // ── Engranajes animados ──────────────────────────────
-                _GearsWidget(gearBig: _gearBig, gearSmall: _gearSmall),
+                // ── Logo flotante con glow ─────────────────────────
+                AnimatedBuilder(
+                  animation: Listenable.merge([_pulse, _float]),
+                  builder: (_, __) {
+                    final glowSize = 110 + _pulse.value * 18;
+                    final floatY   = math.sin(_float.value * math.pi) * 8;
+                    return Transform.translate(
+                      offset: Offset(0, floatY),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Glow exterior
+                          Container(
+                            width: glowSize,
+                            height: glowSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF3B82F6).withValues(alpha: 0.35 + _pulse.value * 0.2),
+                                  blurRadius: 40 + _pulse.value * 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Círculo de fondo
+                          Container(
+                            width: 108,
+                            height: 108,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.08),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.15 + _pulse.value * 0.08),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          // Logo de la app
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/icons/app_icon.png',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
 
                 const SizedBox(height: 40),
 
-                // ── Logo + título ────────────────────────────────────
+                // ── Título ────────────────────────────────────────
                 const Text(
                   'JUEGALO',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: Colors.white54,
                     letterSpacing: 6,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 const Text(
                   'En mantenimiento',
-                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // ── Descripción ──────────────────────────────────────
+                const SizedBox(height: 14),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 44),
                   child: Text(
                     'Estamos haciendo mejoras para darte\nuna mejor experiencia. 🚀',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withValues(alpha:0.65),
+                      color: Colors.white.withValues(alpha: 0.62),
                       height: 1.6,
                     ),
                   ),
@@ -152,22 +190,81 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
 
                 const SizedBox(height: 32),
 
-                // ── Tarjeta de tiempo estimado ───────────────────────
-                _TimeCard(pulse: _pulse),
+                // ── Tarjeta de tiempo estimado ────────────────────
+                AnimatedBuilder(
+                  animation: _pulse,
+                  builder: (_, __) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.07 + _pulse.value * 0.04),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12 + _pulse.value * 0.06),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.12 + _pulse.value * 0.08),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.access_time_rounded,
+                            color: Color(0xFF60A5FA),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Regresamos en unas horas',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Gracias por tu paciencia 🙏',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
 
-                // ── Puntos de progreso animados ──────────────────────
+                // ── Puntos rebotando ──────────────────────────────
                 _BouncingDots(pulse: _pulse),
 
                 const Spacer(flex: 3),
 
-                // ── Contador + botón ─────────────────────────────────
+                // ── Countdown + botón ────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Column(
                     children: [
-                      // Barra de progreso del countdown
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
@@ -184,12 +281,10 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                         'Verificando automáticamente en $_secondsLeft s...',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha:0.45),
+                          color: Colors.white.withValues(alpha: 0.42),
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Botón reintentar ahora
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -198,9 +293,7 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                           label: const Text('Reintentar ahora'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha:0.3),
-                            ),
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -215,7 +308,6 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 32),
               ],
             ),
@@ -226,228 +318,7 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
   }
 }
 
-// ── Tarjeta de tiempo estimado ─────────────────────────────────────────────
-class _TimeCard extends StatelessWidget {
-  final AnimationController pulse;
-  const _TimeCard({required this.pulse});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: pulse,
-      builder: (_, __) {
-        final glow = pulse.value * 0.15;
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.06 + glow),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha:0.12 + glow),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF3B82F6).withValues(alpha:0.08 + glow * 0.5),
-                blurRadius: 24,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha:0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.access_time_rounded,
-                  color: Color(0xFF60A5FA),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Regresamos en unas horas',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Gracias por tu paciencia 🙏',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white54,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ── Engranajes animados ───────────────────────────────────────────────────
-class _GearsWidget extends StatelessWidget {
-  final AnimationController gearBig;
-  final AnimationController gearSmall;
-
-  const _GearsWidget({required this.gearBig, required this.gearSmall});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 160,
-      height: 130,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Glow detrás
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3B82F6).withValues(alpha:0.25),
-                  blurRadius: 50,
-                  spreadRadius: 10,
-                ),
-              ],
-            ),
-          ),
-
-          // Engranaje grande (izquierda, gira horario)
-          Positioned(
-            left: 0,
-            top: 20,
-            child: AnimatedBuilder(
-              animation: gearBig,
-              builder: (_, __) => Transform.rotate(
-                angle: gearBig.value * 2 * math.pi,
-                child: const _GearIcon(size: 72, color: Color(0xFF3B82F6)),
-              ),
-            ),
-          ),
-
-          // Engranaje pequeño (derecha, gira antihorario)
-          Positioned(
-            right: 0,
-            top: 0,
-            child: AnimatedBuilder(
-              animation: gearSmall,
-              builder: (_, __) => Transform.rotate(
-                angle: -gearSmall.value * 2 * math.pi,
-                child: const _GearIcon(size: 52, color: Color(0xFF60A5FA)),
-              ),
-            ),
-          ),
-
-          // Engranaje mini (abajo derecha, gira horario más rápido)
-          Positioned(
-            right: 8,
-            bottom: 0,
-            child: AnimatedBuilder(
-              animation: gearSmall,
-              builder: (_, __) => Transform.rotate(
-                angle: gearSmall.value * 2 * math.pi * 1.5,
-                child: const _GearIcon(size: 34, color: Color(0xFF93C5FD)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Icono de engranaje dibujado con CustomPainter ─────────────────────────
-class _GearIcon extends StatelessWidget {
-  final double size;
-  final Color color;
-  const _GearIcon({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _GearPainter(color: color),
-    );
-  }
-}
-
-class _GearPainter extends CustomPainter {
-  final Color color;
-  const _GearPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final outerR = size.width * 0.46;
-    final innerR = size.width * 0.30;
-    final holeR  = size.width * 0.16;
-    const teeth  = 8;
-
-    final path = Path();
-    for (int i = 0; i < teeth; i++) {
-      final baseAngle  = (i / teeth) * 2 * math.pi;
-      final toothAngle = (math.pi / teeth) * 0.6;
-
-      // Base del diente (innerR)
-      path.moveTo(
-        cx + innerR * math.cos(baseAngle - toothAngle),
-        cy + innerR * math.sin(baseAngle - toothAngle),
-      );
-      // Punta del diente (outerR)
-      path.lineTo(
-        cx + outerR * math.cos(baseAngle - toothAngle * 0.3),
-        cy + outerR * math.sin(baseAngle - toothAngle * 0.3),
-      );
-      path.lineTo(
-        cx + outerR * math.cos(baseAngle + toothAngle * 0.3),
-        cy + outerR * math.sin(baseAngle + toothAngle * 0.3),
-      );
-      // Base del siguiente valle
-      path.lineTo(
-        cx + innerR * math.cos(baseAngle + toothAngle),
-        cy + innerR * math.sin(baseAngle + toothAngle),
-      );
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-
-    // Círculo interior del engranaje
-    canvas.drawCircle(Offset(cx, cy), innerR, paint);
-
-    // Agujero central
-    canvas.drawCircle(Offset(cx, cy), holeR, Paint()..color = const Color(0xFF0F1B3D));
-  }
-
-  @override
-  bool shouldRepaint(_GearPainter old) => old.color != color;
-}
-
-// ── Puntos de carga pulsantes ────────────────────────────────────────────
+// ── Tres puntos rebotando ─────────────────────────────────────────────────
 class _BouncingDots extends StatelessWidget {
   final AnimationController pulse;
   const _BouncingDots({required this.pulse});
@@ -460,7 +331,6 @@ class _BouncingDots extends StatelessWidget {
         return AnimatedBuilder(
           animation: pulse,
           builder: (_, __) {
-            // Cada punto desfasado 120°
             final offset = math.sin(
               (pulse.value * 2 * math.pi) - (i * math.pi * 0.66),
             );
@@ -470,8 +340,8 @@ class _BouncingDots extends StatelessWidget {
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha:
-                  0.3 + (offset.clamp(-1.0, 1.0) + 1) / 2 * 0.55,
+                color: Colors.white.withValues(
+                  alpha: 0.3 + (offset.clamp(-1.0, 1.0) + 1) / 2 * 0.55,
                 ),
               ),
               transform: Matrix4.translationValues(0, -offset * 5, 0),

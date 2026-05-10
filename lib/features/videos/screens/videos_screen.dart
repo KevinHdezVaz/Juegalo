@@ -225,9 +225,10 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.videosEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Videos temporalmente desactivados',
-        message: 'Estamos haciendo mejoras. Vuelve pronto.',
+        title: 'Videos no disponibles',
+        subtitle: 'Los videos con recompensa están en pausa.\nVuelve en unas horas.',
         icon: Icons.play_circle_rounded,
+        theme: FeatureTheme.videos,
       );
     }
 
