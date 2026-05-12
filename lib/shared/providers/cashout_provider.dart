@@ -2,14 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Solicitudes de retiro del usuario actual.
-/// Incluye: pending, processing, y las pagadas en los últimos 7 días.
+/// Incluye: pending, processing, y las pagadas en los últimos 60 días.
 final cashoutRequestsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final uid = Supabase.instance.client.auth.currentUser?.id;
   if (uid == null) return [];
 
   final since = DateTime.now()
-      .subtract(const Duration(days: 1))
+      .subtract(const Duration(days: 60))
       .toUtc()
       .toIso8601String();
 
@@ -21,19 +21,19 @@ final cashoutRequestsProvider =
       .inFilter('status', ['pending', 'processing'])
       .order('created_at', ascending: false);
 
-  // Pagadas en los últimos 7 días
-  final recentPaid = await Supabase.instance.client
+  // Pagadas / rechazadas en los últimos 60 días
+  final recent = await Supabase.instance.client
       .from('cashout_requests')
       .select()
       .eq('user_id', uid)
-      .eq('status', 'paid')
-      .gte('processed_at', since)
-      .order('processed_at', ascending: false)
-      .limit(3);
+      .inFilter('status', ['paid', 'rejected'])
+      .gte('created_at', since)
+      .order('created_at', ascending: false)
+      .limit(20);
 
   final all = [
     ...List<Map<String, dynamic>>.from(active),
-    ...List<Map<String, dynamic>>.from(recentPaid),
+    ...List<Map<String, dynamic>>.from(recent),
   ];
   return all;
 });

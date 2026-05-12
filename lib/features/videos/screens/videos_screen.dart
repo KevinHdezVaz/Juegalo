@@ -10,6 +10,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/providers/user_provider.dart';
 import '../../../shared/widgets/feature_disabled_screen.dart';
 
 // ── Ad Unit IDs por plataforma ───────────────────────────────────
@@ -27,7 +28,7 @@ final _adUnits = Platform.isIOS
         'ca-app-pub-5486388630970825/4277615994',
       ];
 
-const _kVideosKey     = 'videos_watched_today';
+const _kVideosKey = 'videos_watched_today';
 const _kVideosDateKey = 'videos_watched_date';
 
 final videosWatchedProvider = StateProvider<int>((ref) => 0);
@@ -35,10 +36,11 @@ final videosWatchedProvider = StateProvider<int>((ref) => 0);
 // ── Estado de cada slot ──────────────────────────────────────────
 class _SlotState {
   RewardedAd? ad;
-  bool loading    = false;
-  bool loaded     = false;
+  bool loading = false;
+  bool loaded = false;
   bool unavailable = false; // sin inventario tras N reintentos
-  int  retries    = 0;
+  bool showing = false; // evita doble-tap mientras se muestra el anuncio
+  int retries = 0;
   Timer? retryTimer;
 }
 
@@ -52,6 +54,11 @@ class VideosScreen extends ConsumerStatefulWidget {
 class _VideosScreenState extends ConsumerState<VideosScreen> {
   late final List<_SlotState> _slots;
 
+  // ── Cooldown entre videos ────────────────────────────────────────
+  static const _kCooldownSecs = 25;
+  int _cooldownSeconds = 0;
+  Timer? _cooldownTimer;
+
   @override
   void initState() {
     super.initState();
@@ -61,13 +68,15 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
   Future<void> _init() async {
     final p = await SharedPreferences.getInstance();
+    if (!mounted) return; // widget pudo haber sido disposed durante el await
 
     // Cargar contador diario
-    final date  = p.getString(_kVideosDateKey) ?? '';
+    final date = p.getString(_kVideosDateKey) ?? '';
     final today = DateTime.now().toIso8601String().substring(0, 10);
     if (date != today) {
       await p.setInt(_kVideosKey, 0);
       await p.setString(_kVideosDateKey, today);
+      if (!mounted) return;
       ref.read(videosWatchedProvider.notifier).state = 0;
     } else {
       ref.read(videosWatchedProvider.notifier).state =
@@ -90,30 +99,33 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     if (!isRetry) {
       // Reset completo al cargar manualmente
       setState(() {
-        slot.loading     = true;
-        slot.loaded      = false;
+        slot.loading = true;
+        slot.loaded = false;
         slot.unavailable = false;
-        slot.retries     = 0;
+        slot.retries = 0;
       });
     } else {
       setState(() {
         slot.loading = true;
-        slot.loaded  = false;
+        slot.loaded = false;
       });
     }
 
     RewardedAd.load(
       adUnitId: _adUnits[index],
-      request: const AdRequest(),
+      request: AdRequest(
+        // SSV: pasamos el UID para que AdMob lo reenvíe a nuestro servidor
+        extras: const {},
+      ),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           if (!mounted) return;
           setState(() {
-            slot.ad          = ad;
-            slot.loading     = false;
-            slot.loaded      = true;
+            slot.ad = ad;
+            slot.loading = false;
+            slot.loaded = true;
             slot.unavailable = false;
-            slot.retries     = 0;
+            slot.retries = 0;
           });
         },
         onAdFailedToLoad: (_) {
@@ -128,8 +140,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
           } else {
             // Sin inventario — mostrar mensaje informativo
             setState(() {
-              slot.loading     = false;
-              slot.loaded      = false;
+              slot.loading = false;
+              slot.loaded = false;
               slot.unavailable = true;
             });
             // Volver a intentar automáticamente en 2 minutos
@@ -142,77 +154,105 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     );
   }
 
+  void _startCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() => _cooldownSeconds = _kCooldownSecs);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        _cooldownSeconds--;
+        if (_cooldownSeconds <= 0) {
+          _cooldownSeconds = 0;
+          t.cancel();
+        }
+      });
+    });
+  }
+
   Future<void> _showAd(int index) async {
     final slot = _slots[index];
-    if (slot.ad == null) return;
 
-    slot.ad!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
+    // Prevenir doble-tap, cooldown activo o anuncio ya en pantalla
+    if (_cooldownSeconds > 0 || slot.showing || slot.ad == null) return;
+
+    final ad = slot.ad!; // referencia local: ya verificamos que no es null
+    setState(() => slot.showing = true);
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (dismissed) {
+        dismissed.dispose();
         _slots[index].ad = null;
+        _slots[index].showing = false;
         _loadAd(index);
       },
-      onAdFailedToShowFullScreenContent: (ad, _) {
-        ad.dispose();
+      onAdFailedToShowFullScreenContent: (failed, _) {
+        failed.dispose();
         _slots[index].ad = null;
+        _slots[index].showing = false;
         _loadAd(index);
       },
     );
 
-    await slot.ad!.show(
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    await ad.setServerSideOptions(
+      ServerSideVerificationOptions(customData: uid),
+    );
+
+    // Verificar que el widget sigue montado antes de mostrar el anuncio
+    if (!mounted) {
+      _slots[index].showing = false;
+      return;
+    }
+
+    await ad.show(
       onUserEarnedReward: (_, __) => _creditCoins(index),
     );
   }
 
   Future<void> _creditCoins(int index) async {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (uid == null) return;
+    // ── SSV activo: AdMob acredita las monedas vía nuestro servidor ──────────
+    // No llamamos Supabase directamente — el servidor /api/admob/ssv lo hace.
+    // Solo actualizamos la UI de forma optimista y refrescamos después.
+    final p = await SharedPreferences.getInstance();
+    final count = (p.getInt(_kVideosKey) ?? 0) + 1;
+    await p.setInt(_kVideosKey, count);
+    ref.read(videosWatchedProvider.notifier).state = count;
 
-    try {
-      await Supabase.instance.client.rpc('credit_coins', params: {
-        'p_user_id'    : uid,
-        'p_coins'      : AppConstants.coinsPerVideo,
-        'p_source'     : 'video',
-        'p_description': 'Video ${index + 1} completado',
-      });
+    // Iniciar cooldown de 25s — bloquea todos los slots
+    _startCooldown();
 
-      final p     = await SharedPreferences.getInstance();
-      final count = (p.getInt(_kVideosKey) ?? 0) + 1;
-      await p.setInt(_kVideosKey, count);
-      ref.read(videosWatchedProvider.notifier).state = count;
+    // Esperar 3 segundos: el anuncio se descarta y el SSV llega al servidor.
+    // El snackbar se muestra DESPUÉS para que el usuario lo vea en la app.
+    await Future.delayed(const Duration(seconds: 3));
+    if (!context.mounted) return;
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            context.l10n.videosCoinsEarned(AppConstants.coinsPerVideo),
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: AppColors.verdePrimario,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ));
-        await tryClaimDailyBonus(context, ref);
-        await tryClaimDailyGoalBonus(context, ref);
-      }
-    } catch (e) {
-      debugPrint('❌ credit_coins error: $e');
-      if (mounted) {
-        final isLimitError = e.toString().contains('daily_video_limit_reached');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            isLimitError
-                ? context.l10n.videosLimitReached
-                : context.l10n.videosErrorCredit(e.toString()),
-          ),
-          backgroundColor: isLimitError ? Colors.orange : AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
-    }
+    ref.invalidate(userProvider);
+
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        // ignore: use_build_context_synchronously
+        context.l10n.videosCoinsEarned(AppConstants.coinsPerVideo),
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      backgroundColor: AppColors.verdePrimario,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 3),
+    ));
+
+    // ignore: use_build_context_synchronously
+    await tryClaimDailyBonus(context, ref);
+    if (!context.mounted) return;
+    // ignore: use_build_context_synchronously
+    await tryClaimDailyGoalBonus(context, ref);
   }
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     for (final s in _slots) {
       s.ad?.dispose();
       s.retryTimer?.cancel();
@@ -225,15 +265,16 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.videosEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Videos no disponibles',
-        subtitle: 'Los videos con recompensa están en pausa.\nVuelve en unas horas.',
+        title: 'Videos en mantenimiento.',
+        subtitle:
+            'Los videos con recompensa están en pausa.\nVuelve en unas horas.',
         icon: Icons.play_circle_rounded,
         theme: FeatureTheme.videos,
       );
     }
 
-    final watched      = ref.watch(videosWatchedProvider);
-    final maxVideos    = AppConstants.coinsPerVideoMax;
+    final watched = ref.watch(videosWatchedProvider);
+    final maxVideos = AppConstants.coinsPerVideoMax;
     final limitReached = watched >= maxVideos;
 
     return SingleChildScrollView(
@@ -270,6 +311,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
               index: i,
               slot: _slots[i],
               limitReached: limitReached,
+              cooldownSeconds: _cooldownSeconds,
               onTap: () => _showAd(i),
               onReload: () => _loadAd(i),
             ),
@@ -287,7 +329,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.schedule_rounded, color: Colors.amber, size: 16),
+                const Icon(Icons.schedule_rounded,
+                    color: Colors.amber, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -331,8 +374,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
                     icon: Icons.play_circle_outline,
                     text: context.l10n.videosInfoFull),
                 _InfoRow(
-                    icon: Icons.refresh,
-                    text: context.l10n.videosInfoLimit),
+                    icon: Icons.refresh, text: context.l10n.videosInfoLimit),
                 _InfoRow(
                     icon: Icons.monetization_on_outlined,
                     text: context.l10n.videosInfoCoins),
@@ -353,6 +395,7 @@ class _VideoSlotCard extends StatelessWidget {
   final int index;
   final _SlotState slot;
   final bool limitReached;
+  final int cooldownSeconds;
   final VoidCallback onTap;
   final VoidCallback onReload;
 
@@ -360,13 +403,14 @@ class _VideoSlotCard extends StatelessWidget {
     required this.index,
     required this.slot,
     required this.limitReached,
+    required this.cooldownSeconds,
     required this.onTap,
     required this.onReload,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isReady    = slot.loaded && !limitReached;
+    final isReady = slot.loaded && !limitReached;
     final isDisabled = limitReached;
 
     return Container(
@@ -387,7 +431,8 @@ class _VideoSlotCard extends StatelessWidget {
           Column(
             children: [
               Container(
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: isDisabled
                       ? AppColors.fondoCardBorde
@@ -446,9 +491,10 @@ class _VideoSlotCard extends StatelessWidget {
                 style: const TextStyle(
                     color: AppColors.textoDeshabilitado, fontSize: 10),
                 textAlign: TextAlign.center)
-          else if (slot.loading)
+          else if (slot.loading || slot.showing)
             const SizedBox(
-              width: 22, height: 22,
+              width: 22,
+              height: 22,
               child: CircularProgressIndicator(
                   color: AppColors.colorVideos, strokeWidth: 2),
             )
@@ -473,9 +519,37 @@ class _VideoSlotCard extends StatelessWidget {
           else if (!slot.loaded)
             // Cargando silencioso (retry automático en curso)
             const SizedBox(
-              width: 18, height: 18,
+              width: 18,
+              height: 18,
               child: CircularProgressIndicator(
                   color: AppColors.textoSecundario, strokeWidth: 1.5),
+            )
+          else if (cooldownSeconds > 0)
+            // ── Cooldown activo: muestra cuenta regresiva ────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.timer_rounded,
+                      color: Colors.amber, size: 14),
+                  const SizedBox(width: 5),
+                  Text(
+                    '${cooldownSeconds}s',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             SizedBox(
@@ -491,8 +565,8 @@ class _VideoSlotCard extends StatelessWidget {
                   elevation: 0,
                 ),
                 child: Text(context.l10n.videosWatch,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 13)),
               ),
             ),
         ],
@@ -525,7 +599,7 @@ class _DailyProgressCardState extends State<_DailyProgressCard> {
   }
 
   void _updateRemaining() {
-    final now      = DateTime.now().toUtc();
+    final now = DateTime.now().toUtc();
     final midnight = DateTime.utc(now.year, now.month, now.day + 1);
     setState(() => _remaining = midnight.difference(now));
   }
@@ -545,11 +619,11 @@ class _DailyProgressCardState extends State<_DailyProgressCard> {
 
   @override
   Widget build(BuildContext context) {
-    final watched       = widget.watched;
-    final max           = widget.max;
-    final pct           = (watched / max).clamp(0.0, 1.0);
-    final earned        = watched * AppConstants.coinsPerVideo;
-    final limitReached  = watched >= max;
+    final watched = widget.watched;
+    final max = widget.max;
+    final pct = (watched / max).clamp(0.0, 1.0);
+    final earned = watched * AppConstants.coinsPerVideo;
+    final limitReached = watched >= max;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -585,8 +659,7 @@ class _DailyProgressCardState extends State<_DailyProgressCard> {
                         fontSize: 15)),
               ]),
               Text('$watched / $max',
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 13)),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 10),
@@ -596,8 +669,7 @@ class _DailyProgressCardState extends State<_DailyProgressCard> {
               value: pct,
               minHeight: 6,
               backgroundColor: Colors.white30,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
           const SizedBox(height: 8),

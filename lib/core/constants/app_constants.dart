@@ -18,7 +18,12 @@ class AppConstants {
   // ── Recompensas ───────────────────────────────────────────────
   static const int coinsPerVideo = 30;      // 30 monedas = $0.003 por video
   static const int coinsPerVideoMax = 50;   // max 50 videos/día = 1,500 monedas
-  static const int coinsPerSurvey = 6000;   // ~$0.60 por encuesta (CPX paga ~$1, damos 60%)
+  // ── CPX Research — economía de encuestas ─────────────────────────
+  // Estos valores DEBEN coincidir con las env vars del servidor:
+  //   CPX_COINS_DIVISOR=2  CPX_COINS_MAX=5000  CPX_COINS_MIN=100
+  static const double cpxCoinsDivisor = 2.0;  // divide amount_local de CPX
+  static const int    cpxCoinsMax     = 5000; // máximo por encuesta
+  static const int    cpxCoinsMin     = 100;  // mínimo por encuesta
   static const int coinsStreak7days = 1000; // bonus racha 7 días = $0.10
   static const int coinsStreak30days = 5000; // bonus racha 30 días = $0.50
   static const int coinsReferral = 1000;   // referido cobra = $0.10

@@ -598,6 +598,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get videosRetry => 'Reintentar';
 
   @override
+  String get videosUnavailable => 'No disponible\nahora';
+
+  @override
   String get videosWatch => 'Ver';
 
   @override
@@ -904,10 +907,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Instala juegos y apps para ganar\nmonedas extra sin ver anuncios.';
 
   @override
-  String get gamesOpenButton => 'Ver juegos y ofertas';
+  String get gamesOpenButton => '🎮  Ver Juegos y Ganar';
 
   @override
-  String get gamesExploreSoon => 'Explorar próximamente';
+  String get gamesExploreSoon => '🔓  Ver Catálogo';
 
   @override
   String get gamesInstallGames => 'Instala juegos';
@@ -951,6 +954,68 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gamesComingSoonButton => 'Entendido';
+
+  @override
+  String get gamesStatusActive => 'ACTIVO';
+
+  @override
+  String get gamesStatusSoon => 'PRÓXIMAMENTE';
+
+  @override
+  String get gamesHeroTitle => '¡Juega y Gana\nMonedas Reales! 🎮';
+
+  @override
+  String get gamesHeroSubtitle =>
+      'Descarga juegos, completa misiones\ny acumula monedas canjeables.';
+
+  @override
+  String get gamesPopularTitle => 'Juegos Populares';
+
+  @override
+  String get gamesSeeAll => 'Ver todos →';
+
+  @override
+  String get gamesStatGames => '50+ juegos';
+
+  @override
+  String get gamesStatReward => 'Hasta 5,000 🪙';
+
+  @override
+  String get gamesStatInstant => 'Crédito inmediato';
+
+  @override
+  String get gamesHowTitle => '¿Cómo funciona?';
+
+  @override
+  String get gamesStep1Title => 'Descarga un juego';
+
+  @override
+  String get gamesStep1Desc =>
+      'Elige cualquier juego del catálogo y descárgalo gratis.';
+
+  @override
+  String get gamesStep2Title => 'Juega y completa misiones';
+
+  @override
+  String get gamesStep2Desc =>
+      'Alcanza los niveles o metas indicadas en la oferta.';
+
+  @override
+  String get gamesStep3Title => '¡Gana monedas!';
+
+  @override
+  String get gamesStep3Desc =>
+      'Las monedas se acreditan automáticamente al completar.';
+
+  @override
+  String get gamesFreeLabel => 'GRATIS';
+
+  @override
+  String get gamesMaintenanceTitle => 'Juegos en mantenimiento';
+
+  @override
+  String get gamesMaintenanceSubtitle =>
+      'Estamos preparando algo increíble.\nVuelve en unas horas.';
 
   @override
   String get dailyBonusClaimedToast => '¡Bono diario reclamado!';

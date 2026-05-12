@@ -597,6 +597,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videosRetry => 'Retry';
 
   @override
+  String get videosUnavailable => 'Not available\nright now';
+
+  @override
   String get videosWatch => 'Watch';
 
   @override
@@ -902,10 +905,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Install games and apps to earn\nextra coins without watching ads.';
 
   @override
-  String get gamesOpenButton => 'See games and offers';
+  String get gamesOpenButton => '🎮  See Games and Earn';
 
   @override
-  String get gamesExploreSoon => 'Explore coming soon';
+  String get gamesExploreSoon => '🔓  View Catalog';
 
   @override
   String get gamesInstallGames => 'Install games';
@@ -948,6 +951,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gamesComingSoonButton => 'Got it';
+
+  @override
+  String get gamesStatusActive => 'ACTIVE';
+
+  @override
+  String get gamesStatusSoon => 'COMING SOON';
+
+  @override
+  String get gamesHeroTitle => 'Play and Earn\nReal Coins! 🎮';
+
+  @override
+  String get gamesHeroSubtitle =>
+      'Download games, complete missions\nand earn redeemable coins.';
+
+  @override
+  String get gamesPopularTitle => 'Popular Games';
+
+  @override
+  String get gamesSeeAll => 'See all →';
+
+  @override
+  String get gamesStatGames => '50+ games';
+
+  @override
+  String get gamesStatReward => 'Up to 5,000 🪙';
+
+  @override
+  String get gamesStatInstant => 'Instant credit';
+
+  @override
+  String get gamesHowTitle => 'How does it work?';
+
+  @override
+  String get gamesStep1Title => 'Download a game';
+
+  @override
+  String get gamesStep1Desc =>
+      'Choose any game from the catalog and download it for free.';
+
+  @override
+  String get gamesStep2Title => 'Play and complete missions';
+
+  @override
+  String get gamesStep2Desc =>
+      'Reach the levels or goals indicated in the offer.';
+
+  @override
+  String get gamesStep3Title => 'Earn coins!';
+
+  @override
+  String get gamesStep3Desc =>
+      'Coins are credited automatically upon completion.';
+
+  @override
+  String get gamesFreeLabel => 'FREE';
+
+  @override
+  String get gamesMaintenanceTitle => 'Games under maintenance';
+
+  @override
+  String get gamesMaintenanceSubtitle =>
+      'We\'re preparing something amazing.\nCome back in a few hours.';
 
   @override
   String get dailyBonusClaimedToast => 'Daily bonus claimed!';

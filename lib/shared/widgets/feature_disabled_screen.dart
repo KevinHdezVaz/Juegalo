@@ -13,31 +13,49 @@ enum FeatureTheme {
 
 extension _FeatureThemeX on FeatureTheme {
   List<Color> get gradientColors => switch (this) {
-    FeatureTheme.games    => [const Color(0xFF1E0547), const Color(0xFF3B1A8C)],
-    FeatureTheme.surveys  => [const Color(0xFF012E1E), const Color(0xFF065F46)],
-    FeatureTheme.videos   => [const Color(0xFF2D1200), const Color(0xFF92400E)],
-    FeatureTheme.cashout  => [const Color(0xFF0F1B3D), const Color(0xFF1E3A7B)],
-    FeatureTheme.referrals=> [const Color(0xFF2D0037), const Color(0xFF6B21A8)],
-    FeatureTheme.generic  => [const Color(0xFF0F172A), const Color(0xFF1E293B)],
-  };
+        FeatureTheme.games => [
+            const Color(0xFF1E0547),
+            const Color(0xFF3B1A8C)
+          ],
+        FeatureTheme.surveys => [
+            const Color(0xFF012E1E),
+            const Color(0xFF065F46)
+          ],
+        FeatureTheme.videos => [
+            const Color(0xFF2D1200),
+            const Color(0xFF92400E)
+          ],
+        FeatureTheme.cashout => [
+            const Color(0xFF0F1B3D),
+            const Color(0xFF1E3A7B)
+          ],
+        FeatureTheme.referrals => [
+            const Color(0xFF2D0037),
+            const Color(0xFF6B21A8)
+          ],
+        FeatureTheme.generic => [
+            const Color(0xFF0F172A),
+            const Color(0xFF1E293B)
+          ],
+      };
 
   Color get accentColor => switch (this) {
-    FeatureTheme.games    => const Color(0xFFA78BFA),
-    FeatureTheme.surveys  => const Color(0xFF34D399),
-    FeatureTheme.videos   => const Color(0xFFFBBF24),
-    FeatureTheme.cashout  => const Color(0xFF60A5FA),
-    FeatureTheme.referrals=> const Color(0xFFD946EF),
-    FeatureTheme.generic  => const Color(0xFF94A3B8),
-  };
+        FeatureTheme.games => const Color(0xFFA78BFA),
+        FeatureTheme.surveys => const Color(0xFF34D399),
+        FeatureTheme.videos => const Color(0xFFFBBF24),
+        FeatureTheme.cashout => const Color(0xFF60A5FA),
+        FeatureTheme.referrals => const Color(0xFFD946EF),
+        FeatureTheme.generic => const Color(0xFF94A3B8),
+      };
 
   Color get iconBg => switch (this) {
-    FeatureTheme.games    => const Color(0xFF4C1D95),
-    FeatureTheme.surveys  => const Color(0xFF065F46),
-    FeatureTheme.videos   => const Color(0xFF78350F),
-    FeatureTheme.cashout  => const Color(0xFF1E3A8A),
-    FeatureTheme.referrals=> const Color(0xFF581C87),
-    FeatureTheme.generic  => const Color(0xFF334155),
-  };
+        FeatureTheme.games => const Color(0xFF4C1D95),
+        FeatureTheme.surveys => const Color(0xFF065F46),
+        FeatureTheme.videos => const Color(0xFF78350F),
+        FeatureTheme.cashout => const Color(0xFF1E3A8A),
+        FeatureTheme.referrals => const Color(0xFF581C87),
+        FeatureTheme.generic => const Color(0xFF334155),
+      };
 }
 
 /// Widget premium para secciones desactivadas por feature flag.
@@ -81,7 +99,7 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme  = widget.theme;
+    final theme = widget.theme;
     final accent = theme.accentColor;
 
     return Container(
@@ -158,7 +176,8 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
 
               // ── Chip "Temporalmente desactivado" ───────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -179,7 +198,7 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
                     ),
                     const SizedBox(width: 7),
                     Text(
-                      'Temporalmente desactivado',
+                      'En mantenimiento temporalmente',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -225,7 +244,8 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
                 animation: _pulse,
                 builder: (_, __) => Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 16,
+                    horizontal: 20,
+                    vertical: 16,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(
@@ -233,7 +253,8 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1 + _pulse.value * 0.05),
+                      color: Colors.white
+                          .withValues(alpha: 0.1 + _pulse.value * 0.05),
                     ),
                   ),
                   child: Row(

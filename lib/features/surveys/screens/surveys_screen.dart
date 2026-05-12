@@ -2,7 +2,6 @@ import 'package:cpx_research_sdk_flutter/cpx.dart';
 import 'package:cpx_research_sdk_flutter/model/cpx_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
@@ -62,38 +61,44 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     required String earningsGross,
   }) async {
     if (transactionId.isEmpty) return;
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (uid == null) return;
-    try {
-      await Supabase.instance.client.rpc('credit_coins', params: {
-        'p_user_id': uid,
-        'p_coins': AppConstants.coinsPerSurvey,
-        'p_source': 'survey',
-        'p_description': 'Encuesta CPX completada (\$$earningsGross)',
-      });
-      // Marcar como pagada para no procesar de nuevo
-      markTransactionAsPaid(transactionId, messageId);
 
-      // Refrescar saldo en la UI
-      ref.invalidate(userProvider);
-      ref.invalidate(userNotifierProvider);
+    // ── El postback server-side (CPX → /api/postback/cpx) ya acreditó ──────
+    // las monedas reales. Flutter solo marca como pagada y refresca la UI.
+    // NO llamamos credit_coins directamente para evitar doble crédito.
+    markTransactionAsPaid(transactionId, messageId);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            context.l10n.surveysCoinsEarned(AppConstants.coinsPerSurvey.formatted),
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: AppColors.verdePrimario,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ));
-        await tryClaimDailyBonus(context, ref);
-        await tryClaimDailyGoalBonus(context, ref);
-      }
-    } catch (e) {
-      debugPrint('❌ credit_coins (survey): $e');
-    }
+    // Calcular monedas reales con la misma fórmula del servidor
+    // (CPX_COINS_DIVISOR=2, CPX_COINS_MAX=5000, CPX_COINS_MIN=100)
+    final rawCoins = double.tryParse(earningsGross) ?? 0.0;
+    final earnedCoins = (rawCoins / AppConstants.cpxCoinsDivisor)
+        .floor()
+        .clamp(AppConstants.cpxCoinsMin, AppConstants.cpxCoinsMax);
+
+    // Esperar brevemente a que el postback procese antes de refrescar
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!context.mounted) return;
+
+    ref.invalidate(userProvider);
+    ref.invalidate(userNotifierProvider);
+
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        // ignore: use_build_context_synchronously
+        context.l10n.surveysCoinsEarned(earnedCoins.formatted),
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      backgroundColor: AppColors.verdePrimario,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 3),
+    ));
+
+    // ignore: use_build_context_synchronously
+    await tryClaimDailyBonus(context, ref);
+    if (!context.mounted) return;
+    // ignore: use_build_context_synchronously
+    await tryClaimDailyGoalBonus(context, ref);
   }
 
   Future<void> _refresh() async {
@@ -105,8 +110,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   String _timeAgo(BuildContext context) {
     if (_lastUpdated == null) return '';
     final diff = DateTime.now().difference(_lastUpdated!);
-    if (diff.inSeconds < 60) return context.l10n.surveysTimeAgoSeconds(diff.inSeconds);
-    if (diff.inMinutes < 60) return context.l10n.surveysTimeAgoMinutes(diff.inMinutes);
+    if (diff.inSeconds < 60)
+      return context.l10n.surveysTimeAgoSeconds(diff.inSeconds);
+    if (diff.inMinutes < 60)
+      return context.l10n.surveysTimeAgoMinutes(diff.inMinutes);
     return context.l10n.surveysTimeAgoHours(diff.inHours);
   }
 
@@ -137,8 +144,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.surveysEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Encuestas no disponibles',
-        subtitle: 'Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.',
+        title: 'Encuestas en mantenimiento.',
+        subtitle:
+            'Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.',
         icon: Icons.poll_rounded,
         theme: FeatureTheme.surveys,
       );
@@ -189,8 +197,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                           return Text(
                             count > 0
                                 ? (count == 1
-                                    ? ctx.l10n.surveysCount(count, _timeAgo(ctx))
-                                    : ctx.l10n.surveysCountPlural(count, _timeAgo(ctx)))
+                                    ? ctx.l10n
+                                        .surveysCount(count, _timeAgo(ctx))
+                                    : ctx.l10n.surveysCountPlural(
+                                        count, _timeAgo(ctx)))
                                 : ctx.l10n.surveysUpdated(_timeAgo(ctx)),
                             style: const TextStyle(
                               color: AppColors.textoSecundario,
@@ -244,7 +254,8 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         children: [
                           TextSpan(text: context.l10n.surveysEarn),
                           TextSpan(
-                            text: '+${AppConstants.coinsPerSurvey.formatted} monedas',
+                            text:
+                                '+${AppConstants.cpxCoinsMin.formatted}–${AppConstants.cpxCoinsMax.formatted} monedas',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               color: AppColors.verdePrimario,

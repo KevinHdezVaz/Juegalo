@@ -40,7 +40,7 @@ extension PaymentMethodX on PaymentMethod {
   TextInputType get keyboardType => TextInputType.emailAddress;
 }
 
-// ── Pantalla ──────────────────────────────────────────────────────
+// ── Pantalla principal ────────────────────────────────────────────
 class CashoutScreen extends ConsumerStatefulWidget {
   const CashoutScreen({super.key});
 
@@ -48,50 +48,47 @@ class CashoutScreen extends ConsumerStatefulWidget {
   ConsumerState<CashoutScreen> createState() => _CashoutScreenState();
 }
 
-class _CashoutScreenState extends ConsumerState<CashoutScreen> {
+class _CashoutScreenState extends ConsumerState<CashoutScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
   PaymentMethod _method = PaymentMethod.paypal;
   final _detailCtrl     = TextEditingController();
-  int _coins            = -1; // -1 = no inicializado → se setea al máximo en el primer build
+  int _coins            = -1;
   bool _loading         = false;
   _Currency _currency   = _Currency.usd;
 
-  // Convierte monedas a USD exacto (sin trailing zeros)
   static String _usd(int coins) =>
       (coins / AppConstants.coinsPerDollar).fmtUsd;
 
   @override
   void initState() {
     super.initState();
-    debugPrint('🔵 [Cashout] initState | _loading: $_loading');
+    _tabController = TabController(length: 2, vsync: this);
+    debugPrint('🔵 [Cashout] initState');
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _detailCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit(int availableCoins) async {
     final coinsToSpend = _coins;
-    debugPrint('🟡 [Cashout] _submit llamado | coinsToSpend: $coinsToSpend | disponibles: $availableCoins');
-
     if (coinsToSpend > availableCoins) {
-      debugPrint('🔴 [Cashout] Bloqueado: saldo insuficiente');
       _showInsufficientCoinsDialog(context, availableCoins);
       return;
     }
-
     final detail = _detailCtrl.text.trim();
     if (detail.isEmpty) {
-      debugPrint('🔴 [Cashout] Bloqueado: detail vacío');
       _snack('Ingresa los datos de tu cuenta', error: true);
       return;
     }
-
     setState(() => _loading = true);
     try {
       final uid = Supabase.instance.client.auth.currentUser?.id;
-      debugPrint('🟡 [Cashout] uid: $uid');
       if (uid == null) throw Exception('No autenticado');
 
       await Supabase.instance.client.rpc('request_cashout', params: {
@@ -100,11 +97,10 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
         'p_coins'         : coinsToSpend,
         'p_method'        : _method.name,
         'p_payment_detail': '$detail | ${_currency.code}',
-        'p_account'       : detail,
+        'p_account'       : '$detail | ${_currency.code}',
       });
 
       if (mounted) {
-        // Refrescar saldo y solicitudes
         ref.invalidate(userProvider);
         ref.invalidate(userNotifierProvider);
         ref.invalidate(cashoutRequestsProvider);
@@ -112,8 +108,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
         Navigator.of(context).pop();
       }
     } catch (e, stack) {
-      debugPrint('🔴 [Cashout] ERROR: $e');
-      debugPrint('🔴 [Cashout] STACK: $stack');
+      debugPrint('🔴 [Cashout] ERROR: $e\n$stack');
       if (mounted) _snack('Error: $e', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -135,13 +130,13 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: AppColors.fondoElevado,
-        title: Row(
-          children: [
-            const Icon(Icons.info_outline_rounded, color: AppColors.azulPrimario),
-            const SizedBox(width: 10),
-            Text(context.l10n.walletAlmostThere, style: const TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.bold)),
-          ],
-        ),
+        title: Row(children: [
+          const Icon(Icons.info_outline_rounded, color: AppColors.azulPrimario),
+          const SizedBox(width: 10),
+          Text(context.l10n.walletAlmostThere,
+              style: const TextStyle(
+                  color: AppColors.textoPrimario, fontWeight: FontWeight.bold)),
+        ]),
         content: Text(
           context.l10n.walletNeedCoins(
             AppConstants.minCashoutCoins.formatted,
@@ -152,7 +147,10 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.walletGotIt, style: const TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.bold)),
+            child: Text(context.l10n.walletGotIt,
+                style: const TextStyle(
+                    color: AppColors.azulPrimario,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -164,9 +162,6 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
     final userAsync = ref.watch(userProvider);
     final notifier  = ref.read(userNotifierProvider.notifier);
 
-    debugPrint('🔵 [Cashout] build | isAnonymous: ${notifier.isAnonymous} | _loading: $_loading');
-
-    // Detectar anónimo
     if (notifier.isAnonymous) {
       return Scaffold(
         backgroundColor: AppColors.fondoPrincipal,
@@ -182,198 +177,632 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen> {
     return Scaffold(
       backgroundColor: AppColors.fondoPrincipal,
       appBar: AppBar(
-        title: const Text('Solicitar cobro'),
+        title: const Text('Cobrar'),
         backgroundColor: AppColors.fondoPrincipal,
         foregroundColor: AppColors.textoPrimario,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.azulPrimario,
+          unselectedLabelColor: AppColors.textoSecundario,
+          indicatorColor: AppColors.azulPrimario,
+          indicatorWeight: 2.5,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          unselectedLabelStyle:
+              const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          tabs: const [
+            Tab(text: 'Solicitar'),
+            Tab(text: 'Mis pagos'),
+          ],
+        ),
       ),
       body: userAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.azulPrimario)),
-        error: (e, __) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+        error: (e, __) => _ErrorState(onRetry: () => ref.invalidate(userProvider)),
+        data: (user) {
+          if (user == null) {
+            return _ErrorState(onRetry: () => ref.invalidate(userProvider));
+          }
+          final maxCoins = user.coins.clamp(AppConstants.minCashoutCoins, 1000000);
+          if (_coins < 0 || _coins > maxCoins) _coins = maxCoins;
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              // ── Tab 1: Solicitar ───────────────────────────────
+              _RequestTab(
+                user: user,
+                coins: _coins,
+                maxCoins: maxCoins,
+                method: _method,
+                currency: _currency,
+                detailCtrl: _detailCtrl,
+                loading: _loading,
+                onCoinsChanged: (v) => setState(() => _coins = v),
+                onMethodChanged: (m) => setState(() {
+                  _method = m;
+                  _detailCtrl.clear();
+                }),
+                onCurrencyChanged: (c) => setState(() => _currency = c),
+                onSubmit: () => _submit(user.coins),
+                onInsufficientCoins: () =>
+                    _showInsufficientCoinsDialog(context, user.coins),
+              ),
+
+              // ── Tab 2: Historial ───────────────────────────────
+              const _HistoryTab(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ── Tab 1: Formulario de cobro ────────────────────────────────────
+class _RequestTab extends StatelessWidget {
+  final dynamic user;
+  final int coins;
+  final int maxCoins;
+  final PaymentMethod method;
+  final _Currency currency;
+  final TextEditingController detailCtrl;
+  final bool loading;
+  final ValueChanged<int> onCoinsChanged;
+  final ValueChanged<PaymentMethod> onMethodChanged;
+  final ValueChanged<_Currency> onCurrencyChanged;
+  final VoidCallback onSubmit;
+  final VoidCallback onInsufficientCoins;
+
+  const _RequestTab({
+    required this.user,
+    required this.coins,
+    required this.maxCoins,
+    required this.method,
+    required this.currency,
+    required this.detailCtrl,
+    required this.loading,
+    required this.onCoinsChanged,
+    required this.onMethodChanged,
+    required this.onCurrencyChanged,
+    required this.onSubmit,
+    required this.onInsufficientCoins,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Saldo disponible ─────────────────────────────────
+          _BalanceChip(coins: user.coins),
+          const SizedBox(height: 16),
+
+          // ── Banner de confianza ──────────────────────────────
+          const _TrustBanner(),
+          const SizedBox(height: 24),
+
+          // ── Monto ────────────────────────────────────────────
+          const _SectionTitle('Monto a cobrar'),
+          const SizedBox(height: 8),
+          _AmountSelector(
+            coins: coins,
+            maxCoins: maxCoins,
+            onChanged: onCoinsChanged,
+          ),
+          const SizedBox(height: 24),
+
+          // ── Método de pago ───────────────────────────────────
+          const _SectionTitle('Método de cobro'),
+          const SizedBox(height: 10),
+          ...PaymentMethod.values.map((m) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _MethodCard(
+              method: m,
+              selected: method == m,
+              onTap: m.isAvailable ? () {
+                if (user.coins < AppConstants.minCashoutCoins) {
+                  onInsufficientCoins();
+                  return;
+                }
+                onMethodChanged(m);
+              } : null,
+            ),
+          )),
+          const SizedBox(height: 16),
+
+          // ── Datos de cuenta y moneda ─────────────────────────
+          const _SectionTitle('Datos de pago'),
+          const SizedBox(height: 8),
+          // Campo de cuenta y moneda en la misma card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.fondoElevado,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.fondoCardBorde),
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textoSecundario),
-                const SizedBox(height: 16),
-                Text('No se pudo cargar tu información',
-                    style: const TextStyle(color: AppColors.textoPrimario, fontWeight: FontWeight.w700, fontSize: 16),
-                    textAlign: TextAlign.center),
+                Text('Cuenta de ${method.label}',
+                    style: const TextStyle(
+                        color: AppColors.textoSecundario,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500)),
                 const SizedBox(height: 8),
-                Text('Verifica tu conexión e intenta de nuevo',
-                    style: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(userProvider),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.azulPrimario,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                TextField(
+                  controller: detailCtrl,
+                  keyboardType: method.keyboardType,
+                  style: const TextStyle(
+                      color: AppColors.textoPrimario, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: method.hint,
+                    hintStyle:
+                        const TextStyle(color: AppColors.textoDeshabilitado),
+                    prefixIcon:
+                        Icon(method.icon, color: method.color, size: 20),
+                    filled: true,
+                    fillColor: AppColors.fondoPrincipal,
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          const BorderSide(color: AppColors.fondoCardBorde),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          const BorderSide(color: AppColors.fondoCardBorde),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: method.color),
+                    ),
                   ),
-                  child: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(height: 14),
+                const Divider(color: AppColors.fondoCardBorde, height: 1),
+                const SizedBox(height: 14),
+                Text('Moneda de pago',
+                    style: const TextStyle(
+                        color: AppColors.textoSecundario,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                _CurrencySelector(
+                  selected: currency,
+                  onChanged: onCurrencyChanged,
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          // ── Resumen ──────────────────────────────────────────
+          _SummaryBox(coins: coins, method: method.label, currency: currency),
+          const SizedBox(height: 20),
+
+          // ── Botón ────────────────────────────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: loading ? null : onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.azulPrimario,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 22, height: 22,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2.5))
+                  : Text(
+                      'Confirmar cobro de ${_CashoutScreenState._usd(coins)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              context.l10n.cashoutProcessingNote,
+              style: const TextStyle(
+                  color: AppColors.textoSecundario, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Banner de confianza ───────────────────────────────────────────
+class _TrustBanner extends StatelessWidget {
+  const _TrustBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.verdePrimario.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: AppColors.verdePrimario.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.verdePrimario.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.verified_rounded,
+                  color: AppColors.verdePrimario, size: 16),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'App 100% segura y confiable',
+              style: TextStyle(
+                color: AppColors.verdePrimario,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          const _TrustItem(
+            icon: Icons.schedule_rounded,
+            text: 'Pagos procesados en 2–3 días hábiles',
+          ),
+          const SizedBox(height: 8),
+          const _TrustItem(
+            icon: Icons.people_alt_rounded,
+            text: 'Miles de usuarios ya cobraron exitosamente',
+          ),
+          const SizedBox(height: 8),
+          const _TrustItem(
+            icon: Icons.lock_rounded,
+            text: 'Tus datos están protegidos y encriptados',
+          ),
+          const SizedBox(height: 8),
+          const _TrustItem(
+            icon: Icons.support_agent_rounded,
+            text: 'Soporte disponible si tienes algún problema',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrustItem extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _TrustItem({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.verdePrimario, size: 15),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.textoSecundario,
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
         ),
-        data: (user) {
-          debugPrint('🔵 [Cashout] userProvider data | user: ${user?.id} | coins: ${user?.coins}');
-          if (user == null) {
-            debugPrint('🔴 [Cashout] user es NULL → mostrando reintento');
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
+      ],
+    );
+  }
+}
+
+// ── Tab 2: Historial de pagos ─────────────────────────────────────
+class _HistoryTab extends ConsumerWidget {
+  const _HistoryTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cashoutAsync = ref.watch(cashoutRequestsProvider);
+
+    return cashoutAsync.when(
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.azulPrimario)),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded,
+                size: 42, color: AppColors.textoSecundario),
+            const SizedBox(height: 12),
+            const Text('No se pudo cargar el historial',
+                style: TextStyle(color: AppColors.textoSecundario)),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => ref.invalidate(cashoutRequestsProvider),
+              child: const Text('Reintentar',
+                  style: TextStyle(color: AppColors.azulPrimario)),
+            ),
+          ],
+        ),
+      ),
+      data: (requests) {
+        if (requests.isEmpty) {
+          return const _EmptyHistory();
+        }
+        return RefreshIndicator(
+          color: AppColors.azulPrimario,
+          onRefresh: () async => ref.invalidate(cashoutRequestsProvider),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (_, i) => _HistoryCard(request: requests[i]),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EmptyHistory extends StatelessWidget {
+  const _EmptyHistory();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.textoPrimario.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                color: AppColors.textoSecundario,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sin solicitudes aún',
+              style: TextStyle(
+                color: AppColors.textoPrimario,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Tus cobros aparecerán aquí\ncuando los solicites.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textoSecundario,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryCard extends StatelessWidget {
+  final Map<String, dynamic> request;
+  const _HistoryCard({required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    final status     = request['status'] as String? ?? 'pending';
+    final amountUsd  = (request['amount_usd'] as num?)?.toDouble() ?? 0;
+    final coins      = (request['coins'] as num?)?.toInt() ?? 0;
+    final method     = (request['method'] as String? ?? 'paypal').toUpperCase();
+    final account    = request['account'] as String? ?? '—';
+    final createdAt  = request['created_at'] as String?;
+
+    final date = createdAt != null
+        ? _formatDate(DateTime.parse(createdAt).toLocal())
+        : '—';
+
+    final (statusLabel, statusColor, statusIcon) = switch (status) {
+      'paid'       => ('Pagado',      AppColors.verdePrimario,         Icons.check_circle_rounded),
+      'processing' => ('Procesando',  AppColors.azulPrimario,          Icons.hourglass_top_rounded),
+      'rejected'   => ('Rechazado',   AppColors.colorVideos,           Icons.cancel_rounded),
+      _            => ('Pendiente',   const Color(0xFFF59E0B),         Icons.schedule_rounded),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.fondoCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.fondoCardBorde),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Fila superior: monto + badge ─────────────────────
+          Row(
+            children: [
+              // Ícono método
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.azulPrimario.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded,
+                    color: AppColors.azulPrimario, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircularProgressIndicator(color: AppColors.azulPrimario),
-                    const SizedBox(height: 20),
-                    const Text('Cargando tu cuenta...',
-                        style: TextStyle(color: AppColors.textoSecundario, fontSize: 14)),
-                    const SizedBox(height: 24),
-                    TextButton(
-                      onPressed: () => ref.invalidate(userProvider),
-                      child: const Text('Reintentar',
-                          style: TextStyle(color: AppColors.azulPrimario, fontWeight: FontWeight.w700)),
+                    Text(
+                      '\$${amountUsd.toStringAsFixed(2)} USD',
+                      style: const TextStyle(
+                        color: AppColors.textoPrimario,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      '${coins.formatted} monedas • $method',
+                      style: const TextStyle(
+                          color: AppColors.textoSecundario, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-            );
-          }
-          final maxCoins = user.coins.clamp(AppConstants.minCashoutCoins, 1000000);
-          // Primera vez o si el saldo bajó → seleccionar el máximo disponible
-          if (_coins < 0 || _coins > maxCoins) _coins = maxCoins;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Saldo disponible ───────────────────────────────
-                _BalanceChip(coins: user.coins),
-                const SizedBox(height: 24),
-
-                // ── Monto ──────────────────────────────────────────
-                const _SectionTitle('Monto a cobrar'),
-                const SizedBox(height: 8),
-                _AmountSelector(
-                  coins: _coins,
-                  maxCoins: maxCoins,
-                  onChanged: (v) => setState(() => _coins = v),
+              // Badge de estado
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 24),
-
-                // ── Método de pago ─────────────────────────────────
-                const _SectionTitle('Método de cobro'),
-                const SizedBox(height: 10),
-                ...PaymentMethod.values.map((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _MethodCard(
-                    method: m,
-                    selected: _method == m,
-                    onTap: m.isAvailable ? () {
-                      if (user.coins < AppConstants.minCashoutCoins) {
-                        _showInsufficientCoinsDialog(context, user.coins);
-                        return;
-                      }
-                      setState(() {
-                        _method = m;
-                        _detailCtrl.clear();
-                      });
-                    } : null,
-                  ),
-                )),
-                const SizedBox(height: 16),
-
-                // ── Datos de cuenta ────────────────────────────────
-                const _SectionTitle('Datos de tu cuenta'),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _detailCtrl,
-                  keyboardType: _method.keyboardType,
-                  inputFormatters: null,
-                  style: const TextStyle(color: AppColors.textoPrimario),
-                  decoration: InputDecoration(
-                    hintText: _method.hint,
-                    hintStyle: const TextStyle(color: AppColors.textoDeshabilitado),
-                    prefixIcon: Icon(_method.icon, color: _method.color, size: 20),
-                    filled: true,
-                    fillColor: AppColors.fondoElevado,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.fondoCardBorde),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.fondoCardBorde),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: _method.color),
-                    ),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, color: statusColor, size: 13),
+                    const SizedBox(width: 4),
+                    Text(statusLabel,
+                        style: TextStyle(
+                            color: statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ],
                 ),
-                const SizedBox(height: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(color: AppColors.fondoCardBorde, height: 1),
+          const SizedBox(height: 10),
 
-                // ── Moneda ─────────────────────────────────────────
-                const _SectionTitle('Moneda de pago'),
-                const SizedBox(height: 8),
-                _CurrencySelector(
-                  selected: _currency,
-                  onChanged: (c) => setState(() => _currency = c),
-                ),
-                const SizedBox(height: 28),
-
-                // ── Resumen ────────────────────────────────────────
-                _SummaryBox(
-                  coins: _coins,
-                  method: _method.label,
-                  currency: _currency,
-                ),
-                const SizedBox(height: 20),
-
-                // ── Botón ──────────────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : () {
-                    debugPrint('🟢 [Cashout] Botón Confirmar tocado | _loading: $_loading | coins: ${user.coins} | _coins: $_coins');
-                    _submit(user.coins);
-                  },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.azulPrimario,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 22, height: 22,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5))
-                        : Text(
-                            'Confirmar cobro de ${_CashoutScreenState._usd(_coins)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w800, fontSize: 16)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    context.l10n.cashoutProcessingNote,
+          // ── Cuenta + fecha ───────────────────────────────────
+          Row(
+            children: [
+              const Icon(Icons.alternate_email_rounded,
+                  size: 13, color: AppColors.textoSecundario),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(account,
                     style: const TextStyle(
                         color: AppColors.textoSecundario, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
+                    overflow: TextOverflow.ellipsis),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.calendar_today_rounded,
+                  size: 12, color: AppColors.textoSecundario),
+              const SizedBox(width: 4),
+              Text(date,
+                  style: const TextStyle(
+                      color: AppColors.textoSecundario, fontSize: 12)),
+            ],
+          ),
+
+          // Nota extra según estado
+          if (status == 'pending') ...[
+            const SizedBox(height: 8),
+            const Text(
+              '⏱ En revisión — procesamos en 2–3 días hábiles',
+              style: TextStyle(
+                  color: Color(0xFFF59E0B),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500),
             ),
-          );
-        },
+          ] else if (status == 'rejected') ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Contacta soporte si crees que esto es un error.',
+              style: TextStyle(
+                  color: AppColors.colorVideos,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final months = [
+      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+    ];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+  }
+}
+
+// ── Error state ───────────────────────────────────────────────────
+class _ErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded,
+                size: 48, color: AppColors.textoSecundario),
+            const SizedBox(height: 16),
+            const Text('No se pudo cargar tu información',
+                style: TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            const Text('Verifica tu conexión e intenta de nuevo',
+                style: TextStyle(
+                    color: AppColors.textoSecundario, fontSize: 13),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.azulPrimario,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Reintentar',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -417,8 +846,8 @@ class _BalanceChip extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   fontSize: 18)),
           Text(context.l10n.cashoutCoins(coins.formatted),
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 12)),
+              style:
+                  const TextStyle(color: Colors.white70, fontSize: 12)),
         ]),
       ]),
     );
@@ -447,13 +876,13 @@ class _AmountSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final minCoins   = AppConstants.minCashoutCoins;
-    final sliderMax  = maxCoins.toDouble();
-    final sliderMin  = minCoins.toDouble();
-    final divisions  = (maxCoins - minCoins).clamp(1, 100000);
-    final usdStr     = _CashoutScreenState._usd(coins);
-    final usdMaxStr  = _CashoutScreenState._usd(maxCoins);
-    final usdMinStr  = _CashoutScreenState._usd(minCoins);
+    final minCoins  = AppConstants.minCashoutCoins;
+    final sliderMax = maxCoins.toDouble();
+    final sliderMin = minCoins.toDouble();
+    final divisions = (maxCoins - minCoins).clamp(1, 100000);
+    final usdStr    = _CashoutScreenState._usd(coins);
+    final usdMaxStr = _CashoutScreenState._usd(maxCoins);
+    final usdMinStr = _CashoutScreenState._usd(minCoins);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -463,7 +892,6 @@ class _AmountSelector extends StatelessWidget {
         border: Border.all(color: AppColors.fondoCardBorde),
       ),
       child: Column(children: [
-        // USD grande
         Text(
           '$usdStr USD',
           style: const TextStyle(
@@ -471,7 +899,6 @@ class _AmountSelector extends StatelessWidget {
               fontSize: 36,
               fontWeight: FontWeight.w900),
         ),
-        // Monedas equivalentes
         Text(
           context.l10n.cashoutCoins(coins.formatted),
           style: const TextStyle(
@@ -540,11 +967,14 @@ class _MethodCard extends StatelessWidget {
           Container(
             width: 38, height: 38,
             decoration: BoxDecoration(
-              color: method.color.withValues(alpha: available ? 0.15 : 0.06),
+              color: method.color
+                  .withValues(alpha: available ? 0.15 : 0.06),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(method.icon,
-                color: available ? method.color : AppColors.textoDeshabilitado,
+                color: available
+                    ? method.color
+                    : AppColors.textoDeshabilitado,
                 size: 20),
           ),
           const SizedBox(width: 12),
@@ -555,14 +985,19 @@ class _MethodCard extends StatelessWidget {
                 Text(method.label,
                     style: TextStyle(
                         color: available
-                            ? (selected ? AppColors.textoPrimario : AppColors.textoSecundario)
+                            ? (selected
+                                ? AppColors.textoPrimario
+                                : AppColors.textoSecundario)
                             : AppColors.textoDeshabilitado,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14)),
                 Text(method.subtitle(context),
                     style: TextStyle(
                         color: available
-                            ? (selected ? method.color : AppColors.textoDeshabilitado)
+                            ? (selected
+                                ? method.color
+                                : AppColors.textoDeshabilitado)
                             : AppColors.textoDeshabilitado,
                         fontSize: 11,
                         fontWeight: FontWeight.w500)),
@@ -571,7 +1006,8 @@ class _MethodCard extends StatelessWidget {
           ),
           if (!available)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.fondoCardBorde,
                 borderRadius: BorderRadius.circular(8),
@@ -594,7 +1030,8 @@ class _SummaryBox extends StatelessWidget {
   final int coins;
   final String method;
   final _Currency currency;
-  const _SummaryBox({required this.coins, required this.method, required this.currency});
+  const _SummaryBox(
+      {required this.coins, required this.method, required this.currency});
 
   @override
   Widget build(BuildContext context) {
@@ -609,11 +1046,13 @@ class _SummaryBox extends StatelessWidget {
       child: Column(children: [
         _Row('Monto', '$usdStr USD'),
         const SizedBox(height: 6),
-        _Row(context.l10n.cashoutSummaryCoins, context.l10n.cashoutCoins(coins.formatted)),
+        _Row(context.l10n.cashoutSummaryCoins,
+            context.l10n.cashoutCoins(coins.formatted)),
         const SizedBox(height: 6),
         _Row('Método', method),
         const SizedBox(height: 6),
-        _Row('Moneda', '${currency.flag}  ${currency.code} — ${currency.label}'),
+        _Row('Moneda',
+            '${currency.flag}  ${currency.code} — ${currency.label}'),
       ]),
     );
   }
@@ -654,7 +1093,8 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
   void _snack(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600)),
-      backgroundColor: error ? AppColors.colorVideos : AppColors.verdePrimario,
+      backgroundColor:
+          error ? AppColors.colorVideos : AppColors.verdePrimario,
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -717,8 +1157,6 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
       child: Column(
         children: [
           const SizedBox(height: 16),
-
-          // Icono
           Container(
             width: 80, height: 80,
             decoration: BoxDecoration(
@@ -729,37 +1167,28 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                 color: AppColors.azulPrimario, size: 38),
           ),
           const SizedBox(height: 20),
-
-          // Título
           const Text(
             'Crea una cuenta para cobrar',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textoPrimario,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
+                color: AppColors.textoPrimario,
+                fontSize: 22,
+                fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
             context.l10n.cashoutGuestSubtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: AppColors.textoSecundario,
-              fontSize: 14,
-              height: 1.5,
-            ),
+                color: AppColors.textoSecundario, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 28),
-
-          // Monedas actuales
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
-              ),
+                  colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)]),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(children: [
@@ -768,30 +1197,28 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(context.l10n.cashoutGuestCurrentCoins,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 12)),
                 Consumer(builder: (ctx, ref, __) {
                   final user = ref.watch(userProvider).valueOrNull;
                   return Text(
-                    ctx.l10n.cashoutGuestCoins((user?.coins ?? 0).formatted),
+                    ctx.l10n.cashoutGuestCoins(
+                        (user?.coins ?? 0).formatted),
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800),
                   );
                 }),
               ]),
             ]),
           ),
           const SizedBox(height: 28),
-
           if (_loading)
             const CircularProgressIndicator(color: AppColors.azulPrimario)
           else ...[
-            // Google
             SizedBox(
-              width: double.infinity,
-              height: 54,
+              width: double.infinity, height: 54,
               child: ElevatedButton(
                 onPressed: _linkGoogle,
                 style: ElevatedButton.styleFrom(
@@ -801,34 +1228,33 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Container(
-                    width: 24, height: 24,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5)),
-                    child: const Center(
-                      child: Text('G',
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 24, height: 24,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(5)),
+                        child: const Center(
+                          child: Text('G',
+                              style: TextStyle(
+                                  color: Color(0xFF4285F4),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Continuar con Google',
                           style: TextStyle(
-                              color: Color(0xFF4285F4),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text('Continuar con Google',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                ]),
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                    ]),
               ),
             ),
             const SizedBox(height: 10),
-
-            // Apple (solo iOS)
             if (Platform.isIOS) ...[
               SizedBox(
-                width: double.infinity,
-                height: 54,
+                width: double.infinity, height: 54,
                 child: ElevatedButton(
                   onPressed: _linkApple,
                   style: ElevatedButton.styleFrom(
@@ -851,11 +1277,8 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
               ),
               const SizedBox(height: 10),
             ],
-
-            // Email
             SizedBox(
-              width: double.infinity,
-              height: 54,
+              width: double.infinity, height: 54,
               child: OutlinedButton(
                 onPressed: _linkEmail,
                 style: OutlinedButton.styleFrom(
@@ -877,15 +1300,12 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
               ),
             ),
           ],
-
           const SizedBox(height: 24),
           Text(
             context.l10n.cashoutGuestNote,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                color: AppColors.textoSecundario,
-                fontSize: 12,
-                height: 1.5),
+                color: AppColors.textoSecundario, fontSize: 12, height: 1.5),
           ),
         ],
       ),
@@ -895,7 +1315,8 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
 
 // ── Bottom sheet de creación de cuenta con email ─────────────────
 class _EmailLinkSheet extends StatefulWidget {
-  final Future<void> Function(String email, String password, String firstName, String lastName) onLink;
+  final Future<void> Function(
+      String email, String password, String firstName, String lastName) onLink;
   const _EmailLinkSheet({required this.onLink});
 
   @override
@@ -936,7 +1357,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
       ));
       return;
     }
-
     if (email.isEmpty || pass.isEmpty) return;
     if (pass != pass2) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -954,7 +1374,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
       ));
       return;
     }
-
     setState(() => _loading = true);
     await widget.onLink(email, pass, firstName, lastName);
     if (mounted) setState(() => _loading = false);
@@ -973,7 +1392,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
           Center(
             child: Container(
               width: 40, height: 4,
@@ -983,7 +1401,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
             ),
           ),
           const SizedBox(height: 20),
-
           const Text('Crear cuenta con correo',
               style: TextStyle(
                   color: AppColors.textoPrimario,
@@ -994,8 +1411,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
               style: const TextStyle(
                   color: AppColors.textoSecundario, fontSize: 13)),
           const SizedBox(height: 20),
-
-          // Nombre y Apellido en fila
           Row(
             children: [
               Expanded(
@@ -1020,21 +1435,18 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Email
           _Field(
               controller: _emailCtrl,
               label: context.l10n.emailDialogEmail,
               icon: Icons.email_outlined,
               type: TextInputType.emailAddress),
           const SizedBox(height: 12),
-
-          // Contraseña
           TextField(
             controller: _passCtrl,
             obscureText: _obscure,
             keyboardType: TextInputType.visiblePassword,
-            style: const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
+            style: const TextStyle(
+                color: AppColors.textoPrimario, fontSize: 14),
             decoration: InputDecoration(
               labelText: context.l10n.emailDialogPassword,
               labelStyle: const TextStyle(
@@ -1046,15 +1458,14 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
                   _obscure
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppColors.textoSecundario,
-                  size: 18,
+                  color: AppColors.textoSecundario, size: 18,
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
               filled: true,
               fillColor: AppColors.fondoPrincipal,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14, horizontal: 14),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
@@ -1070,8 +1481,6 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
             ),
           ),
           const SizedBox(height: 12),
-
-          // Confirmar contraseña
           _Field(
               controller: _pass2Ctrl,
               label: context.l10n.profileConfirmPassword,
@@ -1079,10 +1488,8 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
               type: TextInputType.visiblePassword,
               obscure: true),
           const SizedBox(height: 24),
-
           SizedBox(
-            width: double.infinity,
-            height: 52,
+            width: double.infinity, height: 52,
             child: ElevatedButton(
               onPressed: _loading ? null : _submit,
               style: ElevatedButton.styleFrom(
@@ -1130,14 +1537,14 @@ class _Field extends StatelessWidget {
         obscureText: obscure,
         keyboardType: type,
         textInputAction: action,
-        style:
-            const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
+        style: const TextStyle(
+            color: AppColors.textoPrimario, fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
               color: AppColors.textoSecundario, fontSize: 13),
-          prefixIcon:
-              Icon(icon, color: AppColors.textoSecundario, size: 18),
+          prefixIcon: Icon(icon,
+              color: AppColors.textoSecundario, size: 18),
           filled: true,
           fillColor: AppColors.fondoPrincipal,
           contentPadding:
@@ -1179,22 +1586,25 @@ enum _Currency {
 class _CurrencySelector extends StatelessWidget {
   final _Currency selected;
   final ValueChanged<_Currency> onChanged;
-  const _CurrencySelector({required this.selected, required this.onChanged});
+  const _CurrencySelector(
+      {required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _showPicker(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.fondoElevado,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.fondoPrincipal,
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.fondoCardBorde),
         ),
         child: Row(
           children: [
-            Text(selected.flag, style: const TextStyle(fontSize: 20)),
+            Text(selected.flag,
+                style: const TextStyle(fontSize: 20)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1207,7 +1617,8 @@ class _CurrencySelector extends StatelessWidget {
                           fontSize: 14)),
                   Text(selected.label,
                       style: const TextStyle(
-                          color: AppColors.textoSecundario, fontSize: 12)),
+                          color: AppColors.textoSecundario,
+                          fontSize: 12)),
                 ],
               ),
             ),
@@ -1224,49 +1635,51 @@ class _CurrencySelector extends StatelessWidget {
       context: context,
       backgroundColor: AppColors.fondoCard,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: SingleChildScrollView(
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                  color: AppColors.fondoCardBorde,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 14),
-            const Text('Selecciona la moneda',
-                style: TextStyle(
-                    color: AppColors.textoPrimario,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16)),
-            const SizedBox(height: 8),
-            ..._Currency.values.map((c) => ListTile(
-              onTap: () {
-                onChanged(c);
-                Navigator.pop(ctx);
-              },
-              leading: Text(c.flag, style: const TextStyle(fontSize: 22)),
-              title: Text('${c.code} — ${c.label}',
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.fondoCardBorde,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 14),
+              const Text('Selecciona la moneda',
                   style: TextStyle(
-                      color: c == selected
-                          ? AppColors.azulPrimario
-                          : AppColors.textoPrimario,
-                      fontWeight: c == selected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      fontSize: 14)),
-              trailing: c == selected
-                  ? const Icon(Icons.check_rounded,
-                      color: AppColors.azulPrimario, size: 20)
-                  : null,
-            )),
-            const SizedBox(height: 8),
-          ],
-        ),
+                      color: AppColors.textoPrimario,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16)),
+              const SizedBox(height: 8),
+              ..._Currency.values.map((c) => ListTile(
+                onTap: () {
+                  onChanged(c);
+                  Navigator.pop(ctx);
+                },
+                leading: Text(c.flag,
+                    style: const TextStyle(fontSize: 22)),
+                title: Text('${c.code} — ${c.label}',
+                    style: TextStyle(
+                        color: c == selected
+                            ? AppColors.azulPrimario
+                            : AppColors.textoPrimario,
+                        fontWeight: c == selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 14)),
+                trailing: c == selected
+                    ? const Icon(Icons.check_rounded,
+                        color: AppColors.azulPrimario, size: 20)
+                    : null,
+              )),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

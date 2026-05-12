@@ -34,13 +34,14 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userProvider);
-    final flags     = ref.watch(featureFlagsProvider).valueOrNull;
+    final flags = ref.watch(featureFlagsProvider).valueOrNull;
 
     // Flag: cobros desactivados → bloquear todo el tab de Cobrar
     if (flags != null && !flags.cashoutEnabled) {
       return const FeatureDisabledScreen(
-        title: 'Cobros no disponibles',
-        subtitle: 'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
+        title: 'Cobros en mantenimiento.',
+        subtitle:
+            'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
         icon: Icons.account_balance_wallet_rounded,
         theme: FeatureTheme.cashout,
       );
@@ -186,14 +187,7 @@ class WalletScreen extends ConsumerWidget {
                         }
                       }),
                   const SizedBox(height: 10),
-                  _PaymentMethod(
-                      icon: Icons.account_balance_rounded,
-                      name: 'MercadoPago',
-                      desc: context.l10n.walletMercadopagoDesc,
-                      color: const Color(0xFF009EE3),
-                      comingSoon: true,
-                      onTap: null),
-                  const SizedBox(height: 24),
+
                   // ── Historial (preview) ─────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -240,22 +234,19 @@ class WalletScreen extends ConsumerWidget {
                                   SizedBox(
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
-                                      onPressed: () => context
-                                          .push(AppRoutes.transactions),
+                                      onPressed: () =>
+                                          context.push(AppRoutes.transactions),
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor:
-                                            AppColors.azulPrimario,
+                                        foregroundColor: AppColors.azulPrimario,
                                         side: const BorderSide(
                                             color: AppColors.azulPrimario),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(12)),
                                       ),
-                                      icon: const Icon(
-                                          Icons.history_rounded,
+                                      icon: const Icon(Icons.history_rounded,
                                           size: 18),
-                                      label:
-                                          Text(context.l10n.txSeeAll),
+                                      label: Text(context.l10n.txSeeAll),
                                     ),
                                   ),
                                 ],
@@ -336,14 +327,12 @@ class _PaymentMethod extends StatelessWidget {
   final String desc;
   final Color color;
   final VoidCallback? onTap;
-  final bool comingSoon;
   const _PaymentMethod(
       {required this.icon,
       required this.name,
       required this.desc,
       required this.color,
-      this.onTap,
-      this.comingSoon = false});
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +344,7 @@ class _PaymentMethod extends StatelessWidget {
           color: AppColors.fondoCard,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-              color: (!comingSoon && onTap != null)
+              color: onTap != null
                   ? color.withValues(alpha: 0.3)
                   : AppColors.fondoCardBorde),
         ),
@@ -365,12 +354,10 @@ class _PaymentMethod extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: comingSoon ? 0.06 : 0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon,
-                  color: comingSoon ? AppColors.textoDeshabilitado : color,
-                  size: 22),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -378,35 +365,19 @@ class _PaymentMethod extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(name,
-                      style: TextStyle(
-                          color: comingSoon
-                              ? AppColors.textoDeshabilitado
-                              : AppColors.textoPrimario,
+                      style: const TextStyle(
+                          color: AppColors.textoPrimario,
                           fontWeight: FontWeight.w600,
                           fontSize: 14)),
-                  Text(comingSoon ? context.l10n.walletComingSoon : desc,
+                  Text(desc,
                       style: const TextStyle(
                           color: AppColors.textoSecundario, fontSize: 12)),
                 ],
               ),
             ),
-            if (comingSoon)
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.fondoCardBorde,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(context.l10n.walletComingSoon,
-                      style: const TextStyle(
-                          color: AppColors.textoSecundario,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700)))
-            else
-              Icon(Icons.chevron_right,
-                  color: onTap != null ? color : AppColors.textoDeshabilitado,
-                  size: 20),
+            Icon(Icons.chevron_right,
+                color: onTap != null ? color : AppColors.textoDeshabilitado,
+                size: 20),
           ],
         ),
       ),
@@ -511,7 +482,8 @@ class _CashoutStatusCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.l10n.cashoutRequestHeader(amountUsd.fmtUsd, methodLabel),
+                        context.l10n.cashoutRequestHeader(
+                            amountUsd.fmtUsd, methodLabel),
                         style: const TextStyle(
                           color: AppColors.textoPrimario,
                           fontWeight: FontWeight.w700,

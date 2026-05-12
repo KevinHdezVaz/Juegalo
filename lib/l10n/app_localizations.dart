@@ -1156,6 +1156,12 @@ abstract class AppLocalizations {
   /// **'Reintentar'**
   String get videosRetry;
 
+  /// No description provided for @videosUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No disponible\nahora'**
+  String get videosUnavailable;
+
   /// No description provided for @videosWatch.
   ///
   /// In es, this message translates to:
@@ -1675,13 +1681,13 @@ abstract class AppLocalizations {
   /// No description provided for @gamesOpenButton.
   ///
   /// In es, this message translates to:
-  /// **'Ver juegos y ofertas'**
+  /// **'🎮  Ver Juegos y Ganar'**
   String get gamesOpenButton;
 
   /// No description provided for @gamesExploreSoon.
   ///
   /// In es, this message translates to:
-  /// **'Explorar próximamente'**
+  /// **'🔓  Ver Catálogo'**
   String get gamesExploreSoon;
 
   /// No description provided for @gamesInstallGames.
@@ -1755,6 +1761,120 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Entendido'**
   String get gamesComingSoonButton;
+
+  /// No description provided for @gamesStatusActive.
+  ///
+  /// In es, this message translates to:
+  /// **'ACTIVO'**
+  String get gamesStatusActive;
+
+  /// No description provided for @gamesStatusSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'PRÓXIMAMENTE'**
+  String get gamesStatusSoon;
+
+  /// No description provided for @gamesHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Juega y Gana\nMonedas Reales! 🎮'**
+  String get gamesHeroTitle;
+
+  /// No description provided for @gamesHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga juegos, completa misiones\ny acumula monedas canjeables.'**
+  String get gamesHeroSubtitle;
+
+  /// No description provided for @gamesPopularTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Juegos Populares'**
+  String get gamesPopularTitle;
+
+  /// No description provided for @gamesSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todos →'**
+  String get gamesSeeAll;
+
+  /// No description provided for @gamesStatGames.
+  ///
+  /// In es, this message translates to:
+  /// **'50+ juegos'**
+  String get gamesStatGames;
+
+  /// No description provided for @gamesStatReward.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta 5,000 🪙'**
+  String get gamesStatReward;
+
+  /// No description provided for @gamesStatInstant.
+  ///
+  /// In es, this message translates to:
+  /// **'Crédito inmediato'**
+  String get gamesStatInstant;
+
+  /// No description provided for @gamesHowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo funciona?'**
+  String get gamesHowTitle;
+
+  /// No description provided for @gamesStep1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga un juego'**
+  String get gamesStep1Title;
+
+  /// No description provided for @gamesStep1Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige cualquier juego del catálogo y descárgalo gratis.'**
+  String get gamesStep1Desc;
+
+  /// No description provided for @gamesStep2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Juega y completa misiones'**
+  String get gamesStep2Title;
+
+  /// No description provided for @gamesStep2Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Alcanza los niveles o metas indicadas en la oferta.'**
+  String get gamesStep2Desc;
+
+  /// No description provided for @gamesStep3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Gana monedas!'**
+  String get gamesStep3Title;
+
+  /// No description provided for @gamesStep3Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Las monedas se acreditan automáticamente al completar.'**
+  String get gamesStep3Desc;
+
+  /// No description provided for @gamesFreeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'GRATIS'**
+  String get gamesFreeLabel;
+
+  /// No description provided for @gamesMaintenanceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Juegos en mantenimiento'**
+  String get gamesMaintenanceTitle;
+
+  /// No description provided for @gamesMaintenanceSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos preparando algo increíble.\nVuelve en unas horas.'**
+  String get gamesMaintenanceSubtitle;
 
   /// No description provided for @dailyBonusClaimedToast.
   ///
