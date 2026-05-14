@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
@@ -10,6 +12,7 @@ import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/widgets/app_error_widget.dart';
 import '../../../shared/widgets/feature_disabled_screen.dart';
 import '../../home/widgets/daily_bonus_card.dart';
 import '../../home/widgets/daily_goal_bar.dart';
@@ -50,14 +53,17 @@ class WalletScreen extends ConsumerWidget {
     return userAsync.when(
       loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.azulPrimario)),
-      error: (_, __) => Center(
-          child: Text(context.l10n.walletErrorLoading,
-              style: const TextStyle(color: AppColors.textoSecundario))),
+      error: (_, __) => AppErrorWidget(
+          onRetry: () => ref.invalidate(userProvider)),
       data: (user) {
         if (user == null) return const SizedBox.shrink();
         final canCashout = user.coins >= AppConstants.minCashoutCoins;
 
-        return RefreshIndicator(
+        return Stack(
+          children: [
+            // Widget invisible que dispara la reseña si hay un cobro pagado
+            const _ReviewTrigger(),
+            RefreshIndicator(
             color: AppColors.azulPrimario,
             onRefresh: () async {
               ref.invalidate(userProvider);
@@ -254,7 +260,9 @@ class WalletScreen extends ConsumerWidget {
                       ),
                 ],
               ),
-            )); // cierra SingleChildScrollView y RefreshIndicator
+            )), // cierra SingleChildScrollView y RefreshIndicator
+          ],
+        ); // cierra Stack
       },
     );
   }
@@ -868,4 +876,62 @@ void _showInsufficientCoinsDialog(BuildContext context, int currentCoins) {
       ],
     ),
   );
+}
+
+// ── Widget invisible que dispara in-app review en el tab de Cobrar ──
+// Solo se ejecuta una vez por sesión. Si el usuario ya tiene un cobro
+// pagado y no le hemos pedido reseña, lanza el diálogo de Play Store/App Store.
+class _ReviewTrigger extends StatefulWidget {
+  const _ReviewTrigger();
+
+  @override
+  State<_ReviewTrigger> createState() => _ReviewTriggerState();
+}
+
+class _ReviewTriggerState extends State<_ReviewTrigger> {
+  static const _kReviewKey = 'review_requested';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryRequestReview());
+  }
+
+  Future<void> _tryRequestReview() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_kReviewKey) == true) return;
+
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      // ¿Tiene algún cobro ya pagado?
+      final result = await Supabase.instance.client
+          .from('cashout_requests')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('status', 'paid')
+          .limit(1);
+
+      if (result.isEmpty) return;
+
+      // Esperar 2s para que el usuario vea la pantalla antes del diálogo
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      final inAppReview = InAppReview.instance;
+      final available = await inAppReview.isAvailable();
+      debugPrint('⭐ [WalletReview] isAvailable=$available');
+      if (available) {
+        await inAppReview.requestReview();
+        await prefs.setBool(_kReviewKey, true);
+        debugPrint('✅ [WalletReview] Reseña solicitada');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [WalletReview] Error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

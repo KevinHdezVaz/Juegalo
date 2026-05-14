@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -468,52 +467,6 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
           .single();
       state = AsyncData(AppUser.fromJson(row));
     } catch (_) {}
-  }
-
-  // Subir foto de perfil a Supabase Storage y guardar URL
-  Future<void> uploadAvatar(String filePath) async {
-    final uid = _db.auth.currentUser?.id;
-    if (uid == null) return;
-
-    debugPrint('🔵 [uploadAvatar] Comprimiendo imagen: $filePath');
-
-    // Comprimir a JPEG 80% calidad, máximo 400×400
-    final compressed = await FlutterImageCompress.compressWithFile(
-      filePath,
-      minWidth: 400,
-      minHeight: 400,
-      quality: 80,
-      format: CompressFormat.jpeg,
-    );
-
-    if (compressed == null) throw Exception('No se pudo comprimir la imagen');
-    debugPrint('🟢 [uploadAvatar] Comprimida: ${compressed.length} bytes');
-
-    final fileName = '$uid/avatar.jpg';
-
-    debugPrint('🔵 [uploadAvatar] Subiendo a storage bucket=avatars path=$fileName');
-    try {
-      await _db.storage.from('avatars').uploadBinary(
-        fileName,
-        compressed,
-        fileOptions: const FileOptions(
-          upsert: true,
-          contentType: 'image/jpeg',
-        ),
-      );
-    } on StorageException catch (e) {
-      debugPrint('🔴 [uploadAvatar] StorageException: statusCode=${e.statusCode} | error=${e.error} | message=${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('🔴 [uploadAvatar] Error inesperado en upload: $e');
-      rethrow;
-    }
-
-    final url = _db.storage.from('avatars').getPublicUrl(fileName);
-    debugPrint('🟢 [uploadAvatar] URL pública: $url');
-
-    await _db.from('users').update({'avatar_url': url}).eq('id', uid);
-    ref.invalidateSelf();
   }
 
   // Sign out

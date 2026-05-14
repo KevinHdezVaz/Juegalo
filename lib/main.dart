@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:ui';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -42,6 +44,19 @@ Future<void> main() async {
   // Remote Config (force update)
   await VersionCheckService.instance.init();
 
+  // App Tracking Transparency (iOS 14+)
+  // Debe pedirse ANTES de inicializar AdMob para que Google pueda
+  // usar el IDFA si el usuario lo autoriza.
+  if (Platform.isIOS) {
+    final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+    if (status == TrackingStatus.notDetermined) {
+      // Pequeña pausa para que el diálogo ATT aparezca después de que
+      // la app esté completamente visible (recomendado por Apple).
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await AppTrackingTransparency.requestTrackingAuthorization();
+    }
+  }
+
   // AdMob
   await MobileAds.instance.initialize();
 
@@ -59,6 +74,14 @@ Future<void> main() async {
 
   // Fechas en español
   await initializeDateFormatting('es');
+
+  // Si ya hay sesión activa, refrescar el FCM token en la BD.
+  // requestAndSaveToken solo se llama al hacer login — si el usuario ya
+  // tenía sesión, el token guardado puede ser de otro dispositivo o estar vencido.
+  final existingSession = Supabase.instance.client.auth.currentSession;
+  if (existingSession != null) {
+    NotificationService.instance.requestAndSaveToken().catchError((_) {});
+  }
 
   runApp(const ProviderScope(child: JuegaloApp()));
 }

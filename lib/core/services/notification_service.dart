@@ -167,6 +167,13 @@ class NotificationService {
     final notif = message.notification;
     if (notif == null) return;
 
+    // Si es un pago aprobado con la app abierta, activar review también
+    final type = message.data['type'] as String?;
+    if (type == 'cashout_paid') {
+      debugPrint('🔔 [Notification] Pago recibido en foreground — activando señal de reseña');
+      _paymentController.add(null);
+    }
+
     _local.show(
       notif.hashCode,
       notif.title,

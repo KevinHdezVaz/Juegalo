@@ -596,5 +596,62 @@
   "txLoadMore": "Cargar más",
   "txEmpty": "Sin transacciones aún",
   "txEmptyFilter": "Sin transacciones de este tipo",
-  "txSeeAll": "Ver todo"
+  "txSeeAll": "Ver todo",
+
+  "phoneVerifyInvalidNumber": "Ingresa un número de teléfono válido",
+  "phoneVerifyUnexpectedError": "Error inesperado. Intenta de nuevo.",
+  "phoneVerifyCodeLength": "El código tiene 6 dígitos",
+  "phoneVerifyErrorInvalidExpired": "Código incorrecto o expirado. Solicita uno nuevo.",
+  "phoneVerifyErrorRateLimit": "Demasiados intentos. Espera unos minutos.",
+  "phoneVerifyErrorAlreadyRegistered": "Este número ya está registrado en otra cuenta. Usa un número diferente.",
+  "phoneVerifyErrorInvalidPhone": "Número de teléfono inválido. Verifica el formato e intenta de nuevo.",
+  "phoneVerifyErrorNetwork": "Error de conexión. Verifica tu internet e intenta de nuevo.",
+  "phoneVerifyErrorGeneric": "Ocurrió un error inesperado. Intenta de nuevo.",
+  "phoneVerifyTitleOtpSent": "Código enviado",
+  "phoneVerifyTitleEnterPhone": "Verifica tu número",
+  "phoneVerifySubtitleOtpSent": "Ingresa el código de 6 dígitos\nque enviamos a {phone}",
+  "@phoneVerifySubtitleOtpSent": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "phoneVerifySubtitlePhone": "Un paso rápido para proteger\ntu dinero. Solo se hace una vez.",
+  "phoneVerifyStep1of2": "Paso 1 de 2",
+  "phoneVerifyStep2of2": "Paso 2 de 2",
+  "phoneVerifyLabelPhone": "Número de teléfono",
+  "phoneVerifyLabelCode": "Código de verificación",
+  "phoneVerifyButtonVerify": "Verificar código",
+  "phoneVerifyButtonSend": "Enviar SMS",
+  "phoneVerifyResendIn": "Reenviar en {secs}s",
+  "@phoneVerifyResendIn": {
+    "placeholders": {
+      "secs": { "type": "int" }
+    }
+  },
+  "phoneVerifyResend": "Reenviar código",
+  "phoneVerifyChangeNumber": "Cambiar número",
+  "phoneVerifyPrivacyNote": "Tu número solo se usa para verificar tu identidad. No recibirás spam.",
+  "phoneVerifyCountryPickerTitle": "Selecciona tu país",
+  "phoneVerifyCountrySearch": "Buscar país o código...",
+  "phoneVerifyNoResults": "Sin resultados",
+
+  "cashoutPhoneRequired": "Debes verificar tu teléfono para retirar monedas",
+  "cashoutGateTitle": "Verifica tu teléfono\npara cobrar",
+  "cashoutGateStep1Title": "Ingresa tu número",
+  "cashoutGateStep1Subtitle": "Con código de país (+52, +1…)",
+  "cashoutGateStep2Title": "Recibe el SMS",
+  "cashoutGateStep2Subtitle": "Código de 6 dígitos en segundos",
+  "cashoutGateStep3Title": "¡Listo para cobrar!",
+  "cashoutGateStep3Subtitle": "Nunca más se te pedirá",
+  "cashoutGateButton": "Verificar mi teléfono",
+  "cashoutCurrencyTitle": "Selecciona la moneda",
+  "cashoutCurrencyCount": "{count} divisas",
+  "@cashoutCurrencyCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "cashoutCurrencySearch": "Buscar moneda o código (USD, EUR…)",
+
+  "profileUnverifiedAccount": "Cuenta sin verificar"
 }

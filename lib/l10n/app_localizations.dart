@@ -2271,6 +2271,240 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver todo'**
   String get txSeeAll;
+
+  /// No description provided for @phoneVerifyInvalidNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un número de teléfono válido'**
+  String get phoneVerifyInvalidNumber;
+
+  /// No description provided for @phoneVerifyUnexpectedError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error inesperado. Intenta de nuevo.'**
+  String get phoneVerifyUnexpectedError;
+
+  /// No description provided for @phoneVerifyCodeLength.
+  ///
+  /// In es, this message translates to:
+  /// **'El código tiene 6 dígitos'**
+  String get phoneVerifyCodeLength;
+
+  /// No description provided for @phoneVerifyErrorInvalidExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Código incorrecto o expirado. Solicita uno nuevo.'**
+  String get phoneVerifyErrorInvalidExpired;
+
+  /// No description provided for @phoneVerifyErrorRateLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Demasiados intentos. Espera unos minutos.'**
+  String get phoneVerifyErrorRateLimit;
+
+  /// No description provided for @phoneVerifyErrorAlreadyRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'Este número ya está registrado en otra cuenta. Usa un número diferente.'**
+  String get phoneVerifyErrorAlreadyRegistered;
+
+  /// No description provided for @phoneVerifyErrorInvalidPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de teléfono inválido. Verifica el formato e intenta de nuevo.'**
+  String get phoneVerifyErrorInvalidPhone;
+
+  /// No description provided for @phoneVerifyErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'Error de conexión. Verifica tu internet e intenta de nuevo.'**
+  String get phoneVerifyErrorNetwork;
+
+  /// No description provided for @phoneVerifyErrorGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocurrió un error inesperado. Intenta de nuevo.'**
+  String get phoneVerifyErrorGeneric;
+
+  /// No description provided for @phoneVerifyTitleOtpSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Código enviado'**
+  String get phoneVerifyTitleOtpSent;
+
+  /// No description provided for @phoneVerifyTitleEnterPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu número'**
+  String get phoneVerifyTitleEnterPhone;
+
+  /// No description provided for @phoneVerifySubtitleOtpSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa el código de 6 dígitos\nque enviamos a {phone}'**
+  String phoneVerifySubtitleOtpSent(String phone);
+
+  /// No description provided for @phoneVerifySubtitlePhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Un paso rápido para proteger\ntu dinero. Solo se hace una vez.'**
+  String get phoneVerifySubtitlePhone;
+
+  /// No description provided for @phoneVerifyStep1of2.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso 1 de 2'**
+  String get phoneVerifyStep1of2;
+
+  /// No description provided for @phoneVerifyStep2of2.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso 2 de 2'**
+  String get phoneVerifyStep2of2;
+
+  /// No description provided for @phoneVerifyLabelPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de teléfono'**
+  String get phoneVerifyLabelPhone;
+
+  /// No description provided for @phoneVerifyLabelCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de verificación'**
+  String get phoneVerifyLabelCode;
+
+  /// No description provided for @phoneVerifyButtonVerify.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar código'**
+  String get phoneVerifyButtonVerify;
+
+  /// No description provided for @phoneVerifyButtonSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar SMS'**
+  String get phoneVerifyButtonSend;
+
+  /// No description provided for @phoneVerifyResendIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Reenviar en {secs}s'**
+  String phoneVerifyResendIn(int secs);
+
+  /// No description provided for @phoneVerifyResend.
+  ///
+  /// In es, this message translates to:
+  /// **'Reenviar código'**
+  String get phoneVerifyResend;
+
+  /// No description provided for @phoneVerifyChangeNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar número'**
+  String get phoneVerifyChangeNumber;
+
+  /// No description provided for @phoneVerifyPrivacyNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu número solo se usa para verificar tu identidad. No recibirás spam.'**
+  String get phoneVerifyPrivacyNote;
+
+  /// No description provided for @phoneVerifyCountryPickerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona tu país'**
+  String get phoneVerifyCountryPickerTitle;
+
+  /// No description provided for @phoneVerifyCountrySearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar país o código...'**
+  String get phoneVerifyCountrySearch;
+
+  /// No description provided for @phoneVerifyNoResults.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin resultados'**
+  String get phoneVerifyNoResults;
+
+  /// No description provided for @cashoutPhoneRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes verificar tu teléfono para retirar monedas'**
+  String get cashoutPhoneRequired;
+
+  /// No description provided for @cashoutGateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu teléfono\npara cobrar'**
+  String get cashoutGateTitle;
+
+  /// No description provided for @cashoutGateStep1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu número'**
+  String get cashoutGateStep1Title;
+
+  /// No description provided for @cashoutGateStep1Subtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Con código de país (+52, +1…)'**
+  String get cashoutGateStep1Subtitle;
+
+  /// No description provided for @cashoutGateStep2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Recibe el SMS'**
+  String get cashoutGateStep2Title;
+
+  /// No description provided for @cashoutGateStep2Subtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de 6 dígitos en segundos'**
+  String get cashoutGateStep2Subtitle;
+
+  /// No description provided for @cashoutGateStep3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Listo para cobrar!'**
+  String get cashoutGateStep3Title;
+
+  /// No description provided for @cashoutGateStep3Subtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nunca más se te pedirá'**
+  String get cashoutGateStep3Subtitle;
+
+  /// No description provided for @cashoutGateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar mi teléfono'**
+  String get cashoutGateButton;
+
+  /// No description provided for @cashoutCurrencyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona la moneda'**
+  String get cashoutCurrencyTitle;
+
+  /// No description provided for @cashoutCurrencyCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} divisas'**
+  String cashoutCurrencyCount(int count);
+
+  /// No description provided for @cashoutCurrencySearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar moneda o código (USD, EUR…)'**
+  String get cashoutCurrencySearch;
+
+  /// No description provided for @profileUnverifiedAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta sin verificar'**
+  String get profileUnverifiedAccount;
 }
 
 class _AppLocalizationsDelegate

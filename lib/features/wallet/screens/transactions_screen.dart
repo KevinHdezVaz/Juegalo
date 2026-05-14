@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
+import '../../../shared/widgets/app_error_widget.dart';
 
 // ── Filtros ──────────────────────────────────────────────────────
 enum TxFilter { all, video, survey, bonus, cashout }
@@ -237,20 +238,9 @@ class _TxFilterPage extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.azulPrimario),
       ),
-      error: (_, __) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline,
-                color: AppColors.textoSecundario, size: 40),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: notifier.refresh,
-              child: Text(context.l10n.rankingRetry,
-                  style: const TextStyle(color: AppColors.azulPrimario)),
-            ),
-          ],
-        ),
+      error: (_, __) => AppErrorWidget(
+        message: 'No se pudieron cargar tus transacciones.',
+        onRetry: notifier.refresh,
       ),
       data: (data) {
         final grouped = _buildGrouped(data.items, context);

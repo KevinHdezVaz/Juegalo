@@ -1,7 +1,7 @@
 name: juegalo_gana_dinero
 description: "JUEGALO — Gana Dinero Real."
 publish_to: 'none'
-version: 1.0.21+200
+version: 1.0.3+201
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -35,6 +35,7 @@ dependencies:
 
   # --- AdMob (videos rewarded) ---
   google_mobile_ads: ^6.0.0
+  app_tracking_transparency: ^2.0.6
 
   # --- WebView (offerwall AdGem / CPX Research) ---
   webview_flutter: ^4.13.0

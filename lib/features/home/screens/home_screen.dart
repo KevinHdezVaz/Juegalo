@@ -46,8 +46,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _paymentSub = NotificationService.instance.onPaymentTapped.listen((_) {
       if (mounted) _maybeRequestReview(fromNotification: true);
     });
-    // Trigger al abrir la app (después del primer frame)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Trigger al abrir la app — esperar 4s para que Supabase restaure la sesión
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(seconds: 4));
       _maybeRequestReview();
     });
   }
@@ -81,9 +82,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
 
       final inAppReview = InAppReview.instance;
-      if (await inAppReview.isAvailable()) {
+      final available = await inAppReview.isAvailable();
+      debugPrint('⭐ [Review] isAvailable=$available | fromNotification=$fromNotification');
+      if (available) {
         await inAppReview.requestReview();
         await prefs.setBool(kReviewKey, true);
+        debugPrint('✅ [Review] Reseña solicitada correctamente');
+      } else {
+        // En release desde Play Store/App Store debería funcionar.
+        // En dev/debug isAvailable() suele retornar false — es normal.
+        debugPrint('⚠️ [Review] No disponible en este entorno (debug/simulador)');
       }
     } catch (e) {
       debugPrint('⚠️ [Review] Error al pedir reseña: $e');

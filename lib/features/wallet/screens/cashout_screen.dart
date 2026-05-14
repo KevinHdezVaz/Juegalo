@@ -8,6 +8,8 @@ import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../profile/screens/phone_verification_screen.dart';
+import '../../../shared/widgets/app_error_widget.dart';
 
 // ── Métodos de pago ───────────────────────────────────────────────
 enum PaymentMethod { paypal, mercadopago }
@@ -58,6 +60,9 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
   bool _loading         = false;
   _Currency _currency   = _Currency.usd;
 
+  // null = cargando, true = verificado, false = no verificado
+  bool? _phoneVerified;
+
   static String _usd(int coins) =>
       (coins / AppConstants.coinsPerDollar).fmtUsd;
 
@@ -65,7 +70,21 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _checkPhone();
     debugPrint('🔵 [Cashout] initState');
+  }
+
+  /// Consulta el servidor para saber si el teléfono está verificado.
+  Future<void> _checkPhone() async {
+    try {
+      final res = await Supabase.instance.client.auth.getUser();
+      final phone = res.user?.phone ?? '';
+      if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
+    } catch (_) {
+      // Si falla la consulta, usar el valor cacheado
+      final phone = Supabase.instance.client.auth.currentUser?.phone ?? '';
+      if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
+    }
   }
 
   @override
@@ -73,6 +92,23 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     _tabController.dispose();
     _detailCtrl.dispose();
     super.dispose();
+  }
+
+  /// Verifica si el usuario tiene teléfono confirmado.
+  /// Si no, abre la pantalla de verificación y espera el resultado.
+  Future<bool> _ensurePhoneVerified() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final phone = user?.phone;
+    if (phone != null && phone.isNotEmpty) return true; // ya verificado
+
+    // Abrir pantalla de verificación
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PhoneVerificationScreen(),
+      ),
+    );
+    return result == true;
   }
 
   Future<void> _submit(int availableCoins) async {
@@ -83,9 +119,18 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     }
     final detail = _detailCtrl.text.trim();
     if (detail.isEmpty) {
-      _snack('Ingresa los datos de tu cuenta', error: true);
+      _snack(context.l10n.cashoutEnterAccount, error: true);
       return;
     }
+
+    // ── Verificar teléfono antes de procesar ──────────────────────
+    final phoneRequiredMsg = context.l10n.cashoutPhoneRequired;
+    final phoneOk = await _ensurePhoneVerified();
+    if (!phoneOk) {
+      if (mounted) _snack(phoneRequiredMsg, error: true);
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -171,6 +216,28 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
           foregroundColor: AppColors.textoPrimario,
         ),
         body: _LinkAccountGate(notifier: notifier),
+      );
+    }
+
+    // ── Gate: esperando consulta al servidor ──────────────────────
+    if (_phoneVerified == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.fondoPrincipal,
+        body: Center(child: CircularProgressIndicator(
+            color: AppColors.azulPrimario, strokeWidth: 2.5)),
+      );
+    }
+
+    // ── Gate: teléfono no verificado ──────────────────────────────
+    if (_phoneVerified == false) {
+      return Scaffold(
+        backgroundColor: AppColors.fondoPrincipal,
+        appBar: AppBar(
+          title: const Text('Solicitar cobro'),
+          backgroundColor: AppColors.fondoPrincipal,
+          foregroundColor: AppColors.textoPrimario,
+        ),
+        body: _PhoneGate(),
       );
     }
 
@@ -431,55 +498,140 @@ class _TrustBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.verdePrimario.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppColors.verdePrimario.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF064E3B),
+            const Color(0xFF065F46),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.verdePrimario.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
+          // ── Header ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Row(children: [
+              Container(
+                width: 42, height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_rounded,
+                    color: Colors.white, size: 22),
               ),
-              child: const Icon(Icons.verified_rounded,
-                  color: AppColors.verdePrimario, size: 16),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'App 100% segura y confiable',
-              style: TextStyle(
-                color: AppColors.verdePrimario,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pagos garantizados',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        letterSpacing: -.2,
+                      ),
+                    ),
+                    Text(
+                      'Tu dinero llega siempre. Sin excusas.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ]),
-          const SizedBox(height: 12),
-          const _TrustItem(
-            icon: Icons.schedule_rounded,
-            text: 'Pagos procesados en 2–3 días hábiles',
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25)),
+                ),
+                child: const Text(
+                  '100% Real',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .5,
+                  ),
+                ),
+              ),
+            ]),
           ),
-          const SizedBox(height: 8),
-          const _TrustItem(
-            icon: Icons.people_alt_rounded,
-            text: 'Miles de usuarios ya cobraron exitosamente',
+
+          // ── Divisor ─────────────────────────────────────────────
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
-          const SizedBox(height: 8),
-          const _TrustItem(
-            icon: Icons.lock_rounded,
-            text: 'Tus datos están protegidos y encriptados',
+
+          // ── Stats en fila ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(children: [
+              _TrustStat(value: '\$12,847', label: 'USD pagados'),
+              _TrustDivider(),
+              _TrustStat(value: '1,000+', label: 'cobros exitosos'),
+              _TrustDivider(),
+              _TrustStat(value: '2–3', label: 'días hábiles'),
+            ]),
           ),
-          const SizedBox(height: 8),
-          const _TrustItem(
-            icon: Icons.support_agent_rounded,
-            text: 'Soporte disponible si tienes algún problema',
+
+          // ── Divisor ─────────────────────────────────────────────
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
+
+          // ── Items de confianza ───────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(children: [
+              _TrustItem(
+                icon: Icons.payments_rounded,
+                title: 'Pagos reales vía PayPal',
+                subtitle: 'Directo a tu cuenta en 2–3 días hábiles',
+              ),
+              const SizedBox(height: 12),
+              _TrustItem(
+                icon: Icons.shield_rounded,
+                title: 'Verificación SMS anti-fraude',
+                subtitle: 'Solo usuarios reales pueden cobrar',
+              ),
+              const SizedBox(height: 12),
+              _TrustItem(
+                icon: Icons.people_alt_rounded,
+                title: 'Miles ya cobraron',
+                subtitle: 'Úsate a nosotros o no nos uses — los pagos hablan',
+              ),
+              const SizedBox(height: 12),
+              _TrustItem(
+                icon: Icons.support_agent_rounded,
+                title: 'Soporte humano',
+                subtitle: 'Si hay algún problema lo resolvemos contigo',
+              ),
+            ]),
           ),
         ],
       ),
@@ -487,26 +639,87 @@ class _TrustBanner extends StatelessWidget {
   }
 }
 
+class _TrustStat extends StatelessWidget {
+  final String value;
+  final String label;
+  const _TrustStat({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(children: [
+        Text(value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              letterSpacing: -.5,
+            )),
+        const SizedBox(height: 2),
+        Text(label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            )),
+      ]),
+    );
+  }
+}
+
+class _TrustDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1, height: 32,
+      color: Colors.white.withValues(alpha: 0.15),
+    );
+  }
+}
+
 class _TrustItem extends StatelessWidget {
   final IconData icon;
-  final String text;
-  const _TrustItem({required this.icon, required this.text});
+  final String title;
+  final String subtitle;
+  const _TrustItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.verdePrimario, size: 15),
-        const SizedBox(width: 8),
+        Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppColors.textoSecundario,
-              fontSize: 12.5,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  )),
+              const SizedBox(height: 1),
+              Text(subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 11.5,
+                    height: 1.4,
+                  )),
+            ],
           ),
         ),
       ],
@@ -525,23 +738,9 @@ class _HistoryTab extends ConsumerWidget {
     return cashoutAsync.when(
       loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.azulPrimario)),
-      error: (_, __) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wifi_off_rounded,
-                size: 42, color: AppColors.textoSecundario),
-            const SizedBox(height: 12),
-            const Text('No se pudo cargar el historial',
-                style: TextStyle(color: AppColors.textoSecundario)),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => ref.invalidate(cashoutRequestsProvider),
-              child: const Text('Reintentar',
-                  style: TextStyle(color: AppColors.azulPrimario)),
-            ),
-          ],
-        ),
+      error: (_, __) => AppErrorWidget(
+        message: 'No se pudo cargar el historial de cobros.',
+        onRetry: () => ref.invalidate(cashoutRequestsProvider),
       ),
       data: (requests) {
         if (requests.isEmpty) {
@@ -1567,14 +1766,62 @@ class _Field extends StatelessWidget {
 
 // ── Monedas disponibles ───────────────────────────────────────────
 enum _Currency {
+  // Más usadas (primero)
   usd('USD', 'Dólares estadounidenses', '🇺🇸'),
+  eur('EUR', 'Euros',                   '🇪🇺'),
+  gbp('GBP', 'Libras esterlinas',       '🇬🇧'),
+  // América Latina
   mxn('MXN', 'Pesos mexicanos',         '🇲🇽'),
-  ars('ARS', 'Pesos argentinos',         '🇦🇷'),
-  cop('COP', 'Pesos colombianos',        '🇨🇴'),
-  brl('BRL', 'Reales brasileños',        '🇧🇷'),
-  pen('PEN', 'Soles peruanos',           '🇵🇪'),
-  clp('CLP', 'Pesos chilenos',           '🇨🇱'),
-  eur('EUR', 'Euros',                    '🇪🇺');
+  ars('ARS', 'Pesos argentinos',        '🇦🇷'),
+  cop('COP', 'Pesos colombianos',       '🇨🇴'),
+  brl('BRL', 'Reales brasileños',       '🇧🇷'),
+  pen('PEN', 'Soles peruanos',          '🇵🇪'),
+  clp('CLP', 'Pesos chilenos',          '🇨🇱'),
+  uyu('UYU', 'Pesos uruguayos',         '🇺🇾'),
+  bob('BOB', 'Bolivianos',              '🇧🇴'),
+  pyg('PYG', 'Guaraníes paraguayos',    '🇵🇾'),
+  vef('VES', 'Bolívares venezolanos',   '🇻🇪'),
+  gtq('GTQ', 'Quetzales guatemaltecos', '🇬🇹'),
+  crc('CRC', 'Colones costarricenses',  '🇨🇷'),
+  hnl('HNL', 'Lempiras hondureños',     '🇭🇳'),
+  nio('NIO', 'Córdobas nicaragüenses',  '🇳🇮'),
+  pab('PAB', 'Balboas panameños',       '🇵🇦'),
+  dop('DOP', 'Pesos dominicanos',       '🇩🇴'),
+  // Europa
+  chf('CHF', 'Francos suizos',          '🇨🇭'),
+  sek('SEK', 'Coronas suecas',          '🇸🇪'),
+  nok('NOK', 'Coronas noruegas',        '🇳🇴'),
+  dkk('DKK', 'Coronas danesas',        '🇩🇰'),
+  pln('PLN', 'Złoty polaco',            '🇵🇱'),
+  czk('CZK', 'Coronas checas',          '🇨🇿'),
+  huf('HUF', 'Forints húngaros',        '🇭🇺'),
+  ron('RON', 'Leus rumanos',            '🇷🇴'),
+  try_('TRY', 'Liras turcas',           '🇹🇷'),
+  // Asia
+  jpy('JPY', 'Yenes japoneses',         '🇯🇵'),
+  cny('CNY', 'Yuanes chinos',           '🇨🇳'),
+  krw('KRW', 'Wons surcoreanos',        '🇰🇷'),
+  inr('INR', 'Rupias indias',           '🇮🇳'),
+  idr('IDR', 'Rupias indonesias',       '🇮🇩'),
+  php('PHP', 'Pesos filipinos',         '🇵🇭'),
+  thb('THB', 'Bahts tailandeses',       '🇹🇭'),
+  vnd('VND', 'Dongs vietnamitas',       '🇻🇳'),
+  sgd('SGD', 'Dólares singapurenses',   '🇸🇬'),
+  myr('MYR', 'Ringgits malayos',        '🇲🇾'),
+  pkr('PKR', 'Rupias pakistaníes',      '🇵🇰'),
+  aed('AED', 'Dírhams emiratíes',       '🇦🇪'),
+  sar('SAR', 'Riyales saudíes',         '🇸🇦'),
+  ils('ILS', 'Shékels israelíes',       '🇮🇱'),
+  // Oceanía
+  aud('AUD', 'Dólares australianos',    '🇦🇺'),
+  nzd('NZD', 'Dólares neozelandeses',   '🇳🇿'),
+  // África
+  zar('ZAR', 'Rands sudafricanos',      '🇿🇦'),
+  ngn('NGN', 'Nairas nigerianas',       '🇳🇬'),
+  kes('KES', 'Chelines kenianos',       '🇰🇪'),
+  // Otras
+  cad('CAD', 'Dólares canadienses',     '🇨🇦'),
+  rub('RUB', 'Rublos rusos',            '🇷🇺');
 
   final String code;
   final String label;
@@ -1634,54 +1881,480 @@ class _CurrencySelector extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.fondoCard,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 36, height: 4,
-                decoration: BoxDecoration(
-                    color: AppColors.fondoCardBorde,
-                    borderRadius: BorderRadius.circular(2)),
-              ),
-              const SizedBox(height: 14),
-              const Text('Selecciona la moneda',
-                  style: TextStyle(
-                      color: AppColors.textoPrimario,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
-              const SizedBox(height: 8),
-              ..._Currency.values.map((c) => ListTile(
-                onTap: () {
-                  onChanged(c);
-                  Navigator.pop(ctx);
-                },
-                leading: Text(c.flag,
-                    style: const TextStyle(fontSize: 22)),
-                title: Text('${c.code} — ${c.label}',
-                    style: TextStyle(
-                        color: c == selected
-                            ? AppColors.azulPrimario
-                            : AppColors.textoPrimario,
-                        fontWeight: c == selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        fontSize: 14)),
-                trailing: c == selected
-                    ? const Icon(Icons.check_rounded,
-                        color: AppColors.azulPrimario, size: 20)
-                    : null,
-              )),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _CurrencyPickerSheet(
+        selected: selected,
+        onChanged: (c) {
+          onChanged(c);
+          Navigator.pop(ctx);
+        },
       ),
     );
   }
 }
+
+// ── Sheet con buscador ────────────────────────────────────────────────────────
+class _CurrencyPickerSheet extends StatefulWidget {
+  final _Currency selected;
+  final ValueChanged<_Currency> onChanged;
+  const _CurrencyPickerSheet(
+      {required this.selected, required this.onChanged});
+
+  @override
+  State<_CurrencyPickerSheet> createState() => _CurrencyPickerSheetState();
+}
+
+class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<_Currency> _filtered = _Currency.values;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearch(String q) {
+    final query = q.toLowerCase().trim();
+    setState(() {
+      _filtered = query.isEmpty
+          ? _Currency.values
+          : _Currency.values
+              .where((c) =>
+                  c.code.toLowerCase().contains(query) ||
+                  c.label.toLowerCase().contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxH = MediaQuery.of(context).size.height * 0.85;
+    return SizedBox(
+      height: maxH,
+      child: Column(children: [
+        // Handle
+        Container(
+          width: 40, height: 4,
+          margin: const EdgeInsets.only(top: 12, bottom: 16),
+          decoration: BoxDecoration(
+            color: AppColors.fondoCardBorde,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+
+        // Título
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Row(children: [
+            const Icon(Icons.currency_exchange_rounded,
+                color: AppColors.azulPrimario, size: 20),
+            const SizedBox(width: 8),
+            Text(context.l10n.cashoutCurrencyTitle,
+                style: const TextStyle(
+                    color: AppColors.textoPrimario,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            const Spacer(),
+            Text(context.l10n.cashoutCurrencyCount(_Currency.values.length),
+                style: const TextStyle(
+                    color: AppColors.textoSecundario, fontSize: 12)),
+          ]),
+        ),
+
+        // Buscador
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: _onSearch,
+            autofocus: false,
+            decoration: InputDecoration(
+              hintText: context.l10n.cashoutCurrencySearch,
+              hintStyle: TextStyle(
+                  color: Colors.grey.shade400, fontSize: 13),
+              prefixIcon: const Icon(Icons.search_rounded,
+                  color: AppColors.azulPrimario, size: 20),
+              suffixIcon: _searchCtrl.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        _onSearch('');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.fondoPrincipal,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+
+        const Divider(height: 1),
+
+        // Lista
+        Expanded(
+          child: _filtered.isEmpty
+              ? Center(
+                  child: Text(context.l10n.phoneVerifyNoResults,
+                      style: TextStyle(color: Colors.grey.shade400)))
+              : ListView.builder(
+                  itemCount: _filtered.length,
+                  itemBuilder: (_, i) {
+                    final c = _filtered[i];
+                    final isSelected = c == widget.selected;
+                    return ListTile(
+                      dense: true,
+                      onTap: () => widget.onChanged(c),
+                      leading: Text(c.flag,
+                          style: const TextStyle(fontSize: 22)),
+                      title: Text(c.label,
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppColors.azulPrimario
+                                : AppColors.textoPrimario,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            fontSize: 13,
+                          )),
+                      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.azulPrimario
+                                : AppColors.fondoPrincipal,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(c.code,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.textoSecundario,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              )),
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.check_rounded,
+                              color: AppColors.azulPrimario, size: 18),
+                        ],
+                      ]),
+                    );
+                  },
+                ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Gate: verificación de teléfono requerida ──────────────────────────────────
+class _PhoneGate extends StatefulWidget {
+  const _PhoneGate();
+
+  @override
+  State<_PhoneGate> createState() => _PhoneGateState();
+}
+
+class _PhoneGateState extends State<_PhoneGate> with TickerProviderStateMixin {
+  late final AnimationController _entryCtrl;
+  late final AnimationController _pulseCtrl;
+  late final Animation<double>   _fade;
+  late final Animation<Offset>   _slideUp;
+  late final Animation<double>   _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _entryCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700))
+      ..forward();
+    _fade    = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+    _slideUp = Tween<Offset>(begin: const Offset(0, 0.10), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic));
+
+    _pulseCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1600))
+      ..repeat(reverse: true);
+    _pulse = Tween<double>(begin: 1.0, end: 1.08)
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+
+  }
+
+  @override
+  void dispose() {
+    _entryCtrl.dispose();
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _goVerify() async {
+    final verified = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const PhoneVerificationScreen()),
+    );
+    if (!mounted) return;
+    if (verified == true) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const CashoutScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Stack(
+      children: [
+        // ── Fondo degradado ────────────────────────────────────────
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0D1F8A), Color(0xFF1A3FCC), Color(0xFF2563EB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+
+        // ── Círculos decorativos ───────────────────────────────────
+        Positioned(top: -60, right: -40,
+          child: Container(width: 220, height: 220,
+            decoration: BoxDecoration(shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.06)))),
+        Positioned(bottom: -50, left: -60,
+          child: Container(width: 200, height: 200,
+            decoration: BoxDecoration(shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05)))),
+        Positioned(top: size.height * 0.3, right: -20,
+          child: Container(width: 100, height: 100,
+            decoration: BoxDecoration(shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04)))),
+
+        // ── Contenido ──────────────────────────────────────────────
+        FadeTransition(
+          opacity: _fade,
+          child: SlideTransition(
+            position: _slideUp,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(28, 40, 28, 32),
+                child: Column(
+                  children: [
+
+                    // Ícono con pulso
+                    ScaleTransition(
+                      scale: _pulse,
+                      child: Container(
+                        width: 110, height: 110,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.15),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              blurRadius: 30, spreadRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.phone_android_rounded,
+                            size: 52, color: Colors.white),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Título
+                    Text(
+                      context.l10n.cashoutGateTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 26, fontWeight: FontWeight.w900,
+                        color: Colors.white, height: 1.25,
+                        shadows: [Shadow(color: Colors.black26,
+                            blurRadius: 8, offset: Offset(0, 3))],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      context.l10n.phoneVerifySubtitlePhone,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.white.withValues(alpha: 0.75),
+                        height: 1.55,
+                      ),
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // Pasos
+                    _StepRow(
+                      number: '1', icon: Icons.phone_android_rounded,
+                      title: context.l10n.cashoutGateStep1Title,
+                      subtitle: context.l10n.cashoutGateStep1Subtitle,
+                    ),
+                    const SizedBox(height: 14),
+                    _StepRow(
+                      number: '2', icon: Icons.sms_rounded,
+                      title: context.l10n.cashoutGateStep2Title,
+                      subtitle: context.l10n.cashoutGateStep2Subtitle,
+                    ),
+                    const SizedBox(height: 14),
+                    _StepRow(
+                      number: '3', icon: Icons.payments_rounded,
+                      title: context.l10n.cashoutGateStep3Title,
+                      subtitle: context.l10n.cashoutGateStep3Subtitle,
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // Botón principal
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _goVerify,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1A3FCC),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.verified_user_rounded, size: 20),
+                            const SizedBox(width: 10),
+                            Text(context.l10n.cashoutGateButton,
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Nota de seguridad
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.20)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.shield_rounded,
+                            color: Colors.amber, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.l10n.phoneVerifyPrivacyNote,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.80),
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Fila de paso ──────────────────────────────────────────────────────────────
+class _StepRow extends StatelessWidget {
+  final String   number;
+  final IconData icon;
+  final String   title;
+  final String   subtitle;
+
+  const _StepRow({
+    required this.number,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(children: [
+        Container(
+          width: 36, height: 36,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(number,
+                style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w900,
+                  color: Color(0xFF1A3FCC),
+                )),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Icon(icon, color: Colors.white, size: 22),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  )),
+              Text(subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.65),
+                  )),
+            ],
+          ),
+        ),
+        Icon(Icons.check_circle_rounded,
+            color: Colors.white.withValues(alpha: 0.30), size: 18),
+      ]),
+    );
+  }
+}
+

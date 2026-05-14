@@ -3,7 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../../../shared/widgets/app_error_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
@@ -15,63 +16,6 @@ import '../../../shared/providers/user_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
-
-  // ── Seleccionar y subir foto de perfil ───────────────────────────
-  Future<void> _pickAvatar(BuildContext context, WidgetRef ref, UserNotifier notifier) async {
-    final picker = ImagePicker();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const SizedBox(height: 8),
-          Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: AppColors.fondoCardBorde,
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.photo_camera_rounded, color: AppColors.azulPrimario),
-            title: Text(context.l10n.profileTakePhoto),
-            onTap: () => Navigator.pop(context, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_rounded, color: AppColors.azulPrimario),
-            title: Text(context.l10n.profileChooseGallery),
-            onTap: () => Navigator.pop(context, ImageSource.gallery),
-          ),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
-
-    if (source == null) return;
-
-    final picked = await picker.pickImage(
-      source: source,
-      imageQuality: 100,
-    );
-    if (picked == null) return;
-
-    try {
-      await notifier.uploadAvatar(picked.path);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.l10n.profilePhotoUpdated),
-          backgroundColor: AppColors.verdePrimario,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.l10n.profilePhotoError(e.toString())),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
-    }
-  }
 
   // ── Editar nombre ─────────────────────────────────────────────────
   Future<void> _editUsername(BuildContext context, WidgetRef ref,
@@ -283,7 +227,9 @@ class ProfileScreen extends ConsumerWidget {
       body: userAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.azulPrimario)),
-        error: (_, __) => const Center(child: Text('Error')),
+        error: (_, __) => AppErrorWidget(
+          onRetry: () => ref.invalidate(userProvider),
+        ),
         data: (user) {
           if (user == null) return const SizedBox.shrink();
           return RefreshIndicator(
@@ -298,42 +244,21 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               // ── Avatar ──────────────────────────────────────────
               Center(
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _pickAvatar(context, ref, notifier),
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppColors.fondoCard,
-                        backgroundImage: user.avatarUrl != null
-                            ? NetworkImage(user.avatarUrl!)
-                            : null,
-                        child: user.avatarUrl == null
-                            ? Text(
-                                user.username.isNotEmpty
-                                    ? user.username[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                    fontSize: 32, color: AppColors.azulPrimario),
-                              )
-                            : null,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _pickAvatar(context, ref, notifier),
-                      child: Container(
-                        width: 26, height: 26,
-                        decoration: BoxDecoration(
-                          color: AppColors.azulPrimario,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.fondoPrincipal, width: 2),
-                        ),
-                        child: const Icon(Icons.camera_alt_rounded,
-                            color: Colors.white, size: 13),
-                      ),
-                    ),
-                  ],
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: AppColors.fondoCard,
+                  backgroundImage: user.avatarUrl != null
+                      ? NetworkImage(user.avatarUrl!)
+                      : null,
+                  child: user.avatarUrl == null
+                      ? Text(
+                          user.username.isNotEmpty
+                              ? user.username[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                              fontSize: 32, color: AppColors.azulPrimario),
+                        )
+                      : null,
                 ),
               ),
               const SizedBox(height: 12),
@@ -414,7 +339,18 @@ class ProfileScreen extends ConsumerWidget {
               if (isAnon)
                 _LinkAccountCard(notifier: notifier)
               else if (email != null) ...[
-                _AccountInfoCard(email: email),
+                FutureBuilder(
+                  future: Supabase.instance.client.auth.getUser(),
+                  builder: (context, snap) {
+                    final phone = snap.data?.user?.phone ?? '';
+                    final phoneVerified = phone.isNotEmpty;
+                    return _AccountInfoCard(
+                      email: email,
+                      phoneVerified: phoneVerified,
+                      phone: phone.isNotEmpty ? phone : null,
+                    );
+                  },
+                ),
               ],
               const SizedBox(height: 12),
 
@@ -463,6 +399,26 @@ class ProfileScreen extends ConsumerWidget {
                   context.l10n.profileDeleteAccount,
                   style: const TextStyle(fontSize: 13),
                 ),
+              ),
+              const SizedBox(height: 8),
+
+              // ── Versión de la app ────────────────────────────────
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snap) {
+                  final version = snap.data?.version ?? '—';
+                  final build   = snap.data?.buildNumber ?? '';
+                  return Center(
+                    child: Text(
+                      'v$version${build.isNotEmpty ? ' ($build)' : ''}',
+                      style: const TextStyle(
+                        color: AppColors.textoDeshabilitado,
+                        fontSize: 11,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
             ],
@@ -1020,10 +976,16 @@ class _ReferralStat extends StatelessWidget {
       );
 }
 
-// ── Tarjeta info de cuenta verificada ────────────────────────────
+// ── Tarjeta info de cuenta ────────────────────────────────────────
 class _AccountInfoCard extends StatelessWidget {
   final String? email;
-  const _AccountInfoCard({required this.email});
+  final bool    phoneVerified;
+  final String? phone;
+  const _AccountInfoCard({
+    required this.email,
+    this.phoneVerified = false,
+    this.phone,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1033,39 +995,92 @@ class _AccountInfoCard extends StatelessWidget {
         color: AppColors.fondoCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: AppColors.verdePrimario.withValues(alpha: 0.3)),
+            color: phoneVerified
+                ? AppColors.verdePrimario.withValues(alpha: 0.3)
+                : AppColors.fondoCardBorde),
       ),
       child: Row(children: [
         Container(
           width: 38, height: 38,
           decoration: BoxDecoration(
-            color: AppColors.verdePrimario.withValues(alpha: 0.12),
+            color: phoneVerified
+                ? AppColors.verdePrimario.withValues(alpha: 0.12)
+                : AppColors.fondoPrincipal,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.shield_rounded,
-              color: AppColors.verdePrimario, size: 20),
+          child: Icon(
+            phoneVerified ? Icons.shield_rounded : Icons.shield_outlined,
+            color: phoneVerified
+                ? AppColors.verdePrimario
+                : AppColors.textoSecundario,
+            size: 20,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(context.l10n.profileVerifiedAccount,
-                  style: const TextStyle(
-                      color: AppColors.textoPrimario,
+              Row(children: [
+                Text(
+                  phoneVerified
+                      ? context.l10n.profileVerifiedAccount
+                      : context.l10n.profileUnverifiedAccount,
+                  style: TextStyle(
+                      color: phoneVerified
+                          ? AppColors.textoPrimario
+                          : AppColors.textoSecundario,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13)),
+                      fontSize: 13),
+                ),
+                if (phoneVerified) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.verdePrimario.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text('✓ SMS',
+                        style: TextStyle(
+                            color: AppColors.verdePrimario,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ]),
               Text(
                 email ?? context.l10n.profileNoEmail,
                 style: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
+              if (phone != null) ...[
+                const SizedBox(height: 2),
+                Row(children: [
+                  const Icon(Icons.phone_rounded,
+                      size: 11, color: AppColors.verdePrimario),
+                  const SizedBox(width: 4),
+                  Text(phone!,
+                      style: const TextStyle(
+                          color: AppColors.verdePrimario,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ]),
+              ],
             ],
           ),
         ),
-        const Icon(Icons.check_circle_rounded,
-            color: AppColors.verdePrimario, size: 18),
+        Icon(
+          phoneVerified
+              ? Icons.check_circle_rounded
+              : Icons.radio_button_unchecked_rounded,
+          color: phoneVerified
+              ? AppColors.verdePrimario
+              : AppColors.textoDeshabilitado,
+          size: 18,
+        ),
       ]),
     );
   }

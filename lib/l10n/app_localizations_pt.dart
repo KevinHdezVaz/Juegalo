@@ -1227,4 +1227,136 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get txSeeAll => 'Ver tudo';
+
+  @override
+  String get phoneVerifyInvalidNumber => 'Digite um número de telefone válido';
+
+  @override
+  String get phoneVerifyUnexpectedError => 'Erro inesperado. Tente novamente.';
+
+  @override
+  String get phoneVerifyCodeLength => 'O código tem 6 dígitos';
+
+  @override
+  String get phoneVerifyErrorInvalidExpired =>
+      'Código incorreto ou expirado. Solicite um novo.';
+
+  @override
+  String get phoneVerifyErrorRateLimit =>
+      'Muitas tentativas. Aguarde alguns minutos.';
+
+  @override
+  String get phoneVerifyErrorAlreadyRegistered =>
+      'Este número já está registrado em outra conta. Use um número diferente.';
+
+  @override
+  String get phoneVerifyErrorInvalidPhone =>
+      'Número de telefone inválido. Verifique o formato e tente novamente.';
+
+  @override
+  String get phoneVerifyErrorNetwork =>
+      'Erro de conexão. Verifique sua internet e tente novamente.';
+
+  @override
+  String get phoneVerifyErrorGeneric =>
+      'Ocorreu um erro inesperado. Tente novamente.';
+
+  @override
+  String get phoneVerifyTitleOtpSent => 'Código enviado';
+
+  @override
+  String get phoneVerifyTitleEnterPhone => 'Verifique seu número';
+
+  @override
+  String phoneVerifySubtitleOtpSent(String phone) {
+    return 'Digite o código de 6 dígitos\nque enviamos para $phone';
+  }
+
+  @override
+  String get phoneVerifySubtitlePhone =>
+      'Um passo rápido para proteger\nseu dinheiro. Feito só uma vez.';
+
+  @override
+  String get phoneVerifyStep1of2 => 'Passo 1 de 2';
+
+  @override
+  String get phoneVerifyStep2of2 => 'Passo 2 de 2';
+
+  @override
+  String get phoneVerifyLabelPhone => 'Número de telefone';
+
+  @override
+  String get phoneVerifyLabelCode => 'Código de verificação';
+
+  @override
+  String get phoneVerifyButtonVerify => 'Verificar código';
+
+  @override
+  String get phoneVerifyButtonSend => 'Enviar SMS';
+
+  @override
+  String phoneVerifyResendIn(int secs) {
+    return 'Reenviar em ${secs}s';
+  }
+
+  @override
+  String get phoneVerifyResend => 'Reenviar código';
+
+  @override
+  String get phoneVerifyChangeNumber => 'Alterar número';
+
+  @override
+  String get phoneVerifyPrivacyNote =>
+      'Seu número é usado apenas para verificar sua identidade. Você não receberá spam.';
+
+  @override
+  String get phoneVerifyCountryPickerTitle => 'Selecione seu país';
+
+  @override
+  String get phoneVerifyCountrySearch => 'Buscar país ou código...';
+
+  @override
+  String get phoneVerifyNoResults => 'Sem resultados';
+
+  @override
+  String get cashoutPhoneRequired =>
+      'Você deve verificar seu telefone para retirar moedas';
+
+  @override
+  String get cashoutGateTitle => 'Verifique seu telefone\npara sacar';
+
+  @override
+  String get cashoutGateStep1Title => 'Digite seu número';
+
+  @override
+  String get cashoutGateStep1Subtitle => 'Com código do país (+52, +1…)';
+
+  @override
+  String get cashoutGateStep2Title => 'Receba o SMS';
+
+  @override
+  String get cashoutGateStep2Subtitle => 'Código de 6 dígitos em segundos';
+
+  @override
+  String get cashoutGateStep3Title => 'Pronto para sacar!';
+
+  @override
+  String get cashoutGateStep3Subtitle => 'Nunca mais será solicitado';
+
+  @override
+  String get cashoutGateButton => 'Verificar meu telefone';
+
+  @override
+  String get cashoutCurrencyTitle => 'Selecione a moeda';
+
+  @override
+  String cashoutCurrencyCount(int count) {
+    return '$count divisas';
+  }
+
+  @override
+  String get cashoutCurrencySearch => 'Buscar moeda ou código (USD, EUR…)';
+
+  @override
+  String get profileUnverifiedAccount => 'Conta não verificada';
 }
