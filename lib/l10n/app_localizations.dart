@@ -1141,7 +1141,7 @@ abstract class AppLocalizations {
   /// No description provided for @videosLimitReached.
   ///
   /// In es, this message translates to:
-  /// **'Límite alcanzado'**
+  /// **'Límite diario alcanzado'**
   String get videosLimitReached;
 
   /// No description provided for @videosResetsIn.
@@ -2505,6 +2505,360 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuenta sin verificar'**
   String get profileUnverifiedAccount;
+
+  /// No description provided for @dailyBonusNoActivity.
+  ///
+  /// In es, this message translates to:
+  /// **'Completa al menos un video o encuesta hoy para reclamar el bono.'**
+  String get dailyBonusNoActivity;
+
+  /// No description provided for @dailyBonusErrorClaiming.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al reclamar el bono. Intenta de nuevo.'**
+  String get dailyBonusErrorClaiming;
+
+  /// No description provided for @dailyBonusAvailableIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible en'**
+  String get dailyBonusAvailableIn;
+
+  /// No description provided for @splashLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando...'**
+  String get splashLoading;
+
+  /// No description provided for @rankingDefaultUsername.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugador'**
+  String get rankingDefaultUsername;
+
+  /// No description provided for @videosMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Videos en mantenimiento.'**
+  String get videosMaintenance;
+
+  /// No description provided for @videosUnlocksIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Se desbloquea en'**
+  String get videosUnlocksIn;
+
+  /// No description provided for @surveysMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Encuestas en mantenimiento.'**
+  String get surveysMaintenance;
+
+  /// No description provided for @surveysMaintenanceSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.'**
+  String get surveysMaintenanceSub;
+
+  /// No description provided for @walletLinkAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Vincular'**
+  String get walletLinkAccount;
+
+  /// No description provided for @cashoutTabRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitar'**
+  String get cashoutTabRequest;
+
+  /// No description provided for @cashoutTabPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis pagos'**
+  String get cashoutTabPayments;
+
+  /// No description provided for @cashoutSectionAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto a cobrar'**
+  String get cashoutSectionAmount;
+
+  /// No description provided for @cashoutSectionMethod.
+  ///
+  /// In es, this message translates to:
+  /// **'Método de cobro'**
+  String get cashoutSectionMethod;
+
+  /// No description provided for @cashoutSectionDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos de pago'**
+  String get cashoutSectionDetails;
+
+  /// No description provided for @cashoutCurrencyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda de pago'**
+  String get cashoutCurrencyLabel;
+
+  /// No description provided for @cashoutTrustTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos garantizados'**
+  String get cashoutTrustTitle;
+
+  /// No description provided for @cashoutSuccessCount.
+  ///
+  /// In es, this message translates to:
+  /// **'cobros exitosos'**
+  String get cashoutSuccessCount;
+
+  /// No description provided for @cashoutBusinessDays.
+  ///
+  /// In es, this message translates to:
+  /// **'días hábiles'**
+  String get cashoutBusinessDays;
+
+  /// No description provided for @cashoutTrustPaypal.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos reales vía PayPal'**
+  String get cashoutTrustPaypal;
+
+  /// No description provided for @cashoutTrustPaypalSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Directo a tu cuenta en 2–3 días hábiles'**
+  String get cashoutTrustPaypalSub;
+
+  /// No description provided for @cashoutTrustSms.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación SMS anti-fraude'**
+  String get cashoutTrustSms;
+
+  /// No description provided for @cashoutTrustSmsSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo usuarios reales pueden cobrar'**
+  String get cashoutTrustSmsSub;
+
+  /// No description provided for @cashoutTrustUsers.
+  ///
+  /// In es, this message translates to:
+  /// **'Miles ya cobraron'**
+  String get cashoutTrustUsers;
+
+  /// No description provided for @cashoutTrustUsersSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Úsate a nosotros o no nos uses — los pagos hablan'**
+  String get cashoutTrustUsersSub;
+
+  /// No description provided for @cashoutTrustSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte humano'**
+  String get cashoutTrustSupport;
+
+  /// No description provided for @cashoutTrustSupportSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Si hay algún problema lo resolvemos contigo'**
+  String get cashoutTrustSupportSub;
+
+  /// No description provided for @cashoutHistoryLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar el historial de cobros.'**
+  String get cashoutHistoryLoadError;
+
+  /// No description provided for @cashoutHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin solicitudes aún'**
+  String get cashoutHistoryEmpty;
+
+  /// No description provided for @cashoutReviewNote.
+  ///
+  /// In es, this message translates to:
+  /// **'⏱ En revisión — procesamos en 2–3 días hábiles'**
+  String get cashoutReviewNote;
+
+  /// No description provided for @cashoutRejectedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Contacta soporte si crees que esto es un error.'**
+  String get cashoutRejectedNote;
+
+  /// No description provided for @cashoutLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar tu información'**
+  String get cashoutLoadError;
+
+  /// No description provided for @cashoutLoadErrorSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu conexión e intenta de nuevo'**
+  String get cashoutLoadErrorSub;
+
+  /// No description provided for @cashoutAvailableBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} USD disponibles'**
+  String cashoutAvailableBalance(String amount);
+
+  /// No description provided for @cashoutSummaryCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get cashoutSummaryCurrency;
+
+  /// No description provided for @cashoutCreateAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea una cuenta para cobrar'**
+  String get cashoutCreateAccount;
+
+  /// No description provided for @cashoutNameDialogContent.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu nombre y apellido'**
+  String get cashoutNameDialogContent;
+
+  /// No description provided for @txLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar tus transacciones.'**
+  String get txLoadError;
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conexión'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorGenericMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar la información.\nVerifica tu conexión e intenta de nuevo.'**
+  String get errorGenericMessage;
+
+  /// No description provided for @errorRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get errorRetry;
+
+  /// No description provided for @maintenanceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En mantenimiento temporalmente'**
+  String get maintenanceTitle;
+
+  /// No description provided for @maintenanceComingSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Regresamos pronto'**
+  String get maintenanceComingSoon;
+
+  /// No description provided for @maintenanceWorking.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos trabajando en ello. Gracias 🙏'**
+  String get maintenanceWorking;
+
+  /// No description provided for @maintenanceCheckingIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificando automáticamente en {secs} s...'**
+  String maintenanceCheckingIn(int secs);
+
+  /// No description provided for @maintenanceRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar ahora'**
+  String get maintenanceRetry;
+
+  /// No description provided for @promoMusicMeetBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVO'**
+  String get promoMusicMeetBadge;
+
+  /// No description provided for @promoMusicMeetSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Encuentra gente con tus mismos gustos musicales cerca de ti!'**
+  String get promoMusicMeetSubtitle;
+
+  /// No description provided for @promoMusicMeetButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver'**
+  String get promoMusicMeetButton;
+
+  /// No description provided for @walletMaintenanceSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.'**
+  String get walletMaintenanceSubtitle;
+
+  /// No description provided for @walletGuestWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugando como invitado. Vincula tu cuenta para no perder tu progreso.'**
+  String get walletGuestWarning;
+
+  /// No description provided for @phoneVerifyEmailFallbackTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica con tu correo'**
+  String get phoneVerifyEmailFallbackTitle;
+
+  /// No description provided for @phoneVerifyEmailFallbackSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Los SMS no están disponibles para Indonesia (+62).\nTe enviaremos un código a tu correo.'**
+  String get phoneVerifyEmailFallbackSubtitle;
+
+  /// No description provided for @phoneVerifyEmailFallbackLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get phoneVerifyEmailFallbackLabel;
+
+  /// No description provided for @phoneVerifyEmailFallbackHint.
+  ///
+  /// In es, this message translates to:
+  /// **'tucorreo@email.com'**
+  String get phoneVerifyEmailFallbackHint;
+
+  /// No description provided for @phoneVerifyEmailFallbackSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Código enviado a {email}'**
+  String phoneVerifyEmailFallbackSent(String email);
+
+  /// No description provided for @phoneVerifyEmailFallbackInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un correo válido'**
+  String get phoneVerifyEmailFallbackInvalid;
+
+  /// No description provided for @phoneVerifyButtonSendEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar código al correo'**
+  String get phoneVerifyButtonSendEmail;
+
+  /// No description provided for @profileMadeByTeam.
+  ///
+  /// In es, this message translates to:
+  /// **'App desarrollada por el equipo de Juegalo'**
+  String get profileMadeByTeam;
 }
 
 class _AppLocalizationsDelegate

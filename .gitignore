@@ -121,3 +121,4 @@ app.*.symbols
 android/app/google-services.json
 lib/firebase_options.dart
 .env*
+dart_defines.json

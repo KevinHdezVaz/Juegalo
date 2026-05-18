@@ -589,7 +589,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get videosLimitReached => 'Limite atingido';
+  String get videosLimitReached => 'Limite diário atingido';
 
   @override
   String get videosResetsIn => 'Vídeos disponíveis em';
@@ -1359,4 +1359,199 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileUnverifiedAccount => 'Conta não verificada';
+
+  @override
+  String get dailyBonusNoActivity =>
+      'Complete pelo menos um vídeo ou pesquisa hoje para resgatar seu bônus.';
+
+  @override
+  String get dailyBonusErrorClaiming =>
+      'Erro ao resgatar bônus. Tente novamente.';
+
+  @override
+  String get dailyBonusAvailableIn => 'Disponível em';
+
+  @override
+  String get splashLoading => 'Carregando...';
+
+  @override
+  String get rankingDefaultUsername => 'Jogador';
+
+  @override
+  String get videosMaintenance => 'Vídeos em manutenção.';
+
+  @override
+  String get videosUnlocksIn => 'Libera em';
+
+  @override
+  String get surveysMaintenance => 'Pesquisas em manutenção.';
+
+  @override
+  String get surveysMaintenanceSub =>
+      'As pesquisas estão pausadas.\nVoltamos em breve com mais oportunidades.';
+
+  @override
+  String get walletLinkAccount => 'Vincular conta';
+
+  @override
+  String get cashoutTabRequest => 'Solicitar';
+
+  @override
+  String get cashoutTabPayments => 'Meus pagamentos';
+
+  @override
+  String get cashoutSectionAmount => 'Valor a sacar';
+
+  @override
+  String get cashoutSectionMethod => 'Método de pagamento';
+
+  @override
+  String get cashoutSectionDetails => 'Dados de pagamento';
+
+  @override
+  String get cashoutCurrencyLabel => 'Moeda de pagamento';
+
+  @override
+  String get cashoutTrustTitle => 'Pagamentos garantidos';
+
+  @override
+  String get cashoutSuccessCount => 'saques realizados';
+
+  @override
+  String get cashoutBusinessDays => 'dias úteis';
+
+  @override
+  String get cashoutTrustPaypal => 'Pagamentos reais via PayPal';
+
+  @override
+  String get cashoutTrustPaypalSub => 'Direto na sua conta em 2–3 dias úteis';
+
+  @override
+  String get cashoutTrustSms => 'Verificação SMS anti-fraude';
+
+  @override
+  String get cashoutTrustSmsSub => 'Só usuários reais podem sacar';
+
+  @override
+  String get cashoutTrustUsers => 'Milhares já sacaram';
+
+  @override
+  String get cashoutTrustUsersSub =>
+      'Use ou não use — os pagamentos falam por si';
+
+  @override
+  String get cashoutTrustSupport => 'Suporte humano';
+
+  @override
+  String get cashoutTrustSupportSub =>
+      'Se houver algum problema, resolvemos com você';
+
+  @override
+  String get cashoutHistoryLoadError =>
+      'Não foi possível carregar o histórico de saques.';
+
+  @override
+  String get cashoutHistoryEmpty => 'Sem solicitações ainda';
+
+  @override
+  String get cashoutReviewNote =>
+      '⏱ Em revisão — processamos em 2–3 dias úteis';
+
+  @override
+  String get cashoutRejectedNote =>
+      'Entre em contato com o suporte se achar que isso é um erro.';
+
+  @override
+  String get cashoutLoadError => 'Não foi possível carregar suas informações';
+
+  @override
+  String get cashoutLoadErrorSub => 'Verifique sua conexão e tente novamente';
+
+  @override
+  String cashoutAvailableBalance(String amount) {
+    return '$amount USD disponíveis';
+  }
+
+  @override
+  String get cashoutSummaryCurrency => 'Moeda';
+
+  @override
+  String get cashoutCreateAccount => 'Crie uma conta para sacar';
+
+  @override
+  String get cashoutNameDialogContent => 'Digite seu nome e sobrenome';
+
+  @override
+  String get txLoadError => 'Não foi possível carregar suas transações.';
+
+  @override
+  String get errorNoConnection => 'Sem conexão';
+
+  @override
+  String get errorGenericMessage =>
+      'Não conseguimos carregar as informações.\nVerifique sua conexão e tente novamente.';
+
+  @override
+  String get errorRetry => 'Tentar novamente';
+
+  @override
+  String get maintenanceTitle => 'Em manutenção temporariamente';
+
+  @override
+  String get maintenanceComingSoon => 'Voltamos em breve';
+
+  @override
+  String get maintenanceWorking => 'Estamos trabalhando nisso. Obrigado 🙏';
+
+  @override
+  String maintenanceCheckingIn(int secs) {
+    return 'Verificando automaticamente em $secs s...';
+  }
+
+  @override
+  String get maintenanceRetry => 'Tentar novamente';
+
+  @override
+  String get promoMusicMeetBadge => 'NOVO';
+
+  @override
+  String get promoMusicMeetSubtitle => 'Conecta con músicos y fans cerca de ti';
+
+  @override
+  String get promoMusicMeetButton => 'Ver';
+
+  @override
+  String get walletMaintenanceSubtitle =>
+      'Estamos processando pagamentos pendentes.\nVolte em algumas horas para solicitar seu saque.';
+
+  @override
+  String get walletGuestWarning =>
+      'Jogando como convidado. Vincule sua conta para não perder seu progresso.';
+
+  @override
+  String get phoneVerifyEmailFallbackTitle => 'Verifique com seu e-mail';
+
+  @override
+  String get phoneVerifyEmailFallbackSubtitle =>
+      'SMS não está disponível para a Indonésia (+62).\nEnviaremos um código para o seu e-mail.';
+
+  @override
+  String get phoneVerifyEmailFallbackLabel => 'Endereço de e-mail';
+
+  @override
+  String get phoneVerifyEmailFallbackHint => 'seuemail@email.com';
+
+  @override
+  String phoneVerifyEmailFallbackSent(String email) {
+    return 'Código enviado para $email';
+  }
+
+  @override
+  String get phoneVerifyEmailFallbackInvalid => 'Digite um e-mail válido';
+
+  @override
+  String get phoneVerifyButtonSendEmail => 'Enviar código por e-mail';
+
+  @override
+  String get profileMadeByTeam => 'App desenvolvida pela equipe do Juegalo';
 }

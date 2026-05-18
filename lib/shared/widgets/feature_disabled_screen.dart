@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/utils/l10n_ext.dart';
 
 /// Colores temáticos por sección.
 enum FeatureTheme {
@@ -198,7 +199,7 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
                     ),
                     const SizedBox(width: 7),
                     Text(
-                      'En mantenimiento temporalmente',
+                      context.l10n.maintenanceTitle,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -273,22 +274,22 @@ class _FeatureDisabledScreenState extends State<FeatureDisabledScreen>
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Regresamos pronto',
-                              style: TextStyle(
+                              context.l10n.maintenanceComingSoon,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Estamos trabajando en ello. Gracias 🙏',
-                              style: TextStyle(
+                              context.l10n.maintenanceWorking,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.white54,
                               ),

@@ -420,6 +420,34 @@ class ProfileScreen extends ConsumerWidget {
                   );
                 },
               ),
+              const SizedBox(height: 16),
+
+              // ── Banner "Desarrollado por" ────────────────────────
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.fondoElevado,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.fondoCardBorde),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🏆', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 6),
+                      Text(
+                        context.l10n.profileMadeByTeam,
+                        style: const TextStyle(
+                          color: AppColors.textoDeshabilitado,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
             ],
           ));

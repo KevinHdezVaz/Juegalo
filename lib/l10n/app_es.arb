@@ -653,5 +653,99 @@
   },
   "cashoutCurrencySearch": "Buscar moneda o código (USD, EUR…)",
 
-  "profileUnverifiedAccount": "Cuenta sin verificar"
+  "profileUnverifiedAccount": "Cuenta sin verificar",
+
+  "dailyBonusNoActivity": "Completa al menos un video o encuesta hoy para reclamar el bono.",
+  "dailyBonusErrorClaiming": "Error al reclamar el bono. Intenta de nuevo.",
+  "dailyBonusAvailableIn": "Disponible en",
+  "dailyBonusStreakLabelMany": "días",
+
+  "splashLoading": "Cargando...",
+
+  "rankingDefaultUsername": "Jugador",
+
+  "videosMaintenance": "Videos en mantenimiento.",
+  "videosLimitReached": "Límite diario alcanzado",
+  "videosUnlocksIn": "Se desbloquea en",
+
+  "surveysMaintenance": "Encuestas en mantenimiento.",
+  "surveysMaintenanceSub": "Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.",
+
+  "walletLinkAccount": "Vincular",
+
+  "cashoutTabRequest": "Solicitar",
+  "cashoutTabPayments": "Mis pagos",
+  "cashoutSectionAmount": "Monto a cobrar",
+  "cashoutSectionMethod": "Método de cobro",
+  "cashoutSectionDetails": "Datos de pago",
+  "cashoutCurrencyLabel": "Moneda de pago",
+  "cashoutTrustTitle": "Pagos garantizados",
+  "cashoutSuccessCount": "cobros exitosos",
+  "cashoutBusinessDays": "días hábiles",
+  "cashoutTrustPaypal": "Pagos reales vía PayPal",
+  "cashoutTrustPaypalSub": "Directo a tu cuenta en 2–3 días hábiles",
+  "cashoutTrustSms": "Verificación SMS anti-fraude",
+  "cashoutTrustSmsSub": "Solo usuarios reales pueden cobrar",
+  "cashoutTrustUsers": "Miles ya cobraron",
+  "cashoutTrustUsersSub": "Úsate a nosotros o no nos uses — los pagos hablan",
+  "cashoutTrustSupport": "Soporte humano",
+  "cashoutTrustSupportSub": "Si hay algún problema lo resolvemos contigo",
+  "cashoutHistoryLoadError": "No se pudo cargar el historial de cobros.",
+  "cashoutHistoryEmpty": "Sin solicitudes aún",
+  "cashoutReviewNote": "⏱ En revisión — procesamos en 2–3 días hábiles",
+  "cashoutRejectedNote": "Contacta soporte si crees que esto es un error.",
+  "cashoutLoadError": "No se pudo cargar tu información",
+  "cashoutLoadErrorSub": "Verifica tu conexión e intenta de nuevo",
+  "cashoutAvailableBalance": "{amount} USD disponibles",
+  "@cashoutAvailableBalance": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "cashoutSummaryAmount": "Monto",
+  "cashoutSummaryMethod": "Método",
+  "cashoutSummaryCurrency": "Moneda",
+  "cashoutCreateAccount": "Crea una cuenta para cobrar",
+  "cashoutGuestContinueGoogle": "Continuar con Google",
+  "cashoutGuestContinueApple": "Continuar con Apple",
+  "cashoutGuestCreateEmail": "Crear cuenta con correo",
+  "cashoutNameDialogContent": "Ingresa tu nombre y apellido",
+
+  "txLoadError": "No se pudieron cargar tus transacciones.",
+
+  "errorNoConnection": "Sin conexión",
+  "errorGenericMessage": "No pudimos cargar la información.\nVerifica tu conexión e intenta de nuevo.",
+  "errorRetry": "Reintentar",
+
+  "maintenanceTitle": "En mantenimiento temporalmente",
+  "maintenanceComingSoon": "Regresamos pronto",
+  "maintenanceWorking": "Estamos trabajando en ello. Gracias 🙏",
+  "maintenanceCheckingIn": "Verificando automáticamente en {secs} s...",
+  "@maintenanceCheckingIn": {
+    "placeholders": {
+      "secs": { "type": "int" }
+    }
+  },
+  "maintenanceRetry": "Reintentar ahora",
+
+  "promoMusicMeetBadge": "NUEVO",
+  "promoMusicMeetSubtitle": "¡Encuentra gente con tus mismos gustos musicales cerca de ti!",
+  "promoMusicMeetButton": "Ver",
+
+  "walletMaintenanceSubtitle": "Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.",
+  "walletGuestWarning": "Jugando como invitado. Vincula tu cuenta para no perder tu progreso.",
+
+  "phoneVerifyEmailFallbackTitle": "Verifica con tu correo",
+  "phoneVerifyEmailFallbackSubtitle": "Los SMS no están disponibles para Indonesia (+62).\nTe enviaremos un código a tu correo.",
+  "phoneVerifyEmailFallbackLabel": "Correo electrónico",
+  "phoneVerifyEmailFallbackHint": "tucorreo@email.com",
+  "phoneVerifyEmailFallbackSent": "Código enviado a {email}",
+  "@phoneVerifyEmailFallbackSent": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "phoneVerifyEmailFallbackInvalid": "Ingresa un correo válido",
+  "phoneVerifyButtonSendEmail": "Enviar código al correo",
+  "profileMadeByTeam": "App desarrollada por el equipo de Juegalo"
 }

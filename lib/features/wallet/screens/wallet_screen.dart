@@ -41,10 +41,9 @@ class WalletScreen extends ConsumerWidget {
 
     // Flag: cobros desactivados → bloquear todo el tab de Cobrar
     if (flags != null && !flags.cashoutEnabled) {
-      return const FeatureDisabledScreen(
-        title: 'Cobros en mantenimiento.',
-        subtitle:
-            'Estamos procesando pagos pendientes.\nVuelve en unas horas para solicitar tu retiro.',
+      return FeatureDisabledScreen(
+        title: context.l10n.maintenanceTitle,
+        subtitle: context.l10n.walletMaintenanceSubtitle,
         icon: Icons.account_balance_wallet_rounded,
         theme: FeatureTheme.cashout,
       );
@@ -76,6 +75,9 @@ class WalletScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Banner invitado ─────────────────────────────────
+                  const _GuestWarningBanner(),
+
                   // ── Meta diaria y bono ──────────────────────────────
                   DailyGoalBar(user: user),
                   const SizedBox(height: 10),
@@ -876,6 +878,64 @@ void _showInsufficientCoinsDialog(BuildContext context, int currentCoins) {
       ],
     ),
   );
+}
+
+// ── Banner: aviso a usuarios invitados para que vinculen su cuenta ──
+class _GuestWarningBanner extends StatelessWidget {
+  const _GuestWarningBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final isAnonymous =
+        Supabase.instance.client.auth.currentUser?.isAnonymous ?? false;
+    if (!isAnonymous) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.fondoElevado,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.50)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: Color(0xFFF59E0B), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              context.l10n.walletGuestWarning,
+              style: const TextStyle(
+                color: AppColors.textoPrimario,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => context.push(AppRoutes.profile),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                context.l10n.walletLinkAccount,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Widget invisible que dispara in-app review en el tab de Cobrar ──

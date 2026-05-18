@@ -27,8 +27,10 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   // ── Controladores ─────────────────────────────────────────────────
   final _phoneCtrl = TextEditingController();
   final _otpCtrl   = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _phoneFocus = FocusNode();
   final _otpFocus   = FocusNode();
+  final _emailFocus = FocusNode();
 
   // ── Estado ────────────────────────────────────────────────────────
   bool   _loading      = false;
@@ -38,6 +40,10 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   // ── Reenvío ───────────────────────────────────────────────────────
   int  _resendCountdown = 0;
   Timer? _resendTimer;
+
+  // ── Indonesia email fallback ──────────────────────────────────────
+  bool get _isIndonesia => _countryCode == '+62';
+  String _verifiedEmail = '';
 
   // ── Países disponibles (global) ───────────────────────────────────
   static const _countries = [
@@ -134,8 +140,10 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   void dispose() {
     _phoneCtrl.dispose();
     _otpCtrl.dispose();
+    _emailCtrl.dispose();
     _phoneFocus.dispose();
     _otpFocus.dispose();
+    _emailFocus.dispose();
     _resendTimer?.cancel();
     super.dispose();
   }
@@ -161,6 +169,14 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   // ── Enviar OTP ────────────────────────────────────────────────────
   Future<void> _sendOtp() async {
+    if (_isIndonesia) {
+      await _sendEmailOtp();
+    } else {
+      await _sendSmsOtp();
+    }
+  }
+
+  Future<void> _sendSmsOtp() async {
     final digits = _phoneCtrl.text.trim().replaceAll(RegExp(r'\D'), '');
     if (digits.length < 5) {
       _setError(context.l10n.phoneVerifyInvalidNumber);
@@ -170,7 +186,6 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     setState(() => _loading = true);
     final unexpectedMsg = context.l10n.phoneVerifyUnexpectedError;
     try {
-      // Vincula el teléfono al usuario actual (envía OTP)
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(phone: _fullPhone),
       );
@@ -188,8 +203,51 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     }
   }
 
+  Future<void> _sendEmailOtp() async {
+    final digits = _phoneCtrl.text.trim().replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 5) {
+      _setError(context.l10n.phoneVerifyInvalidNumber);
+      return;
+    }
+    final email = _emailCtrl.text.trim();
+    final emailValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    if (!emailValid) {
+      _setError(context.l10n.phoneVerifyEmailFallbackInvalid);
+      return;
+    }
+    _setError(null);
+    setState(() => _loading = true);
+    final unexpectedMsg = context.l10n.phoneVerifyUnexpectedError;
+    try {
+      await Supabase.instance.client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: false,
+      );
+      _verifiedEmail = email;
+      setState(() => _otpSent = true);
+      _startResendTimer();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) FocusScope.of(context).requestFocus(_otpFocus);
+      });
+    } on AuthException catch (e) {
+      _setError(_friendlyError(e.message));
+    } catch (e) {
+      _setError(unexpectedMsg);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   // ── Verificar OTP ─────────────────────────────────────────────────
   Future<void> _verifyOtp() async {
+    if (_isIndonesia) {
+      await _verifyEmailOtp();
+    } else {
+      await _verifySmsOtp();
+    }
+  }
+
+  Future<void> _verifySmsOtp() async {
     final code = _otpCtrl.text.trim();
     if (code.length != 6) {
       _setError(context.l10n.phoneVerifyCodeLength);
@@ -204,9 +262,38 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         token: code,
         type: OtpType.phoneChange,
       );
-      // Refrescar sesión para que currentUser?.phone refleje el número nuevo
       await Supabase.instance.client.auth.refreshSession();
-      if (mounted) Navigator.of(context).pop(true); // ✅ verificado
+      if (mounted) Navigator.of(context).pop(true);
+    } on AuthException catch (e) {
+      _setError(_friendlyError(e.message));
+    } catch (e) {
+      _setError(unexpectedMsg);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _verifyEmailOtp() async {
+    final code = _otpCtrl.text.trim();
+    if (code.length != 6) {
+      _setError(context.l10n.phoneVerifyCodeLength);
+      return;
+    }
+    _setError(null);
+    setState(() => _loading = true);
+    final unexpectedMsg = context.l10n.phoneVerifyUnexpectedError;
+    try {
+      await Supabase.instance.client.auth.verifyOTP(
+        email: _verifiedEmail,
+        token: code,
+        type: OtpType.email,
+      );
+      // Guardar el teléfono en userMetadata para que el gate lo reconozca
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {'verified_phone': _fullPhone}),
+      );
+      await Supabase.instance.client.auth.refreshSession();
+      if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (e) {
       _setError(_friendlyError(e.message));
     } catch (e) {
@@ -302,10 +389,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
                       child: Text(
-                        key: ValueKey('t$_otpSent'),
+                        key: ValueKey('t$_otpSent$_isIndonesia'),
                         _otpSent
                             ? context.l10n.phoneVerifyTitleOtpSent
-                            : context.l10n.phoneVerifyTitleEnterPhone,
+                            : _isIndonesia
+                                ? context.l10n.phoneVerifyEmailFallbackTitle
+                                : context.l10n.phoneVerifyTitleEnterPhone,
                         style: const TextStyle(
                           color: Colors.white, fontSize: 24,
                           fontWeight: FontWeight.w900, letterSpacing: -.3,
@@ -315,8 +404,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     const SizedBox(height: 6),
                     Text(
                       _otpSent
-                          ? context.l10n.phoneVerifySubtitleOtpSent(_fullPhone)
-                          : context.l10n.phoneVerifySubtitlePhone,
+                          ? _isIndonesia
+                              ? context.l10n.phoneVerifyEmailFallbackSent(_verifiedEmail)
+                              : context.l10n.phoneVerifySubtitleOtpSent(_fullPhone)
+                          : _isIndonesia
+                              ? context.l10n.phoneVerifyEmailFallbackSubtitle
+                              : context.l10n.phoneVerifySubtitlePhone,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 14, height: 1.5,
@@ -420,7 +513,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                                   Text(
                                     _otpSent
                                         ? context.l10n.phoneVerifyButtonVerify
-                                        : context.l10n.phoneVerifyButtonSend,
+                                        : _isIndonesia
+                                            ? context.l10n.phoneVerifyButtonSendEmail
+                                            : context.l10n.phoneVerifyButtonSend,
                                     style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800),
@@ -575,10 +670,53 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
             ),
-            onSubmitted: (_) => _sendOtp(),
+            onSubmitted: (_) => _isIndonesia ? null : _sendOtp(),
           ),
         ]),
       ),
+
+      // ── Campo de correo (solo Indonesia) ────────────────────────
+      if (_isIndonesia) ...[
+        const SizedBox(height: 16),
+        Text(context.l10n.phoneVerifyEmailFallbackLabel,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
+                color: AppColors.textoSecundario)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.fondoElevado,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: TextField(
+            controller: _emailCtrl,
+            focusNode: _emailFocus,
+            keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(
+                color: AppColors.textoPrimario, fontWeight: FontWeight.w500,
+                fontSize: 15),
+            decoration: InputDecoration(
+              hintText: context.l10n.phoneVerifyEmailFallbackHint,
+              hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 14),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 10),
+                child: Icon(Icons.email_outlined,
+                    color: AppColors.azulPrimario, size: 20),
+              ),
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 0, minHeight: 0),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+            ),
+            onSubmitted: (_) => _sendOtp(),
+          ),
+        ),
+      ],
     ];
   }
 

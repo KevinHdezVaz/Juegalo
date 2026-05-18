@@ -9,6 +9,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/version_check_service.dart';
 import '../../../shared/providers/user_provider.dart';
+import '../../../core/utils/l10n_ext.dart';
 import '../../tutorial/screens/tutorial_screen.dart';
 
 // ── Partícula de moneda ───────────────────────────────────────────────────────
@@ -351,7 +352,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     const SizedBox(height: 16),
 
                     Text(
-                      'Cargando...',
+                      context.l10n.splashLoading,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,

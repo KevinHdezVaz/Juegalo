@@ -239,7 +239,7 @@ class _TxFilterPage extends ConsumerWidget {
         child: CircularProgressIndicator(color: AppColors.azulPrimario),
       ),
       error: (_, __) => AppErrorWidget(
-        message: 'No se pudieron cargar tus transacciones.',
+        message: context.l10n.txLoadError,
         onRetry: notifier.refresh,
       ),
       data: (data) {

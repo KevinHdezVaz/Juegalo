@@ -1,15 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 
+// Clave compartida con daily_bonus_helper.dart
+const _kBonusClaimedKey = 'daily_bonus_claimed_date';
+
 // Monedas exactas que paga claim_daily_bonus según el día de racha
 int _coinsForStreak(int streak) {
   // Mes 1: hitos semanales escalados
-  if (streak == 7)  return 200;
+  if (streak == 7) return 200;
   if (streak == 14) return 300;
   if (streak == 21) return 400;
   if (streak == 30) return 500;
@@ -20,7 +26,7 @@ int _coinsForStreak(int streak) {
 
 // Próximo hito donde hay bono extra
 int _nextMilestone(int streak) {
-  if (streak < 7)  return 7;
+  if (streak < 7) return 7;
   if (streak < 14) return 14;
   if (streak < 21) return 21;
   if (streak < 30) return 30;
@@ -39,8 +45,10 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulse;
   late Animation<double> _scale;
-  bool _claiming    = false;
-  bool _justClaimed = false; // bloqueo local inmediato post-reclamo
+  bool _claiming = false;
+  bool _justClaimed = false;
+  int _secondsUntilReset = 0;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -57,13 +65,90 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
   @override
   void dispose() {
     _pulse.dispose();
+    _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  // ── Segundos hasta medianoche UTC ────────────────────────────────
+  int _calcSecondsUntilMidnight() {
+    final now = DateTime.now().toUtc();
+    final midnight = DateTime.utc(now.year, now.month, now.day + 1);
+    return midnight.difference(now).inSeconds;
+  }
+
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    setState(() => _secondsUntilReset = _calcSecondsUntilMidnight());
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) {
+        _countdownTimer?.cancel();
+        return;
+      }
+      setState(() {
+        _secondsUntilReset = _calcSecondsUntilMidnight();
+      });
+    });
+  }
+
+  String _fmtCountdown(int s) {
+    if (s <= 0) return '00:00:00';
+    final h = (s ~/ 3600).toString().padLeft(2, '0');
+    final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
+    final sec = (s % 60).toString().padLeft(2, '0');
+    return '$h:$m:$sec';
   }
 
   Future<void> _claimBonus() async {
     if (_claiming || _justClaimed) return;
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
+
+    // Verificar SharedPreferences antes de llamar al servidor
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+    if (prefs.getString(_kBonusClaimedKey) == today) {
+      if (mounted) setState(() => _justClaimed = true);
+      return;
+    }
+
+    // ── Verificar actividad del día (video o encuesta) ───────────────
+    final videosHoy = prefs.getInt('videos_watched_today') ?? 0;
+    bool tieneActividad = videosHoy > 0;
+
+    if (!tieneActividad) {
+      // Sin videos locales → revisar encuestas en Supabase
+      final surveys = await Supabase.instance.client
+          .from('transactions')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('source', 'cpx_research')
+          .gte('created_at', '${today}T00:00:00.000Z')
+          .limit(1);
+      tieneActividad = (surveys as List).isNotEmpty;
+    }
+
+    if (!tieneActividad) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Text('🎯', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                context.l10n.dailyBonusNoActivity,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ),
+          ]),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 4),
+        ));
+      }
+      return;
+    }
 
     setState(() => _claiming = true);
     try {
@@ -73,14 +158,16 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
       final success = result['success'] as bool? ?? false;
       ref.invalidate(userProvider);
 
+      // Guardar en SharedPreferences ANTES de checks de mounted/context
+      if (success) {
+        await prefs.setString(_kBonusClaimedKey, today);
+      }
       if (!mounted) return;
       if (success) {
-        setState(() => _justClaimed = true); // bloqueo inmediato
-        final coins  = result['coins']  as int? ?? 0;
+        setState(() => _justClaimed = true);
+        _startCountdown();
+        final coins = result['coins'] as int? ?? 0;
         final streak = result['streak'] as int? ?? 1;
-        // Reutilizamos el helper para mostrar el snackbar estándar
-        // Llamamos tryClaimDailyBonus con el userProvider ya invalidado —
-        // como ya marcamos éxito, mostramos snackbar directamente aquí
         final streakLabel = streak == 1
             ? context.l10n.dailyBonusStreakLabelOne
             : context.l10n.dailyBonusStreakLabelMany;
@@ -96,12 +183,15 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                   children: [
                     Text(
                       context.l10n.dailyBonusClaimedToast,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 13),
                     ),
                     Text(
-                      context.l10n.dailyBonusCoinsAndStreak(coins, streak, streakLabel),
+                      context.l10n
+                          .dailyBonusCoinsAndStreak(coins, streak, streakLabel),
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11),
                     ),
                   ],
                 ),
@@ -109,23 +199,28 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
             ]),
             backgroundColor: AppColors.azulPrimario,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             duration: const Duration(seconds: 4),
           ),
         );
       } else {
-        // Ya fue reclamado hoy (race condition)
+        final reason = result['reason'] as String? ?? '';
+        final msg = reason == 'no_activity'
+            ? context.l10n.dailyBonusNoActivity
+            : context.l10n.dailyBonusClaimed;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.l10n.dailyBonusClaimed),
+          content: Text(msg),
+          backgroundColor: reason == 'no_activity' ? Colors.orange : null,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ));
       }
     } catch (e) {
       debugPrint('❌ _claimBonus error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Error al reclamar el bono. Intenta de nuevo.'),
+          content: Text(context.l10n.dailyBonusErrorClaiming),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ));
@@ -145,12 +240,18 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
       data: (user) {
         if (user == null) return const SizedBox.shrink();
 
-        final claimed     = user.dailyBonusClaimed || _justClaimed;
-        final streak      = user.streakDays;
-        final nextStreak  = streak + 1;
-        final todayCoins  = _coinsForStreak(claimed ? streak : nextStreak);
-        final nextMile    = _nextMilestone(claimed ? streak : nextStreak);
-        final mileCoins   = _coinsForStreak(nextMile);
+        final claimed = user.dailyBonusClaimed || _justClaimed;
+
+        // Iniciar countdown si ya fue reclamado y el timer no está corriendo
+        if (claimed && _countdownTimer == null) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _startCountdown());
+        }
+        final streak = user.streakDays;
+        final nextStreak = streak + 1;
+        final todayCoins = _coinsForStreak(claimed ? streak : nextStreak);
+        final nextMile = _nextMilestone(claimed ? streak : nextStreak);
+        final mileCoins = _coinsForStreak(nextMile);
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -170,7 +271,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
             children: [
               // ── Header ───────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -180,7 +282,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
                 ),
                 child: Row(
                   children: [
@@ -215,7 +318,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                     ),
                     // Días actuales
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(20),
@@ -252,7 +356,9 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            claimed ? context.l10n.dailyBonusClaimed : context.l10n.dailyBonusTodayPrize,
+                            claimed
+                                ? context.l10n.dailyBonusClaimed
+                                : context.l10n.dailyBonusTodayPrize,
                             style: const TextStyle(
                               color: AppColors.textoSecundario,
                               fontSize: 11,
@@ -265,7 +371,8 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                                 color: AppColors.dorado, size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              context.l10n.dailyBonusCoins(todayCoins.formatted),
+                              context.l10n
+                                  .dailyBonusCoins(todayCoins.formatted),
                               style: const TextStyle(
                                 color: AppColors.textoPrimario,
                                 fontWeight: FontWeight.w800,
@@ -275,9 +382,11 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                           ]),
                           const SizedBox(height: 2),
                           Text(
-                            context.l10n.dailyBonusNextMilestone(nextMile, mileCoins.formatted),
+                            context.l10n.dailyBonusNextMilestone(
+                                nextMile, mileCoins.formatted),
                             style: TextStyle(
-                              color: AppColors.azulPrimario.withValues(alpha: 0.70),
+                              color: AppColors.azulPrimario
+                                  .withValues(alpha: 0.70),
                               fontSize: 10,
                             ),
                           ),
@@ -290,24 +399,44 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                     if (claimed)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.verdePrimario.withValues(alpha: 0.10),
+                          color:
+                              AppColors.verdePrimario.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: AppColors.verdePrimario.withValues(alpha: 0.30)),
+                              color: AppColors.verdePrimario
+                                  .withValues(alpha: 0.30)),
                         ),
                         child: Column(
                           children: [
                             const Icon(Icons.check_circle_rounded,
-                                color: AppColors.verdePrimario, size: 22),
-                            const SizedBox(height: 2),
+                                color: AppColors.verdePrimario, size: 20),
+                            const SizedBox(height: 4),
                             Text(
                               context.l10n.dailyBonusClaimedBadge,
                               style: const TextStyle(
                                 color: AppColors.verdePrimario,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              context.l10n.dailyBonusAvailableIn,
+                              style: const TextStyle(
+                                color: AppColors.textoSecundario,
+                                fontSize: 9,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _fmtCountdown(_secondsUntilReset),
+                              style: const TextStyle(
+                                color: AppColors.textoPrimario,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
                               ),
                             ),
                           ],
@@ -317,19 +446,24 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                       GestureDetector(
                         onTap: _claimBonus,
                         child: ScaleTransition(
-                          scale: _claiming ? const AlwaysStoppedAnimation(1.0) : _scale,
+                          scale: _claiming
+                              ? const AlwaysStoppedAnimation(1.0)
+                              : _scale,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
-                              color: AppColors.azulPrimario.withValues(alpha: 0.12),
+                              color: AppColors.azulPrimario
+                                  .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: AppColors.azulPrimario.withValues(alpha: 0.50)),
+                                  color: AppColors.azulPrimario
+                                      .withValues(alpha: 0.50)),
                             ),
                             child: _claiming
                                 ? const SizedBox(
-                                    width: 22, height: 22,
+                                    width: 22,
+                                    height: 22,
                                     child: CircularProgressIndicator(
                                       color: AppColors.azulPrimario,
                                       strokeWidth: 2.5,
@@ -350,10 +484,10 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(7, (i) {
-                    final dayNum   = i + 1;
+                    final dayNum = i + 1;
                     final isActive = dayNum <= streak;
-                    final isToday  = dayNum == streak + 1 && !claimed ||
-                                     dayNum == streak && claimed;
+                    final isToday = dayNum == streak + 1 && !claimed ||
+                        dayNum == streak && claimed;
                     return _DayCircle(
                       day: dayNum,
                       isActive: isActive,
@@ -371,7 +505,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
 }
 
 class _DayCircle extends StatelessWidget {
-  final int  day;
+  final int day;
   final bool isActive;
   final bool isToday;
 
@@ -386,7 +520,8 @@ class _DayCircle extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 32, height: 32,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isActive

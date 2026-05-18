@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/feature_flags_provider.dart';
+import '../../core/utils/l10n_ext.dart';
 
 /// Pantalla de mantenimiento premium con:
 /// - Logo de la app con glow pulsante
@@ -166,9 +167,9 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'En mantenimiento',
-                  style: TextStyle(
+                Text(
+                  context.l10n.maintenanceTitle,
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -278,7 +279,7 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Verificando automáticamente en $_secondsLeft s...',
+                        context.l10n.maintenanceCheckingIn(_secondsLeft),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.42),
@@ -290,7 +291,7 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen>
                         child: OutlinedButton.icon(
                           onPressed: _retryNow,
                           icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Reintentar ahora'),
+                          label: Text(context.l10n.maintenanceRetry),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(color: Colors.white.withValues(alpha: 0.28)),

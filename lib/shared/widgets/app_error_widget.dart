@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/l10n_ext.dart';
 
 /// Widget reutilizable para estados de error con botón de reintentar.
 /// Úsalo en los `.when(error: ...)` de cualquier pantalla.
@@ -42,9 +43,9 @@ class AppErrorWidget extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Título
-            const Text(
-              'Sin conexión',
-              style: TextStyle(
+            Text(
+              context.l10n.errorNoConnection,
+              style: const TextStyle(
                 color: AppColors.textoPrimario,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -54,7 +55,7 @@ class AppErrorWidget extends StatelessWidget {
 
             // Subtítulo
             Text(
-              message ?? 'No pudimos cargar la información.\nVerifica tu conexión e intenta de nuevo.',
+              message ?? context.l10n.errorGenericMessage,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.textoSecundario,
@@ -68,9 +69,9 @@ class AppErrorWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 17),
-                label: const Text(
-                  'Reintentar',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                label: Text(
+                  context.l10n.errorRetry,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.azulPrimario,

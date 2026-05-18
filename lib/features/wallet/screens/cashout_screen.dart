@@ -75,14 +75,20 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
   }
 
   /// Consulta el servidor para saber si el teléfono está verificado.
+  /// Acepta tanto teléfono en auth.users.phone como el guardado en
+  /// userMetadata['verified_phone'] (fallback email para Indonesia +62).
   Future<void> _checkPhone() async {
     try {
       final res = await Supabase.instance.client.auth.getUser();
-      final phone = res.user?.phone ?? '';
+      final phone = res.user?.phone?.isNotEmpty == true
+          ? res.user!.phone!
+          : (res.user?.userMetadata?['verified_phone'] as String? ?? '');
       if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
     } catch (_) {
-      // Si falla la consulta, usar el valor cacheado
-      final phone = Supabase.instance.client.auth.currentUser?.phone ?? '';
+      final u = Supabase.instance.client.auth.currentUser;
+      final phone = u?.phone?.isNotEmpty == true
+          ? u!.phone!
+          : (u?.userMetadata?['verified_phone'] as String? ?? '');
       if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
     }
   }
@@ -136,13 +142,13 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) throw Exception('No autenticado');
 
+      // p_amount_usd se calcula DENTRO del RPC (coins / coinsPerDollar)
+      // No lo enviamos desde el cliente para evitar manipulación.
       await Supabase.instance.client.rpc('request_cashout', params: {
-        'p_user_id'       : uid,
-        'p_amount_usd'    : coinsToSpend / AppConstants.coinsPerDollar,
-        'p_coins'         : coinsToSpend,
-        'p_method'        : _method.name,
-        'p_payment_detail': '$detail | ${_currency.code}',
-        'p_account'       : '$detail | ${_currency.code}',
+        'p_user_id': uid,
+        'p_coins'  : coinsToSpend,
+        'p_method' : _method.name,
+        'p_account': '$detail | ${_currency.code}',
       });
 
       if (mounted) {
@@ -211,7 +217,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       return Scaffold(
         backgroundColor: AppColors.fondoPrincipal,
         appBar: AppBar(
-          title: const Text('Solicitar cobro'),
+          title: Text(context.l10n.cashoutAppTitle),
           backgroundColor: AppColors.fondoPrincipal,
           foregroundColor: AppColors.textoPrimario,
         ),
@@ -233,7 +239,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       return Scaffold(
         backgroundColor: AppColors.fondoPrincipal,
         appBar: AppBar(
-          title: const Text('Solicitar cobro'),
+          title: Text(context.l10n.cashoutAppTitle),
           backgroundColor: AppColors.fondoPrincipal,
           foregroundColor: AppColors.textoPrimario,
         ),
@@ -244,7 +250,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     return Scaffold(
       backgroundColor: AppColors.fondoPrincipal,
       appBar: AppBar(
-        title: const Text('Cobrar'),
+        title: Text(context.l10n.walletRequestCashout),
         backgroundColor: AppColors.fondoPrincipal,
         foregroundColor: AppColors.textoPrimario,
         bottom: TabBar(
@@ -256,9 +262,9 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
           labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
           unselectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-          tabs: const [
-            Tab(text: 'Solicitar'),
-            Tab(text: 'Mis pagos'),
+          tabs: [
+            Tab(text: context.l10n.cashoutTabRequest),
+            Tab(text: context.l10n.cashoutTabPayments),
           ],
         ),
       ),
@@ -352,7 +358,7 @@ class _RequestTab extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Monto ────────────────────────────────────────────
-          const _SectionTitle('Monto a cobrar'),
+          _SectionTitle(context.l10n.cashoutSectionAmount),
           const SizedBox(height: 8),
           _AmountSelector(
             coins: coins,
@@ -362,7 +368,7 @@ class _RequestTab extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Método de pago ───────────────────────────────────
-          const _SectionTitle('Método de cobro'),
+          _SectionTitle(context.l10n.cashoutSectionMethod),
           const SizedBox(height: 10),
           ...PaymentMethod.values.map((m) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -381,7 +387,7 @@ class _RequestTab extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Datos de cuenta y moneda ─────────────────────────
-          const _SectionTitle('Datos de pago'),
+          _SectionTitle(context.l10n.cashoutSectionDetails),
           const SizedBox(height: 8),
           // Campo de cuenta y moneda en la misma card
           Container(
@@ -434,7 +440,7 @@ class _RequestTab extends StatelessWidget {
                 const SizedBox(height: 14),
                 const Divider(color: AppColors.fondoCardBorde, height: 1),
                 const SizedBox(height: 14),
-                Text('Moneda de pago',
+                Text(context.l10n.cashoutCurrencyLabel,
                     style: const TextStyle(
                         color: AppColors.textoSecundario,
                         fontSize: 12,
@@ -536,9 +542,9 @@ class _TrustBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Pagos garantizados',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.cashoutTrustTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
@@ -591,9 +597,9 @@ class _TrustBanner extends StatelessWidget {
             child: Row(children: [
               _TrustStat(value: '\$12,847', label: 'USD pagados'),
               _TrustDivider(),
-              _TrustStat(value: '1,000+', label: 'cobros exitosos'),
+              _TrustStat(value: '1,000+', label: context.l10n.cashoutSuccessCount),
               _TrustDivider(),
-              _TrustStat(value: '2–3', label: 'días hábiles'),
+              _TrustStat(value: '2–3', label: context.l10n.cashoutBusinessDays),
             ]),
           ),
 
@@ -610,26 +616,26 @@ class _TrustBanner extends StatelessWidget {
             child: Column(children: [
               _TrustItem(
                 icon: Icons.payments_rounded,
-                title: 'Pagos reales vía PayPal',
-                subtitle: 'Directo a tu cuenta en 2–3 días hábiles',
+                title: context.l10n.cashoutTrustPaypal,
+                subtitle: context.l10n.cashoutTrustPaypalSub,
               ),
               const SizedBox(height: 12),
               _TrustItem(
                 icon: Icons.shield_rounded,
-                title: 'Verificación SMS anti-fraude',
-                subtitle: 'Solo usuarios reales pueden cobrar',
+                title: context.l10n.cashoutTrustSms,
+                subtitle: context.l10n.cashoutTrustSmsSub,
               ),
               const SizedBox(height: 12),
               _TrustItem(
                 icon: Icons.people_alt_rounded,
-                title: 'Miles ya cobraron',
-                subtitle: 'Úsate a nosotros o no nos uses — los pagos hablan',
+                title: context.l10n.cashoutTrustUsers,
+                subtitle: context.l10n.cashoutTrustUsersSub,
               ),
               const SizedBox(height: 12),
               _TrustItem(
                 icon: Icons.support_agent_rounded,
-                title: 'Soporte humano',
-                subtitle: 'Si hay algún problema lo resolvemos contigo',
+                title: context.l10n.cashoutTrustSupport,
+                subtitle: context.l10n.cashoutTrustSupportSub,
               ),
             ]),
           ),
@@ -739,7 +745,7 @@ class _HistoryTab extends ConsumerWidget {
       loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.azulPrimario)),
       error: (_, __) => AppErrorWidget(
-        message: 'No se pudo cargar el historial de cobros.',
+        message: context.l10n.cashoutHistoryLoadError,
         onRetry: () => ref.invalidate(cashoutRequestsProvider),
       ),
       data: (requests) {
@@ -785,9 +791,9 @@ class _EmptyHistory extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Sin solicitudes aún',
-              style: TextStyle(
+            Text(
+              context.l10n.cashoutHistoryEmpty,
+              style: const TextStyle(
                 color: AppColors.textoPrimario,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -828,10 +834,10 @@ class _HistoryCard extends StatelessWidget {
         : '—';
 
     final (statusLabel, statusColor, statusIcon) = switch (status) {
-      'paid'       => ('Pagado',      AppColors.verdePrimario,         Icons.check_circle_rounded),
-      'processing' => ('Procesando',  AppColors.azulPrimario,          Icons.hourglass_top_rounded),
-      'rejected'   => ('Rechazado',   AppColors.colorVideos,           Icons.cancel_rounded),
-      _            => ('Pendiente',   const Color(0xFFF59E0B),         Icons.schedule_rounded),
+      'paid'       => (context.l10n.cashoutStatusPaid,       AppColors.verdePrimario,         Icons.check_circle_rounded),
+      'processing' => (context.l10n.cashoutStatusProcessing, AppColors.azulPrimario,          Icons.hourglass_top_rounded),
+      'rejected'   => (context.l10n.cashoutStatusRejected,   AppColors.colorVideos,           Icons.cancel_rounded),
+      _            => (context.l10n.cashoutStatusPending,    const Color(0xFFF59E0B),         Icons.schedule_rounded),
     };
 
     return Container(
@@ -930,18 +936,18 @@ class _HistoryCard extends StatelessWidget {
           // Nota extra según estado
           if (status == 'pending') ...[
             const SizedBox(height: 8),
-            const Text(
-              '⏱ En revisión — procesamos en 2–3 días hábiles',
-              style: TextStyle(
+            Text(
+              context.l10n.cashoutReviewNote,
+              style: const TextStyle(
                   color: Color(0xFFF59E0B),
                   fontSize: 11,
                   fontWeight: FontWeight.w500),
             ),
           ] else if (status == 'rejected') ...[
             const SizedBox(height: 8),
-            const Text(
-              'Contacta soporte si crees que esto es un error.',
-              style: TextStyle(
+            Text(
+              context.l10n.cashoutRejectedNote,
+              style: const TextStyle(
                   color: AppColors.colorVideos,
                   fontSize: 11,
                   fontWeight: FontWeight.w500),
@@ -977,15 +983,15 @@ class _ErrorState extends StatelessWidget {
             const Icon(Icons.wifi_off_rounded,
                 size: 48, color: AppColors.textoSecundario),
             const SizedBox(height: 16),
-            const Text('No se pudo cargar tu información',
-                style: TextStyle(
+            Text(context.l10n.cashoutLoadError,
+                style: const TextStyle(
                     color: AppColors.textoPrimario,
                     fontWeight: FontWeight.w700,
                     fontSize: 16),
                 textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            const Text('Verifica tu conexión e intenta de nuevo',
-                style: TextStyle(
+            Text(context.l10n.cashoutLoadErrorSub,
+                style: const TextStyle(
                     color: AppColors.textoSecundario, fontSize: 13),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
@@ -997,8 +1003,8 @@ class _ErrorState extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Reintentar',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(context.l10n.errorRetry,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -1039,7 +1045,7 @@ class _BalanceChip extends StatelessWidget {
             color: Colors.white, size: 28),
         const SizedBox(width: 14),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('$usdStr USD disponibles',
+          Text(context.l10n.cashoutAvailableBalance(usdStr),
               style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -1243,14 +1249,14 @@ class _SummaryBox extends StatelessWidget {
         border: Border.all(color: AppColors.fondoCardBorde),
       ),
       child: Column(children: [
-        _Row('Monto', '$usdStr USD'),
+        _Row(context.l10n.cashoutSummaryAmount, '$usdStr USD'),
         const SizedBox(height: 6),
         _Row(context.l10n.cashoutSummaryCoins,
             context.l10n.cashoutCoins(coins.formatted)),
         const SizedBox(height: 6),
-        _Row('Método', method),
+        _Row(context.l10n.cashoutSummaryMethod, method),
         const SizedBox(height: 6),
-        _Row('Moneda',
+        _Row(context.l10n.cashoutSummaryCurrency,
             '${currency.flag}  ${currency.code} — ${currency.label}'),
       ]),
     );
@@ -1366,10 +1372,10 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                 color: AppColors.azulPrimario, size: 38),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Crea una cuenta para cobrar',
+          Text(
+            context.l10n.cashoutCreateAccount,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
                 color: AppColors.textoPrimario,
                 fontSize: 22,
                 fontWeight: FontWeight.w800),
@@ -1444,8 +1450,8 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text('Continuar con Google',
-                          style: TextStyle(
+                      Text(context.l10n.cashoutGuestContinueGoogle,
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w700)),
                     ]),
               ),
@@ -1463,13 +1469,13 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Row(
+                  child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.apple, size: 22, color: Colors.white),
-                        SizedBox(width: 10),
-                        Text('Continuar con Apple',
-                            style: TextStyle(
+                        const Icon(Icons.apple, size: 22, color: Colors.white),
+                        const SizedBox(width: 10),
+                        Text(context.l10n.cashoutGuestContinueApple,
+                            style: const TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.w700)),
                       ]),
                 ),
@@ -1487,13 +1493,13 @@ class _LinkAccountGateState extends State<_LinkAccountGate> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Row(
+                child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.email_outlined, size: 20),
-                      SizedBox(width: 10),
-                      Text('Crear cuenta con correo',
-                          style: TextStyle(
+                      const Icon(Icons.email_outlined, size: 20),
+                      const SizedBox(width: 10),
+                      Text(context.l10n.cashoutGuestCreateEmail,
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w600)),
                     ]),
               ),
@@ -1549,8 +1555,8 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
     final pass2     = _pass2Ctrl.text;
 
     if (firstName.isEmpty || lastName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Ingresa tu nombre y apellido'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.l10n.cashoutNameDialogContent),
         backgroundColor: AppColors.colorVideos,
         behavior: SnackBarBehavior.floating,
       ));
@@ -1600,8 +1606,8 @@ class _EmailLinkSheetState extends State<_EmailLinkSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text('Crear cuenta con correo',
-              style: TextStyle(
+          Text(context.l10n.cashoutGuestCreateEmail,
+              style: const TextStyle(
                   color: AppColors.textoPrimario,
                   fontSize: 18,
                   fontWeight: FontWeight.w800)),

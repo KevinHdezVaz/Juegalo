@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:cpx_research_sdk_flutter/cpx.dart';
 import 'package:cpx_research_sdk_flutter/model/cpx_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
@@ -110,10 +112,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   String _timeAgo(BuildContext context) {
     if (_lastUpdated == null) return '';
     final diff = DateTime.now().difference(_lastUpdated!);
-    if (diff.inSeconds < 60)
+    if (diff.inSeconds < 60) {
       return context.l10n.surveysTimeAgoSeconds(diff.inSeconds);
-    if (diff.inMinutes < 60)
+    }
+    if (diff.inMinutes < 60) {
       return context.l10n.surveysTimeAgoMinutes(diff.inMinutes);
+    }
     return context.l10n.surveysTimeAgoHours(diff.inHours);
   }
 
@@ -143,10 +147,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   Widget build(BuildContext context) {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
     if (flags != null && !flags.surveysEnabled) {
-      return const FeatureDisabledScreen(
-        title: 'Encuestas en mantenimiento.',
-        subtitle:
-            'Las encuestas están en pausa.\nRegresamos pronto con más oportunidades.',
+      return FeatureDisabledScreen(
+        title: context.l10n.surveysMaintenance,
+        subtitle: context.l10n.surveysMaintenanceSub,
         icon: Icons.poll_rounded,
         theme: FeatureTheme.surveys,
       );
@@ -161,6 +164,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Promo banner ─────────────────────────────────────────
+            const _PromoAppBanner(),
+            const SizedBox(height: 16),
+
             // ── Header ──────────────────────────────────────────────
             Row(
               children: [
@@ -441,6 +448,125 @@ class _SurveyCard extends StatelessWidget {
                 Icons.arrow_forward_ios_rounded,
                 color: AppColors.textoPrimario,
                 size: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Banner promocional MusicMeet ──────────────────────────────────────
+class _PromoAppBanner extends StatelessWidget {
+  const _PromoAppBanner();
+
+  static const _androidUrl =
+      'https://play.google.com/store/apps/details?id=com.musicapp.app_music_comunidad';
+  static const _iosUrl =
+      'https://apps.apple.com/mx/app/musicmeet-conecta-por-m%C3%BAsica/id6762303211';
+
+  Future<void> _openStore() async {
+    final uri = Uri.parse(Platform.isIOS ? _iosUrl : _androidUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _openStore,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6D28D9), Color(0xFF9333EA), Color(0xFFDB2777)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF9333EA).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Logo
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.asset(
+                'assets/images/logoMusicMeet.png',
+                width: 54,
+                height: 54,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Texto
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      context.l10n.promoMusicMeetBadge,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'MusicMeet',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.promoMusicMeetSubtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            // Botón
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                context.l10n.promoMusicMeetButton,
+                style: const TextStyle(
+                  color: Color(0xFF7C3AED),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

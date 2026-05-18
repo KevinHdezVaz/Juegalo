@@ -653,5 +653,99 @@
   },
   "cashoutCurrencySearch": "Search currency or code (USD, EUR…)",
 
-  "profileUnverifiedAccount": "Unverified account"
+  "profileUnverifiedAccount": "Unverified account",
+
+  "dailyBonusNoActivity": "Complete at least one video or survey today to claim your bonus.",
+  "dailyBonusErrorClaiming": "Error claiming bonus. Please try again.",
+  "dailyBonusAvailableIn": "Available in",
+  "dailyBonusStreakLabelMany": "days",
+
+  "splashLoading": "Loading...",
+
+  "rankingDefaultUsername": "Player",
+
+  "videosMaintenance": "Videos under maintenance.",
+  "videosLimitReached": "Daily limit reached",
+  "videosUnlocksIn": "Unlocks in",
+
+  "surveysMaintenance": "Surveys under maintenance.",
+  "surveysMaintenanceSub": "Surveys are paused.\nWe'll be back soon with more opportunities.",
+
+  "walletLinkAccount": "Link account",
+
+  "cashoutTabRequest": "Request",
+  "cashoutTabPayments": "My payments",
+  "cashoutSectionAmount": "Amount to withdraw",
+  "cashoutSectionMethod": "Payment method",
+  "cashoutSectionDetails": "Payment details",
+  "cashoutCurrencyLabel": "Payment currency",
+  "cashoutTrustTitle": "Guaranteed payments",
+  "cashoutSuccessCount": "successful cashouts",
+  "cashoutBusinessDays": "business days",
+  "cashoutTrustPaypal": "Real payments via PayPal",
+  "cashoutTrustPaypalSub": "Direct to your account in 2–3 business days",
+  "cashoutTrustSms": "SMS anti-fraud verification",
+  "cashoutTrustSmsSub": "Only real users can withdraw",
+  "cashoutTrustUsers": "Thousands already cashed out",
+  "cashoutTrustUsersSub": "Use us or don't — the payments speak for themselves",
+  "cashoutTrustSupport": "Human support",
+  "cashoutTrustSupportSub": "If there's any issue, we'll resolve it with you",
+  "cashoutHistoryLoadError": "Could not load cashout history.",
+  "cashoutHistoryEmpty": "No requests yet",
+  "cashoutReviewNote": "⏱ Under review — we process in 2–3 business days",
+  "cashoutRejectedNote": "Contact support if you think this is an error.",
+  "cashoutLoadError": "Could not load your information",
+  "cashoutLoadErrorSub": "Check your connection and try again",
+  "cashoutAvailableBalance": "{amount} USD available",
+  "@cashoutAvailableBalance": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "cashoutSummaryAmount": "Amount",
+  "cashoutSummaryMethod": "Method",
+  "cashoutSummaryCurrency": "Currency",
+  "cashoutCreateAccount": "Create an account to cash out",
+  "cashoutGuestContinueGoogle": "Continue with Google",
+  "cashoutGuestContinueApple": "Continue with Apple",
+  "cashoutGuestCreateEmail": "Create account with email",
+  "cashoutNameDialogContent": "Enter your first and last name",
+
+  "txLoadError": "Could not load your transactions.",
+
+  "errorNoConnection": "No connection",
+  "errorGenericMessage": "We couldn't load the information.\nCheck your connection and try again.",
+  "errorRetry": "Retry",
+
+  "maintenanceTitle": "Temporarily under maintenance",
+  "maintenanceComingSoon": "We'll be back soon",
+  "maintenanceWorking": "We're working on it. Thank you 🙏",
+  "maintenanceCheckingIn": "Checking automatically in {secs} s...",
+  "@maintenanceCheckingIn": {
+    "placeholders": {
+      "secs": { "type": "int" }
+    }
+  },
+  "maintenanceRetry": "Retry now",
+
+  "promoMusicMeetBadge": "NEW",
+  "promoMusicMeetSubtitle": "Conecta con músicos y fans cerca de ti",
+  "promoMusicMeetButton": "View",
+
+  "walletMaintenanceSubtitle": "We're processing pending payments.\nCome back in a few hours to request your withdrawal.",
+  "walletGuestWarning": "Playing as guest. Link your account to keep your progress.",
+
+  "phoneVerifyEmailFallbackTitle": "Verify with your email",
+  "phoneVerifyEmailFallbackSubtitle": "SMS is not available for Indonesia (+62).\nWe'll send a code to your email instead.",
+  "phoneVerifyEmailFallbackLabel": "Email address",
+  "phoneVerifyEmailFallbackHint": "youremail@email.com",
+  "phoneVerifyEmailFallbackSent": "Code sent to {email}",
+  "@phoneVerifyEmailFallbackSent": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "phoneVerifyEmailFallbackInvalid": "Enter a valid email address",
+  "phoneVerifyButtonSendEmail": "Send code to email",
+  "profileMadeByTeam": "App developed by the Juegalo team"
 }
