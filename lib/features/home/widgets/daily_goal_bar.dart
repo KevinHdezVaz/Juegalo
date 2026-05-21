@@ -11,6 +11,9 @@ class DailyGoalBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Bono único: una vez reclamado, no mostrar la barra
+    if (user.dailyGoalBonusClaimed) return const SizedBox.shrink();
+
     final pct = user.dailyProgressPct;
     final reached = user.dailyGoalReached;
     final remaining =

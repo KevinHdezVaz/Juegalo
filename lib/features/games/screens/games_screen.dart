@@ -255,9 +255,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
   @override
   Widget build(BuildContext context) {
     final flags = ref.watch(featureFlagsProvider).valueOrNull;
-    final adjoeReady =
-        ref.watch(appConfigProvider).valueOrNull?.adjoeReady ?? false;
-
     if (flags != null && !flags.gamesEnabled) {
       return FeatureDisabledScreen(
         title: context.l10n.gamesMaintenanceTitle,
@@ -266,6 +263,9 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
         theme: FeatureTheme.games,
       );
     }
+
+    final appConfig = ref.watch(appConfigProvider).valueOrNull;
+    final adjoeReady = appConfig?.adjoeReady ?? false;
 
     return FadeTransition(
       opacity: _entranceAnim,
@@ -776,26 +776,42 @@ class _GameCardState extends State<_GameCard>
             borderRadius: BorderRadius.circular(16),
             child: Row(
               children: [
-                // ── Izquierda 50%: ícono con padding ────────────────
+                // ── Izquierda 50%: ícono con gradiente ──────────────
                 Expanded(
                   flex: 1,
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: game.imageUrl,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          alignment: Alignment.center,
-                          child: Text(game.emoji,
-                              style: const TextStyle(fontSize: 32)),
-                        ),
-                        placeholder: (_, __) => Container(
-                          color: Colors.white.withValues(alpha: 0.15),
-                        ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Gradiente de fondo del ícono
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFF7C3AED),
+                                  Color(0xFFEC4899),
+                                  Color(0xFFF59E0B),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                          ),
+                          // Imagen del juego encima
+                          CachedNetworkImage(
+                            imageUrl: game.imageUrl,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Center(
+                              child: Text(game.emoji,
+                                  style: const TextStyle(fontSize: 32)),
+                            ),
+                            placeholder: (_, __) => const SizedBox.shrink(),
+                          ),
+                        ],
                       ),
                     ),
                   ),

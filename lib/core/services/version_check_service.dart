@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,35 +14,18 @@ class VersionCheckService {
   VersionCheckService._();
   static final instance = VersionCheckService._();
 
-  final _remoteConfig = FirebaseRemoteConfig.instance;
-
   Future<void> init() async {
-    await _remoteConfig.setConfigSettings(RemoteConfigSettings(
-      fetchTimeout:         const Duration(seconds: 10),
-      minimumFetchInterval: const Duration(hours: 1),
-    ));
-
-    // Defaults: sin forzar actualización
-    await _remoteConfig.setDefaults({
-      'min_version':  '1.0.0',
-      'force_update': false,
-    });
-
-    try {
-      await _remoteConfig.fetchAndActivate();
-    } catch (_) {
-      // Si falla el fetch, usamos los defaults → no bloqueamos al usuario
-    }
+    // Nada que inicializar — todo viene de Supabase via /api/config
   }
 
   /// Llama esto en el splash. Si retorna true, se mostró el dialog de update.
-  /// Prioridad: admin panel (/api/config) → Firebase Remote Config.
+  /// Fuente única: Supabase via /api/config.
   Future<bool> checkAndPromptUpdate(BuildContext context) async {
     try {
-      bool  forceUpdate = false;
-      String minVersion = '1.0.0';
+      bool   forceUpdate = false;
+      String minVersion  = '1.0.0';
 
-      // 1. Intentar leer desde el admin panel (fuente primaria, tiempo real)
+      // Leer desde Supabase (/api/config) — única fuente de verdad
       try {
         final dio = Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 4),
@@ -54,30 +36,26 @@ class VersionCheckService {
           final data = res.data as Map;
           final apiForce = data['force_update']?.toString();
           final apiMin   = data['min_version']?.toString();
-          if (apiForce == 'true') forceUpdate = true;
+          forceUpdate = (apiForce == 'true');
           if (apiMin != null && apiMin.isNotEmpty) minVersion = apiMin;
-          debugPrint('🚀 [VersionCheck] Admin panel → force=$forceUpdate min=$minVersion');
+          debugPrint('🚀 [VersionCheck] Supabase → force=$forceUpdate min=$minVersion');
         }
       } catch (e) {
-        debugPrint('🟡 [VersionCheck] Admin panel no disponible, usando Firebase: $e');
-      }
-
-      // 2. Firebase Remote Config como fallback (si el admin panel no activó el force)
-      if (!forceUpdate) {
-        final fbForce = _remoteConfig.getBool('force_update');
-        final fbMin   = _remoteConfig.getString('min_version');
-        if (fbForce) {
-          forceUpdate = true;
-          if (fbMin.isNotEmpty) minVersion = fbMin;
-          debugPrint('🚀 [VersionCheck] Firebase → force=$forceUpdate min=$minVersion');
-        }
+        // Sin internet o error → no bloquear al usuario
+        debugPrint('🟡 [VersionCheck] No se pudo consultar config: $e');
+        return false;
       }
 
       if (!forceUpdate) return false;
 
       final info    = await PackageInfo.fromPlatform();
       final current = info.version;
-      if (!_isOutdated(current, minVersion)) return false;
+      debugPrint('🔵 [VersionCheck] Versión actual=$current | mínima=$minVersion');
+
+      if (!_isOutdated(current, minVersion)) {
+        debugPrint('✅ [VersionCheck] App actualizada, no se muestra dialog');
+        return false;
+      }
 
       if (context.mounted) {
         await _showUpdateDialog(context, current, minVersion);

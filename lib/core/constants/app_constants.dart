@@ -24,8 +24,8 @@ class AppConstants {
   static const double cpxCoinsDivisor = 2.0;  // divide amount_local de CPX
   static const int    cpxCoinsMax     = 5000; // máximo por encuesta
   static const int    cpxCoinsMin     = 100;  // mínimo por encuesta
-  static const int coinsStreak7days = 1000; // bonus racha 7 días = $0.10
-  static const int coinsStreak30days = 5000; // bonus racha 30 días = $0.50
+  static const int coinsStreak7days = 200;  // bonus racha 7 días = $0.02
+  static const int coinsStreak30days = 500; // bonus racha 30 días = $0.05
   static const int coinsReferral = 1000;   // referido cobra = $0.10
 
   // ── Supabase ──────────────────────────────────────────────────

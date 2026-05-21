@@ -16,20 +16,7 @@ import '../../../shared/widgets/app_error_widget.dart';
 import '../../../shared/widgets/feature_disabled_screen.dart';
 import '../../home/widgets/daily_bonus_card.dart';
 import '../../home/widgets/daily_goal_bar.dart';
-
-// ── Provider: últimas 5 transacciones (preview) ──────────────────
-final transactionsProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final uid = Supabase.instance.client.auth.currentUser?.id;
-  if (uid == null) return [];
-  final rows = await Supabase.instance.client
-      .from('transactions')
-      .select()
-      .eq('user_id', uid)
-      .order('created_at', ascending: false)
-      .limit(5);
-  return List<Map<String, dynamic>>.from(rows);
-});
+import '../../../shared/providers/transactions_provider.dart';
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});

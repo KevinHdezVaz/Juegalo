@@ -10,10 +10,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../shared/helpers/daily_bonus_helper.dart';
 import '../../../shared/providers/feature_flags_provider.dart';
+import '../../../shared/providers/transactions_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../../shared/widgets/feature_disabled_screen.dart';
 
 // ── Ad Unit IDs por plataforma ───────────────────────────────────
+// TODO: descomentar producción y comentar pruebas antes de subir a store
 final _adUnits = Platform.isIOS
     ? const [
         'ca-app-pub-5486388630970825/3159932254',
@@ -29,20 +31,23 @@ final _adUnits = Platform.isIOS
       ];
 
 // SharedPreferences keys
-const _kVideosKey    = 'videos_watched_today';
-const _kResetAtKey   = 'videos_reset_at'; // unix ms: cuando vence la ventana 24 h
+const _kVideosKey = 'videos_watched_today';
+const _kResetAtKey = 'videos_reset_at'; // unix ms: cuando vence la ventana 24 h
 
 final videosWatchedProvider = StateProvider<int>((ref) => 0);
 
 // ── Estado de cada slot ──────────────────────────────────────────
 class _SlotState {
   RewardedAd? ad;
-  bool loading     = false;
-  bool loaded      = false;
+  bool loading = false;
+  bool loaded = false;
   bool unavailable = false;
-  bool showing     = false;
-  int  retries     = 0;
+  bool showing = false;
+  int retries = 0;
   Timer? retryTimer;
+  // Cooldown individual de este slot
+  int cooldownSeconds = 0;
+  Timer? cooldownTimer;
 }
 
 class VideosScreen extends ConsumerStatefulWidget {
@@ -55,16 +60,13 @@ class VideosScreen extends ConsumerStatefulWidget {
 class _VideosScreenState extends ConsumerState<VideosScreen> {
   late final List<_SlotState> _slots;
 
-  // ── Cooldown entre videos (25 s) ─────────────────────────────────
-  static const _kCooldownSecs = 60;
-  int    _cooldownSeconds = 0;
-  Timer? _cooldownTimer;
+  static const _kCooldownSecs = 15;
 
   // ── Lock global: bloquea todos los slots mientras un video está en pantalla
   bool _globalLock = false;
 
   // ── Countdown 24 h ───────────────────────────────────────────────
-  int    _secondsUntilReset = 0;
+  int _secondsUntilReset = 0;
   Timer? _resetTimer;
 
   static const int _dailyLimit = AppConstants.coinsPerVideoMax; // 50
@@ -78,11 +80,11 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
   // ── Inicialización: carga contador y ventana de 24 h ────────────
   Future<void> _init() async {
-    final p   = await SharedPreferences.getInstance();
+    final p = await SharedPreferences.getInstance();
     if (!mounted) return;
 
     final resetAt = p.getInt(_kResetAtKey) ?? 0;
-    final now     = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     if (now >= resetAt) {
       // La ventana de 24 h ya expiró → resetear
@@ -110,7 +112,10 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
   void _startResetCountdown() {
     _resetTimer?.cancel();
     _resetTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) { _resetTimer?.cancel(); return; }
+      if (!mounted) {
+        _resetTimer?.cancel();
+        return;
+      }
       setState(() {
         if (_secondsUntilReset > 0) {
           _secondsUntilReset--;
@@ -132,15 +137,15 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
     if (!isRetry) {
       setState(() {
-        slot.loading     = true;
-        slot.loaded      = false;
+        slot.loading = true;
+        slot.loaded = false;
         slot.unavailable = false;
-        slot.retries     = 0;
+        slot.retries = 0;
       });
     } else {
       setState(() {
         slot.loading = true;
-        slot.loaded  = false;
+        slot.loaded = false;
       });
     }
 
@@ -151,11 +156,11 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         onAdLoaded: (ad) {
           if (!mounted) return;
           setState(() {
-            slot.ad          = ad;
-            slot.loading     = false;
-            slot.loaded      = true;
+            slot.ad = ad;
+            slot.loading = false;
+            slot.loaded = true;
             slot.unavailable = false;
-            slot.retries     = 0;
+            slot.retries = 0;
           });
         },
         onAdFailedToLoad: (_) {
@@ -168,8 +173,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
             });
           } else {
             setState(() {
-              slot.loading     = false;
-              slot.loaded      = false;
+              slot.loading = false;
+              slot.loaded = false;
               slot.unavailable = true;
             });
             slot.retryTimer = Timer(const Duration(minutes: 2), () {
@@ -181,16 +186,20 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     );
   }
 
-  // ── Cooldown entre videos ────────────────────────────────────────
-  void _startCooldown() {
-    _cooldownTimer?.cancel();
-    setState(() => _cooldownSeconds = _kCooldownSecs);
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+  // ── Cooldown individual por slot ─────────────────────────────────
+  void _startCooldown(int index) {
+    final slot = _slots[index];
+    slot.cooldownTimer?.cancel();
+    setState(() => slot.cooldownSeconds = _kCooldownSecs);
+    slot.cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       setState(() {
-        _cooldownSeconds--;
-        if (_cooldownSeconds <= 0) {
-          _cooldownSeconds = 0;
+        slot.cooldownSeconds--;
+        if (slot.cooldownSeconds <= 0) {
+          slot.cooldownSeconds = 0;
           t.cancel();
         }
       });
@@ -201,14 +210,17 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
   Future<void> _showAd(int index) async {
     final slot = _slots[index];
 
-    // Bloquear si: global lock activo, cooldown, ya mostrando, sin anuncio
-    if (_globalLock || _cooldownSeconds > 0 || slot.showing || slot.ad == null) return;
+    // Bloquear si: global lock activo, cooldown de este slot, ya mostrando, sin anuncio
+    if (_globalLock ||
+        slot.cooldownSeconds > 0 ||
+        slot.showing ||
+        slot.ad == null) return;
 
     final ad = slot.ad!;
 
     setState(() {
-      _globalLock   = true; // bloquear todos los slots
-      slot.showing  = true;
+      _globalLock = true; // bloquear todos los slots
+      slot.showing = true;
     });
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -216,8 +228,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         dismissed.dispose();
         if (mounted) {
           setState(() {
-            _globalLock           = false; // liberar lock global
-            _slots[index].ad      = null;
+            _globalLock = false; // liberar lock global
+            _slots[index].ad = null;
             _slots[index].showing = false;
           });
         }
@@ -227,8 +239,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         failed.dispose();
         if (mounted) {
           setState(() {
-            _globalLock           = false;
-            _slots[index].ad      = null;
+            _globalLock = false;
+            _slots[index].ad = null;
             _slots[index].showing = false;
           });
         }
@@ -242,7 +254,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     );
 
     if (!mounted) {
-      _globalLock          = false;
+      _globalLock = false;
       _slots[index].showing = false;
       return;
     }
@@ -258,7 +270,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     if (uid == null) return;
     try {
       await Supabase.instance.client.rpc('log_video_attempt', params: {
-        'p_user_id'  : uid,
+        'p_user_id': uid,
         'p_client_ts': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (e) {
@@ -268,7 +280,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
   // ── Acreditar monedas + actualizar contador 24 h ─────────────────
   Future<void> _creditCoins(int index) async {
-    final p     = await SharedPreferences.getInstance();
+    final p = await SharedPreferences.getInstance();
     final count = (p.getInt(_kVideosKey) ?? 0) + 1;
     await p.setInt(_kVideosKey, count);
 
@@ -277,8 +289,10 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
     // Si es el primer video de la nueva ventana, fijar el resetAt (+24 h)
     final existingResetAt = p.getInt(_kResetAtKey) ?? 0;
-    if (existingResetAt == 0 || DateTime.now().millisecondsSinceEpoch >= existingResetAt) {
-      final newResetAt = DateTime.now().millisecondsSinceEpoch + 24 * 3600 * 1000;
+    if (existingResetAt == 0 ||
+        DateTime.now().millisecondsSinceEpoch >= existingResetAt) {
+      final newResetAt =
+          DateTime.now().millisecondsSinceEpoch + 24 * 3600 * 1000;
       await p.setInt(_kResetAtKey, newResetAt);
       if (mounted) {
         setState(() => _secondsUntilReset = 24 * 3600);
@@ -291,19 +305,23 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     // Si alcanzó el límite, iniciar countdown 24 h
     if (count >= _dailyLimit) {
       final resetAt = p.getInt(_kResetAtKey) ?? 0;
-      final secs    = ((resetAt - DateTime.now().millisecondsSinceEpoch) / 1000).ceil();
-      if (mounted) setState(() => _secondsUntilReset = secs.clamp(0, 24 * 3600));
+      final secs =
+          ((resetAt - DateTime.now().millisecondsSinceEpoch) / 1000).ceil();
+      if (mounted)
+        setState(() => _secondsUntilReset = secs.clamp(0, 24 * 3600));
       _startResetCountdown();
     }
 
-    // Cooldown de 25 s entre videos
-    _startCooldown();
+    // Cooldown de 60 s solo para este slot
+    _startCooldown(index);
 
-    // Esperar 3 s para que el SSV de AdMob llegue al servidor
-    await Future.delayed(const Duration(seconds: 3));
+    // Esperar 6 s para que el SSV de AdMob llegue al servidor
+    await Future.delayed(const Duration(seconds: 6));
     if (!context.mounted) return;
 
     ref.invalidate(userProvider);
+    ref.invalidate(
+        transactionsProvider); // refresca "últimas transacciones" en wallet
 
     // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -326,11 +344,11 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
   @override
   void dispose() {
-    _cooldownTimer?.cancel();
     _resetTimer?.cancel();
     for (final s in _slots) {
       s.ad?.dispose();
       s.retryTimer?.cancel();
+      s.cooldownTimer?.cancel();
     }
     super.dispose();
   }
@@ -348,7 +366,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
       );
     }
 
-    final watched      = ref.watch(videosWatchedProvider);
+    final watched = ref.watch(videosWatchedProvider);
     final limitReached = watched >= _dailyLimit;
 
     return SingleChildScrollView(
@@ -358,8 +376,8 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
         children: [
           // ── Progreso diario ──────────────────────────────────
           _DailyProgressCard(
-            watched:          watched,
-            max:              _dailyLimit,
+            watched: watched,
+            max: _dailyLimit,
             secondsUntilReset: _secondsUntilReset,
           ),
           const SizedBox(height: 16),
@@ -386,13 +404,13 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
               childAspectRatio: 0.88,
             ),
             itemBuilder: (_, i) => _VideoSlotCard(
-              index:          i,
-              slot:           _slots[i],
-              limitReached:   limitReached,
-              cooldownSeconds: _cooldownSeconds,
-              globalLock:     _globalLock,
-              onTap:          () => _showAd(i),
-              onReload:       () => _loadAd(i),
+              index: i,
+              slot: _slots[i],
+              limitReached: limitReached,
+              cooldownSeconds: _slots[i].cooldownSeconds,
+              globalLock: _globalLock,
+              onTap: () => _showAd(i),
+              onReload: () => _loadAd(i),
             ),
           ),
 
@@ -471,11 +489,11 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
 
 // ── Tarjeta de slot ──────────────────────────────────────────────
 class _VideoSlotCard extends StatelessWidget {
-  final int       index;
+  final int index;
   final _SlotState slot;
-  final bool      limitReached;
-  final int       cooldownSeconds;
-  final bool      globalLock;
+  final bool limitReached;
+  final int cooldownSeconds;
+  final bool globalLock;
   final VoidCallback onTap;
   final VoidCallback onReload;
 
@@ -493,7 +511,8 @@ class _VideoSlotCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDisabled = limitReached;
     // El slot está listo si: cargado, sin límite, sin cooldown y sin lock global
-    final isReady = slot.loaded && !isDisabled && cooldownSeconds == 0 && !globalLock;
+    final isReady =
+        slot.loaded && !isDisabled && cooldownSeconds == 0 && !globalLock;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -526,9 +545,7 @@ class _VideoSlotCard extends StatelessWidget {
                       ? Icons.block_rounded
                       : Icons.play_circle_fill_rounded,
                   size: 30,
-                  color: isDisabled
-                      ? Colors.redAccent
-                      : AppColors.colorVideos,
+                  color: isDisabled ? Colors.redAccent : AppColors.colorVideos,
                 ),
               ),
               const SizedBox(height: 8),
@@ -612,7 +629,8 @@ class _VideoSlotCard extends StatelessWidget {
             )
           else if (slot.loading || slot.showing)
             const SizedBox(
-              width: 22, height: 22,
+              width: 22,
+              height: 22,
               child: CircularProgressIndicator(
                   color: AppColors.colorVideos, strokeWidth: 2),
             )
@@ -635,7 +653,8 @@ class _VideoSlotCard extends StatelessWidget {
             )
           else if (!slot.loaded)
             const SizedBox(
-              width: 18, height: 18,
+              width: 18,
+              height: 18,
               child: CircularProgressIndicator(
                   color: AppColors.textoSecundario, strokeWidth: 1.5),
             )
@@ -704,16 +723,16 @@ class _DailyProgressCard extends StatelessWidget {
 
   String _fmtCountdown(int s) {
     if (s <= 0) return '00:00:00';
-    final h   = (s ~/ 3600).toString().padLeft(2, '0');
-    final m   = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
+    final h = (s ~/ 3600).toString().padLeft(2, '0');
+    final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
     final sec = (s % 60).toString().padLeft(2, '0');
     return '$h:$m:$sec';
   }
 
   @override
   Widget build(BuildContext context) {
-    final pct          = (watched / max).clamp(0.0, 1.0);
-    final earned       = watched * AppConstants.coinsPerVideo;
+    final pct = (watched / max).clamp(0.0, 1.0);
+    final earned = watched * AppConstants.coinsPerVideo;
     final limitReached = watched >= max;
 
     return Container(
@@ -845,7 +864,7 @@ class _DailyProgressCard extends StatelessWidget {
 
 class _InfoRow extends StatelessWidget {
   final IconData icon;
-  final String   text;
+  final String text;
   const _InfoRow({required this.icon, required this.text});
 
   @override

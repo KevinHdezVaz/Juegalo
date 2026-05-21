@@ -1,69 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/l10n_ext.dart';
 import '../../core/utils/number_format_ext.dart';
 import '../providers/user_provider.dart';
 
-// ── Claves de SharedPreferences ──────────────────────────────────
-const _kBonusClaimedKey     = 'daily_bonus_claimed_date';
-const _kGoalBonusClaimedKey = 'daily_goal_bonus_claimed_date';
-
 // ── Locks de módulo (evitan llamadas concurrentes en la misma sesión) ──
 bool _claimingBonus     = false;
 bool _claimingGoalBonus = false;
-
-/// Devuelve la fecha de hoy en UTC (yyyy-MM-dd) para comparar con SharedPreferences.
-String get _today => DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
 /// Llama a esto después de cualquier actividad (video, encuesta, juego).
 /// Si el bono del día no fue reclamado aún, lo reclama automáticamente
 /// y muestra una notificación.
 ///
-/// Protecciones contra doble reclamo (3 capas):
-///   1. Lock de módulo (_claimingBonus): bloquea llamadas concurrentes en sesión.
-///   2. SharedPreferences: persiste que ya fue reclamado hoy entre llamadas.
-///   3. RPC claim_daily_bonus: valida con SELECT ... FOR UPDATE en Supabase.
+/// La fuente de verdad es el servidor (Supabase), no SharedPreferences.
 // ─────────────────────────────────────────────────────────────────────────────
 Future<void> tryClaimDailyBonus(BuildContext context, WidgetRef ref) async {
-  // Capa 1 — Lock de módulo: evita dos llamadas concurrentes en la misma sesión
+  // Lock de módulo: evita dos llamadas concurrentes en la misma sesión
   if (_claimingBonus) return;
 
-  // Capa 2a — SharedPreferences: check instantáneo sin depender del stream
-  final prefs = await SharedPreferences.getInstance();
-  if (prefs.getString(_kBonusClaimedKey) == _today) return;
-
-  // Capa 2b — Stream de Supabase: el servidor ya marcó hoy como reclamado
+  // Verificar desde el servidor — fuente de verdad
   final user = ref.read(userProvider).valueOrNull;
-  if (user == null || user.dailyBonusClaimed) {
-    // Sincronizar SharedPreferences si el servidor ya lo sabe
-    if (user?.dailyBonusClaimed == true) {
-      await prefs.setString(_kBonusClaimedKey, _today);
-    }
-    return;
-  }
+  if (user == null || user.dailyBonusClaimed) return;
 
   _claimingBonus = true;
   try {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 
-    // Capa 3 — RPC con SELECT ... FOR UPDATE en Supabase
     final result = await Supabase.instance.client
         .rpc('claim_daily_bonus', params: {'p_user_id': uid});
 
     final success = result['success'] as bool? ?? false;
-    if (!success) {
-      // El servidor rechazó: ya fue reclamado hoy (posiblemente desde otro hilo)
-      await prefs.setString(_kBonusClaimedKey, _today);
-      return;
-    }
-
-    // ✅ Reclamado con éxito — guardar inmediatamente en SharedPreferences
-    await prefs.setString(_kBonusClaimedKey, _today);
+    if (!success) return;
 
     final coins  = result['coins']  as int? ?? 0;
     final streak = result['streak'] as int? ?? 1;
@@ -119,42 +90,25 @@ Future<void> tryClaimDailyBonus(BuildContext context, WidgetRef ref) async {
 // ─────────────────────────────────────────────────────────────────────────────
 /// Llama a esto después de cualquier actividad.
 /// Si el usuario acaba de alcanzar su meta diaria, otorga el bono de meta
-/// y notifica. Mismas 3 capas de protección que tryClaimDailyBonus.
+/// y notifica. La fuente de verdad es el servidor.
 // ─────────────────────────────────────────────────────────────────────────────
 Future<void> tryClaimDailyGoalBonus(BuildContext context, WidgetRef ref) async {
-  // Capa 1 — Lock de módulo
   if (_claimingGoalBonus) return;
 
-  // Capa 2a — SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
-  if (prefs.getString(_kGoalBonusClaimedKey) == _today) return;
-
-  // Capa 2b — Stream de Supabase
+  // Verificar desde el servidor — fuente de verdad
   final user = ref.read(userProvider).valueOrNull;
-  if (user == null || user.dailyGoalBonusClaimed) {
-    if (user?.dailyGoalBonusClaimed == true) {
-      await prefs.setString(_kGoalBonusClaimedKey, _today);
-    }
-    return;
-  }
+  if (user == null || user.dailyGoalBonusClaimed) return;
 
   _claimingGoalBonus = true;
   try {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 
-    // Capa 3 — RPC con SELECT ... FOR UPDATE en Supabase
     final result = await Supabase.instance.client
         .rpc('claim_daily_goal_bonus', params: {'p_user_id': uid});
 
     final success = result['success'] as bool? ?? false;
-    if (!success) {
-      await prefs.setString(_kGoalBonusClaimedKey, _today);
-      return;
-    }
-
-    // ✅ Reclamado — guardar inmediatamente
-    await prefs.setString(_kGoalBonusClaimedKey, _today);
+    if (!success) return;
 
     final coins = result['coins'] as int? ?? 1500;
 

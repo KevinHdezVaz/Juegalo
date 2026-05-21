@@ -266,14 +266,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dailyBonusDaySun => 'Dom';
 
   @override
-  String get dailyGoalReached => '¡Meta! +1,500 🎯';
+  String get dailyGoalReached => '¡Meta alcanzada! +500 🎯';
 
   @override
-  String get dailyGoalLabel => 'Meta de hoy';
+  String get dailyGoalLabel => 'Bono único — acumula monedas';
 
   @override
   String dailyGoalRemaining(String coins) {
-    return 'Faltan $coins monedas para el bono de 1,500 monedas gratis.';
+    return 'Faltan $coins monedas para tu bono único de 500 monedas.';
   }
 
   @override

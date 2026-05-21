@@ -125,9 +125,9 @@
   "dailyBonusDaySat": "Sáb",
   "dailyBonusDaySun": "Dom",
 
-  "dailyGoalReached": "¡Meta! +1,500 🎯",
-  "dailyGoalLabel": "Meta de hoy",
-  "dailyGoalRemaining": "Faltan {coins} monedas para el bono de 1,500 monedas gratis.",
+  "dailyGoalReached": "¡Meta alcanzada! +500 🎯",
+  "dailyGoalLabel": "Bono único — acumula monedas",
+  "dailyGoalRemaining": "Faltan {coins} monedas para tu bono único de 500 monedas.",
   "@dailyGoalRemaining": {
     "placeholders": {
       "coins": { "type": "String" }

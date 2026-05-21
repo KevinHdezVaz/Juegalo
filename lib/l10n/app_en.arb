@@ -125,9 +125,9 @@
   "dailyBonusDaySat": "Sat",
   "dailyBonusDaySun": "Sun",
 
-  "dailyGoalReached": "Goal! +1,500 🎯",
-  "dailyGoalLabel": "Today's goal",
-  "dailyGoalRemaining": "Need {coins} more coins for the 1,500 free coins bonus.",
+  "dailyGoalReached": "Goal reached! +500 🎯",
+  "dailyGoalLabel": "One-time bonus — earn coins",
+  "dailyGoalRemaining": "Need {coins} more coins for your one-time 500 coin bonus.",
   "@dailyGoalRemaining": {
     "placeholders": {
       "coins": { "type": "String" }

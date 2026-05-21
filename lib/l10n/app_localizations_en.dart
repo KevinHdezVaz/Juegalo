@@ -265,14 +265,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dailyBonusDaySun => 'Sun';
 
   @override
-  String get dailyGoalReached => 'Goal! +1,500 🎯';
+  String get dailyGoalReached => 'Goal reached! +500 🎯';
 
   @override
-  String get dailyGoalLabel => 'Today\'s goal';
+  String get dailyGoalLabel => 'One-time bonus — earn coins';
 
   @override
   String dailyGoalRemaining(String coins) {
-    return 'Need $coins more coins for the 1,500 free coins bonus.';
+    return 'Need $coins more coins for your one-time 500 coin bonus.';
   }
 
   @override

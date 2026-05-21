@@ -8,7 +8,7 @@ import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../profile/screens/phone_verification_screen.dart';
+import 'email_verification_screen.dart';
 import '../../../shared/widgets/app_error_widget.dart';
 
 // ── Métodos de pago ───────────────────────────────────────────────
@@ -60,9 +60,6 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
   bool _loading         = false;
   _Currency _currency   = _Currency.usd;
 
-  // null = cargando, true = verificado, false = no verificado
-  bool? _phoneVerified;
-
   static String _usd(int coins) =>
       (coins / AppConstants.coinsPerDollar).fmtUsd;
 
@@ -70,27 +67,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _checkPhone();
     debugPrint('🔵 [Cashout] initState');
-  }
-
-  /// Consulta el servidor para saber si el teléfono está verificado.
-  /// Acepta tanto teléfono en auth.users.phone como el guardado en
-  /// userMetadata['verified_phone'] (fallback email para Indonesia +62).
-  Future<void> _checkPhone() async {
-    try {
-      final res = await Supabase.instance.client.auth.getUser();
-      final phone = res.user?.phone?.isNotEmpty == true
-          ? res.user!.phone!
-          : (res.user?.userMetadata?['verified_phone'] as String? ?? '');
-      if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
-    } catch (_) {
-      final u = Supabase.instance.client.auth.currentUser;
-      final phone = u?.phone?.isNotEmpty == true
-          ? u!.phone!
-          : (u?.userMetadata?['verified_phone'] as String? ?? '');
-      if (mounted) setState(() => _phoneVerified = phone.isNotEmpty);
-    }
   }
 
   @override
@@ -100,18 +77,12 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     super.dispose();
   }
 
-  /// Verifica si el usuario tiene teléfono confirmado.
-  /// Si no, abre la pantalla de verificación y espera el resultado.
-  Future<bool> _ensurePhoneVerified() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    final phone = user?.phone;
-    if (phone != null && phone.isNotEmpty) return true; // ya verificado
-
-    // Abrir pantalla de verificación
+  /// Abre la pantalla de verificación de email OTP y espera el resultado.
+  Future<bool> _ensureEmailVerified() async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => const PhoneVerificationScreen(),
+        builder: (_) => const EmailVerificationScreen(),
       ),
     );
     return result == true;
@@ -129,11 +100,11 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       return;
     }
 
-    // ── Verificar teléfono antes de procesar ──────────────────────
-    final phoneRequiredMsg = context.l10n.cashoutPhoneRequired;
-    final phoneOk = await _ensurePhoneVerified();
-    if (!phoneOk) {
-      if (mounted) _snack(phoneRequiredMsg, error: true);
+    // ── Verificar identidad por email OTP antes de procesar ───────
+    final emailOk = await _ensureEmailVerified();
+    debugPrint('🔐 [Cashout] emailOk=$emailOk');
+    if (!emailOk) {
+      if (mounted) _snack('Verificación cancelada', error: true);
       return;
     }
 
@@ -142,6 +113,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) throw Exception('No autenticado');
 
+      debugPrint('💸 [Cashout] RPC → uid=$uid coins=$coinsToSpend method=${_method.name}');
       // p_amount_usd se calcula DENTRO del RPC (coins / coinsPerDollar)
       // No lo enviamos desde el cliente para evitar manipulación.
       await Supabase.instance.client.rpc('request_cashout', params: {
@@ -151,6 +123,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
         'p_account': '$detail | ${_currency.code}',
       });
 
+      debugPrint('✅ [Cashout] RPC exitoso');
       if (mounted) {
         ref.invalidate(userProvider);
         ref.invalidate(userNotifierProvider);
@@ -159,7 +132,7 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
         Navigator.of(context).pop();
       }
     } catch (e, stack) {
-      debugPrint('🔴 [Cashout] ERROR: $e\n$stack');
+      debugPrint('🔴 [Cashout] ERROR snackbar: $e\n$stack');
       if (mounted) _snack('Error: $e', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -222,28 +195,6 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
           foregroundColor: AppColors.textoPrimario,
         ),
         body: _LinkAccountGate(notifier: notifier),
-      );
-    }
-
-    // ── Gate: esperando consulta al servidor ──────────────────────
-    if (_phoneVerified == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.fondoPrincipal,
-        body: Center(child: CircularProgressIndicator(
-            color: AppColors.azulPrimario, strokeWidth: 2.5)),
-      );
-    }
-
-    // ── Gate: teléfono no verificado ──────────────────────────────
-    if (_phoneVerified == false) {
-      return Scaffold(
-        backgroundColor: AppColors.fondoPrincipal,
-        appBar: AppBar(
-          title: Text(context.l10n.cashoutAppTitle),
-          backgroundColor: AppColors.fondoPrincipal,
-          foregroundColor: AppColors.textoPrimario,
-        ),
-        body: _PhoneGate(),
       );
     }
 
@@ -1875,8 +1826,15 @@ class _CurrencySelector extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.expand_more_rounded,
-                color: AppColors.textoDeshabilitado, size: 20),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.azulPrimario.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.azulPrimario, size: 20),
+            ),
           ],
         ),
       ),
@@ -2065,302 +2023,4 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
   }
 }
 
-// ── Gate: verificación de teléfono requerida ──────────────────────────────────
-class _PhoneGate extends StatefulWidget {
-  const _PhoneGate();
-
-  @override
-  State<_PhoneGate> createState() => _PhoneGateState();
-}
-
-class _PhoneGateState extends State<_PhoneGate> with TickerProviderStateMixin {
-  late final AnimationController _entryCtrl;
-  late final AnimationController _pulseCtrl;
-  late final Animation<double>   _fade;
-  late final Animation<Offset>   _slideUp;
-  late final Animation<double>   _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _entryCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700))
-      ..forward();
-    _fade    = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
-    _slideUp = Tween<Offset>(begin: const Offset(0, 0.10), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic));
-
-    _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1600))
-      ..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 1.0, end: 1.08)
-        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
-
-  }
-
-  @override
-  void dispose() {
-    _entryCtrl.dispose();
-    _pulseCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _goVerify() async {
-    final verified = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const PhoneVerificationScreen()),
-    );
-    if (!mounted) return;
-    if (verified == true) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const CashoutScreen()),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return Stack(
-      children: [
-        // ── Fondo degradado ────────────────────────────────────────
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0D1F8A), Color(0xFF1A3FCC), Color(0xFF2563EB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-
-        // ── Círculos decorativos ───────────────────────────────────
-        Positioned(top: -60, right: -40,
-          child: Container(width: 220, height: 220,
-            decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.06)))),
-        Positioned(bottom: -50, left: -60,
-          child: Container(width: 200, height: 200,
-            decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.05)))),
-        Positioned(top: size.height * 0.3, right: -20,
-          child: Container(width: 100, height: 100,
-            decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.04)))),
-
-        // ── Contenido ──────────────────────────────────────────────
-        FadeTransition(
-          opacity: _fade,
-          child: SlideTransition(
-            position: _slideUp,
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 40, 28, 32),
-                child: Column(
-                  children: [
-
-                    // Ícono con pulso
-                    ScaleTransition(
-                      scale: _pulse,
-                      child: Container(
-                        width: 110, height: 110,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              blurRadius: 30, spreadRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.phone_android_rounded,
-                            size: 52, color: Colors.white),
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Título
-                    Text(
-                      context.l10n.cashoutGateTitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w900,
-                        color: Colors.white, height: 1.25,
-                        shadows: [Shadow(color: Colors.black26,
-                            blurRadius: 8, offset: Offset(0, 3))],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      context.l10n.phoneVerifySubtitlePhone,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.white.withValues(alpha: 0.75),
-                        height: 1.55,
-                      ),
-                    ),
-
-                    const SizedBox(height: 36),
-
-                    // Pasos
-                    _StepRow(
-                      number: '1', icon: Icons.phone_android_rounded,
-                      title: context.l10n.cashoutGateStep1Title,
-                      subtitle: context.l10n.cashoutGateStep1Subtitle,
-                    ),
-                    const SizedBox(height: 14),
-                    _StepRow(
-                      number: '2', icon: Icons.sms_rounded,
-                      title: context.l10n.cashoutGateStep2Title,
-                      subtitle: context.l10n.cashoutGateStep2Subtitle,
-                    ),
-                    const SizedBox(height: 14),
-                    _StepRow(
-                      number: '3', icon: Icons.payments_rounded,
-                      title: context.l10n.cashoutGateStep3Title,
-                      subtitle: context.l10n.cashoutGateStep3Subtitle,
-                    ),
-
-                    const SizedBox(height: 36),
-
-                    // Botón principal
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _goVerify,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF1A3FCC),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                          shadowColor: Colors.transparent,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.verified_user_rounded, size: 20),
-                            const SizedBox(width: 10),
-                            Text(context.l10n.cashoutGateButton,
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w800)),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Nota de seguridad
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.20)),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.shield_rounded,
-                            color: Colors.amber, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            context.l10n.phoneVerifyPrivacyNote,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.80),
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ]),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Fila de paso ──────────────────────────────────────────────────────────────
-class _StepRow extends StatelessWidget {
-  final String   number;
-  final IconData icon;
-  final String   title;
-  final String   subtitle;
-
-  const _StepRow({
-    required this.number,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: Row(children: [
-        Container(
-          width: 36, height: 36,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(number,
-                style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w900,
-                  color: Color(0xFF1A3FCC),
-                )),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Icon(icon, color: Colors.white, size: 22),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  )),
-              Text(subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.65),
-                  )),
-            ],
-          ),
-        ),
-        Icon(Icons.check_circle_rounded,
-            color: Colors.white.withValues(alpha: 0.30), size: 18),
-      ]),
-    );
-  }
-}
 

@@ -60,6 +60,18 @@ Future<void> main() async {
   // AdMob
   await MobileAds.instance.initialize();
 
+  // ── Dispositivos de prueba (no cuentan como tráfico inválido) ────
+  // Corre la app y busca en los logs: "Use RequestConfiguration.Builder
+  // .setTestDeviceIds" — ahí aparece tu device ID. Pégalo aquí.
+  // Puedes agregar varios IDs si pruebas en más de un dispositivo.
+  await MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(
+      testDeviceIds: [
+        '9AC32436E06290FF358D760DFEB15FAB', // Kevin - Android
+      ],
+    ),
+  );
+
   // Orientación solo portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

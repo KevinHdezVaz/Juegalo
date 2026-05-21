@@ -9,8 +9,6 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 
-// Clave compartida con daily_bonus_helper.dart
-const _kBonusClaimedKey = 'daily_bonus_claimed_date';
 
 // Monedas exactas que paga claim_daily_bonus según el día de racha
 int _coinsForStreak(int streak) {
@@ -103,15 +101,9 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 
-    // Verificar SharedPreferences antes de llamar al servidor
+    // ── Verificar actividad del día (video o encuesta) ───────────────
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
-    if (prefs.getString(_kBonusClaimedKey) == today) {
-      if (mounted) setState(() => _justClaimed = true);
-      return;
-    }
-
-    // ── Verificar actividad del día (video o encuesta) ───────────────
     final videosHoy = prefs.getInt('videos_watched_today') ?? 0;
     bool tieneActividad = videosHoy > 0;
 
@@ -142,8 +134,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
           ]),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 4),
         ));
       }
@@ -158,10 +149,6 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
       final success = result['success'] as bool? ?? false;
       ref.invalidate(userProvider);
 
-      // Guardar en SharedPreferences ANTES de checks de mounted/context
-      if (success) {
-        await prefs.setString(_kBonusClaimedKey, today);
-      }
       if (!mounted) return;
       if (success) {
         setState(() => _justClaimed = true);

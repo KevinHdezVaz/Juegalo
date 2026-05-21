@@ -79,7 +79,7 @@ class AppUser {
       referralEarnings:   j['referral_earnings'] as int? ?? 0,
       reviewClaimed:         j['review_claimed_at'] != null,
       dailyBonusClaimed:     claimedAt != null && claimedAt.startsWith(today),
-      dailyGoalBonusClaimed: (j['daily_goal_claimed_at'] as String? ?? '').startsWith(today),
+      dailyGoalBonusClaimed: j['daily_goal_claimed_at'] != null, // una sola vez en toda la cuenta
       referredBy:         j['referred_by']          as String?,
       referralBonusPaid:  j['referral_bonus_paid']  as bool? ?? false,
     );

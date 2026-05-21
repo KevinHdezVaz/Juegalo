@@ -571,19 +571,19 @@ abstract class AppLocalizations {
   /// No description provided for @dailyGoalReached.
   ///
   /// In es, this message translates to:
-  /// **'¡Meta! +1,500 🎯'**
+  /// **'¡Meta alcanzada! +500 🎯'**
   String get dailyGoalReached;
 
   /// No description provided for @dailyGoalLabel.
   ///
   /// In es, this message translates to:
-  /// **'Meta de hoy'**
+  /// **'Bono único — acumula monedas'**
   String get dailyGoalLabel;
 
   /// No description provided for @dailyGoalRemaining.
   ///
   /// In es, this message translates to:
-  /// **'Faltan {coins} monedas para el bono de 1,500 monedas gratis.'**
+  /// **'Faltan {coins} monedas para tu bono único de 500 monedas.'**
   String dailyGoalRemaining(String coins);
 
   /// No description provided for @profileTitle.
