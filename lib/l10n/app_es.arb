@@ -747,5 +747,25 @@
   },
   "phoneVerifyEmailFallbackInvalid": "Ingresa un correo válido",
   "phoneVerifyButtonSendEmail": "Enviar código al correo",
-  "profileMadeByTeam": "App desarrollada por el equipo de Juegalo"
+  "profileMadeByTeam": "App desarrollada por el equipo de Juegalo",
+
+  "emailVerifTitle": "Verificación de identidad",
+  "emailVerifSentTo": "Enviamos un código de seguridad a",
+  "emailVerifSending": "Enviando tu código de seguridad...",
+  "emailVerifCodeSent": "Código enviado",
+  "emailVerifSendingBtn": "Enviando código...",
+  "emailVerifConfirmBtn": "Confirmar retiro",
+  "emailVerifResendIn": "Reenviar en {secs}s",
+  "@emailVerifResendIn": {
+    "placeholders": {
+      "secs": { "type": "int" }
+    }
+  },
+  "emailVerifResend": "Reenviar código",
+  "emailVerifProtected": "Retiro protegido",
+  "emailVerifProtectedSub": "Verificamos tu identidad para proteger cada cobro.",
+  "emailVerifErrorSend": "Error al enviar el código. Intenta de nuevo.",
+  "emailVerifErrorLength": "Ingresa el código de 8 dígitos",
+  "emailVerifErrorWrong": "Código incorrecto o expirado. Solicita uno nuevo.",
+  "emailVerifErrorGeneric": "Error inesperado. Intenta de nuevo."
 }

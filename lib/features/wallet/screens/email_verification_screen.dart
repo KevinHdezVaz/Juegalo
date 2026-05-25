@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/l10n_ext.dart';
 
 /// Pantalla de verificación de identidad por email OTP.
 /// Se muestra antes de procesar un retiro.
@@ -124,7 +125,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = 'Error al enviar el código. Intenta de nuevo.';
+          _error = context.l10n.emailVerifErrorSend;
         });
       }
     }
@@ -148,7 +149,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
   Future<void> _verify() async {
     final code = _digits;
     if (code.length < 8) {
-      setState(() => _error = 'Ingresa el código de 8 dígitos');
+      setState(() => _error = context.l10n.emailVerifErrorLength);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -173,8 +174,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           _digits = '';
           _hiddenCtrl.clear();
           _error = e.message.contains('expired') || e.message.contains('invalid')
-              ? 'Código incorrecto o expirado. Solicita uno nuevo.'
-              : 'Error al verificar: ${e.message}';
+              ? context.l10n.emailVerifErrorWrong
+              : context.l10n.emailVerifErrorGeneric;
         });
       }
     } catch (e) {
@@ -185,7 +186,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           _loading = false;
           _digits = '';
           _hiddenCtrl.clear();
-          _error = 'Error inesperado. Intenta de nuevo.';
+          _error = context.l10n.emailVerifErrorGeneric;
         });
       }
     }
@@ -279,7 +280,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _otpSent ? 'Código enviado' : 'Enviando...',
+                            _otpSent ? context.l10n.emailVerifCodeSent : context.l10n.emailVerifSending,
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -349,10 +350,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                             const SizedBox(height: 28),
 
                             // ── Título ───────────────────────────────
-                            const Text(
-                              'Verificación de identidad',
+                            Text(
+                              context.l10n.emailVerifTitle,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
@@ -363,8 +364,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                             const SizedBox(height: 10),
                             Text(
                               _otpSent
-                                  ? 'Enviamos un código de seguridad a'
-                                  : 'Enviando tu código de seguridad...',
+                                  ? context.l10n.emailVerifSentTo
+                                  : context.l10n.emailVerifSending,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.65),
@@ -407,7 +408,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                     color: Colors.white, strokeWidth: 2.5),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Enviando código...',
+                                  context.l10n.emailVerifSendingBtn,
                                   style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.7),
                                       fontSize: 13),
@@ -571,16 +572,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                           child: CircularProgressIndicator(
                                               color: Color(0xFF1A3FCC),
                                               strokeWidth: 2.5))
-                                      : const Row(
+                                      : Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.verified_rounded,
+                                            const Icon(Icons.verified_rounded,
                                                 size: 20),
-                                            SizedBox(width: 10),
+                                            const SizedBox(width: 10),
                                             Text(
-                                              'Confirmar retiro',
-                                              style: TextStyle(
+                                              context.l10n.emailVerifConfirmBtn,
+                                              style: const TextStyle(
                                                   fontWeight: FontWeight.w800,
                                                   fontSize: 16),
                                             ),
@@ -610,7 +611,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          'Reenviar en ${_resendCountdown}s',
+                                          context.l10n.emailVerifResendIn(_resendCountdown),
                                           style: TextStyle(
                                               color: Colors.white
                                                   .withValues(alpha: 0.55),
@@ -641,7 +642,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                                 size: 16),
                                             const SizedBox(width: 8),
                                             Text(
-                                              'Reenviar código',
+                                              context.l10n.emailVerifResend,
                                               style: TextStyle(
                                                 color: Colors.white
                                                     .withValues(alpha: 0.85),
@@ -684,9 +685,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            'Retiro protegido',
-                                            style: TextStyle(
+                                          Text(
+                                            context.l10n.emailVerifProtected,
+                                            style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
@@ -694,7 +695,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            'Verificamos tu identidad para proteger cada cobro.',
+                                            context.l10n.emailVerifProtectedSub,
                                             style: TextStyle(
                                               color: Colors.white
                                                   .withValues(alpha: 0.55),

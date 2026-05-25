@@ -1549,4 +1549,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMadeByTeam => 'App developed by the Juegalo team';
+
+  @override
+  String get emailVerifTitle => 'Identity verification';
+
+  @override
+  String get emailVerifSentTo => 'We sent a security code to';
+
+  @override
+  String get emailVerifSending => 'Sending your security code...';
+
+  @override
+  String get emailVerifCodeSent => 'Code sent';
+
+  @override
+  String get emailVerifSendingBtn => 'Sending code...';
+
+  @override
+  String get emailVerifConfirmBtn => 'Confirm withdrawal';
+
+  @override
+  String emailVerifResendIn(int secs) {
+    return 'Resend in ${secs}s';
+  }
+
+  @override
+  String get emailVerifResend => 'Resend code';
+
+  @override
+  String get emailVerifProtected => 'Protected withdrawal';
+
+  @override
+  String get emailVerifProtectedSub =>
+      'We verify your identity to protect every payout.';
+
+  @override
+  String get emailVerifErrorSend => 'Error sending the code. Please try again.';
+
+  @override
+  String get emailVerifErrorLength => 'Enter the 8-digit code';
+
+  @override
+  String get emailVerifErrorWrong =>
+      'Incorrect or expired code. Request a new one.';
+
+  @override
+  String get emailVerifErrorGeneric => 'Unexpected error. Please try again.';
 }

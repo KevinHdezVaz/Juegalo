@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:adjoe/sdk.dart' show Playtime;
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -59,6 +60,17 @@ Future<void> main() async {
 
   // AdMob
   await MobileAds.instance.initialize();
+
+  // Adjoe Playtime Offerwall — inicializar SDK al arranque
+  // El userId se pasa luego al abrir el catálogo (games_screen)
+  if (Platform.isAndroid) {
+    try {
+      await Playtime.init(AppConstants.adjoeAppId, null);
+      debugPrint('✅ [Adjoe] SDK inicializado');
+    } catch (e) {
+      debugPrint('🟡 [Adjoe] Error al inicializar: $e');
+    }
+  }
 
   // ── Dispositivos de prueba (no cuentan como tráfico inválido) ────
   // Corre la app y busca en los logs: "Use RequestConfiguration.Builder

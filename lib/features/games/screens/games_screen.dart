@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/app_config_provider.dart';
@@ -197,7 +198,9 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 
-    final appId = ref.read(appConfigProvider).valueOrNull?.adjoeAppId ?? '';
+    final appId = ref.read(appConfigProvider).valueOrNull?.adjoeAppId?.isNotEmpty == true
+        ? ref.read(appConfigProvider).valueOrNull!.adjoeAppId!
+        : AppConstants.adjoeAppId;
     if (appId.isEmpty) {
       _showComingSoon();
       return;
@@ -433,7 +436,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                       icon: Icons.download_rounded,
                       title: context.l10n.gamesStep1Title,
                       desc: context.l10n.gamesStep1Desc,
-                      color: const Color(0xFF7C3AED),
+                      color: const Color(0xFF2563EB),
                     ),
                     const SizedBox(height: 10),
                     _HowItWorksCard(
@@ -441,7 +444,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                       icon: Icons.sports_esports_rounded,
                       title: context.l10n.gamesStep2Title,
                       desc: context.l10n.gamesStep2Desc,
-                      color: const Color(0xFF5B21B6),
+                      color: const Color(0xFF1D4ED8),
                     ),
                     const SizedBox(height: 10),
                     _HowItWorksCard(
@@ -511,7 +514,7 @@ class _HeroHeader extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF3B1F8C), Color(0xFF5B21B6), Color(0xFF7C3AED)],
+          colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -653,7 +656,7 @@ class _StatsRow extends StatelessWidget {
           _StatChip(
             icon: Icons.videogame_asset_rounded,
             label: context.l10n.gamesStatGames,
-            color: const Color(0xFF7C3AED),
+            color: const Color(0xFF2563EB),
           ),
           const SizedBox(width: 10),
           _StatChip(
@@ -776,7 +779,7 @@ class _GameCardState extends State<_GameCard>
             borderRadius: BorderRadius.circular(16),
             child: Row(
               children: [
-                // ── Izquierda 50%: ícono con gradiente ──────────────
+                // ── Izquierda 50%: imagen ────────────────────────────
                 Expanded(
                   flex: 1,
                   child: Padding(
@@ -786,21 +789,15 @@ class _GameCardState extends State<_GameCard>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Gradiente de fondo del ícono
                           Container(
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  Color(0xFF7C3AED),
-                                  Color(0xFFEC4899),
-                                  Color(0xFFF59E0B),
-                                ],
+                                colors: game.gradient,
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                             ),
                           ),
-                          // Imagen del juego encima
                           CachedNetworkImage(
                             imageUrl: game.imageUrl,
                             height: double.infinity,
@@ -817,71 +814,126 @@ class _GameCardState extends State<_GameCard>
                   ),
                 ),
 
-                // ── Derecha 50%: info ────────────────────────────────
+                // ── Derecha 50%: gradiente + círculos + info ─────────
                 Expanded(
                   flex: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (game.badge != null)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 3),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              game.badge!,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        Text(
-                          game.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            height: 1.1,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          game.category,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
-                            fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        // Chip recompensa
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
+                  child: Stack(
+                    clipBehavior: Clip.hardEdge,
+                    children: [
+                      // Gradiente oscuro de izquierda a derecha
+                      Positioned.fill(
+                        child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.28),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '🪙 +${game.maxCoins.formatted}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.0),
+                                Colors.black.withValues(alpha: 0.45),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      // Círculo grande arriba-derecha
+                      Positioned(
+                        top: -18, right: -18,
+                        child: Container(
+                          width: 60, height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                      ),
+                      // Círculo mediano abajo-izquierda
+                      Positioned(
+                        bottom: -14, left: -10,
+                        child: Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.06),
+                          ),
+                        ),
+                      ),
+                      // Círculo pequeño centro-derecha
+                      Positioned(
+                        top: 20, right: 10,
+                        child: Container(
+                          width: 14, height: 14,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.10),
+                          ),
+                        ),
+                      ),
+                      // Info encima de todo
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (game.badge != null)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.22),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    game.badge!,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              Text(
+                                game.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                game.category,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                  fontSize: 10,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.28),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '🪙 +${game.maxCoins.formatted}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -911,7 +963,7 @@ class _AnimatedCTAButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const glowColor = Color(0xFF9F5FFF);
+    const glowColor = Color(0xFF3B82F6);
 
     return AnimatedBuilder(
       animation: Listenable.merge([pulseAnim, shimmerAnim]),
@@ -950,9 +1002,9 @@ class _AnimatedCTAButton extends StatelessWidget {
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Color(0xFF5B21B6),
-                          Color(0xFF7C3AED),
-                          Color(0xFF9F5FFF),
+                          Color(0xFF1D4ED8),
+                          Color(0xFF2563EB),
+                          Color(0xFF3B82F6),
                         ],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,

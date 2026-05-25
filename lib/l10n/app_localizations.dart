@@ -2859,6 +2859,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'App desarrollada por el equipo de Juegalo'**
   String get profileMadeByTeam;
+
+  /// No description provided for @emailVerifTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación de identidad'**
+  String get emailVerifTitle;
+
+  /// No description provided for @emailVerifSentTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviamos un código de seguridad a'**
+  String get emailVerifSentTo;
+
+  /// No description provided for @emailVerifSending.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviando tu código de seguridad...'**
+  String get emailVerifSending;
+
+  /// No description provided for @emailVerifCodeSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Código enviado'**
+  String get emailVerifCodeSent;
+
+  /// No description provided for @emailVerifSendingBtn.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviando código...'**
+  String get emailVerifSendingBtn;
+
+  /// No description provided for @emailVerifConfirmBtn.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar retiro'**
+  String get emailVerifConfirmBtn;
+
+  /// No description provided for @emailVerifResendIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Reenviar en {secs}s'**
+  String emailVerifResendIn(int secs);
+
+  /// No description provided for @emailVerifResend.
+  ///
+  /// In es, this message translates to:
+  /// **'Reenviar código'**
+  String get emailVerifResend;
+
+  /// No description provided for @emailVerifProtected.
+  ///
+  /// In es, this message translates to:
+  /// **'Retiro protegido'**
+  String get emailVerifProtected;
+
+  /// No description provided for @emailVerifProtectedSub.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificamos tu identidad para proteger cada cobro.'**
+  String get emailVerifProtectedSub;
+
+  /// No description provided for @emailVerifErrorSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al enviar el código. Intenta de nuevo.'**
+  String get emailVerifErrorSend;
+
+  /// No description provided for @emailVerifErrorLength.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa el código de 8 dígitos'**
+  String get emailVerifErrorLength;
+
+  /// No description provided for @emailVerifErrorWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'Código incorrecto o expirado. Solicita uno nuevo.'**
+  String get emailVerifErrorWrong;
+
+  /// No description provided for @emailVerifErrorGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'Error inesperado. Intenta de nuevo.'**
+  String get emailVerifErrorGeneric;
 }
 
 class _AppLocalizationsDelegate

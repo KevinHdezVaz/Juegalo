@@ -3,6 +3,9 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <!-- AD_ID: permite a AdMob leer el Advertising ID en Android 13+
+         Sin esto, solo se sirven anuncios no personalizados → CPM hasta 40-60% menor -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
     <application
         android:label="JUEGALO"
         android:name="${applicationName}"

@@ -747,5 +747,25 @@
   },
   "phoneVerifyEmailFallbackInvalid": "Enter a valid email address",
   "phoneVerifyButtonSendEmail": "Send code to email",
-  "profileMadeByTeam": "App developed by the Juegalo team"
+  "profileMadeByTeam": "App developed by the Juegalo team",
+
+  "emailVerifTitle": "Identity verification",
+  "emailVerifSentTo": "We sent a security code to",
+  "emailVerifSending": "Sending your security code...",
+  "emailVerifCodeSent": "Code sent",
+  "emailVerifSendingBtn": "Sending code...",
+  "emailVerifConfirmBtn": "Confirm withdrawal",
+  "emailVerifResendIn": "Resend in {secs}s",
+  "@emailVerifResendIn": {
+    "placeholders": {
+      "secs": { "type": "int" }
+    }
+  },
+  "emailVerifResend": "Resend code",
+  "emailVerifProtected": "Protected withdrawal",
+  "emailVerifProtectedSub": "We verify your identity to protect every payout.",
+  "emailVerifErrorSend": "Error sending the code. Please try again.",
+  "emailVerifErrorLength": "Enter the 8-digit code",
+  "emailVerifErrorWrong": "Incorrect or expired code. Request a new one.",
+  "emailVerifErrorGeneric": "Unexpected error. Please try again."
 }
