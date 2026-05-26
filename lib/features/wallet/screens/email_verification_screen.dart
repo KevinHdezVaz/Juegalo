@@ -103,13 +103,18 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
 
   // ── Enviar OTP ───────────────────────────────────────────────────
   Future<void> _sendOtp() async {
+    debugPrint('📧 [EmailVerif] _sendOtp() iniciado');
+    debugPrint('📧 [EmailVerif] email: $_userEmail');
+    debugPrint('📧 [EmailVerif] email vacío: ${_userEmail.isEmpty}');
     setState(() { _loading = true; _error = null; _digits = ''; });
     _hiddenCtrl.clear();
     try {
+      debugPrint('📧 [EmailVerif] Llamando signInWithOtp...');
       await Supabase.instance.client.auth.signInWithOtp(
         email: _userEmail,
         shouldCreateUser: false,
       );
+      debugPrint('📧 [EmailVerif] ✅ OTP enviado exitosamente a $_userEmail');
       if (mounted) {
         setState(() {
           _otpSent = true;
@@ -118,10 +123,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
         });
         _startResendTimer();
         Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) _hiddenFocus.requestFocus();
+          if (mounted) _openKeyboard();
         });
       }
     } catch (e) {
+      debugPrint('📧 [EmailVerif] ❌ Error enviando OTP: $e');
+      debugPrint('📧 [EmailVerif] Error tipo: ${e.runtimeType}');
       if (mounted) {
         setState(() {
           _loading = false;
@@ -129,6 +136,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
         });
       }
     }
+  }
+
+  void _openKeyboard() {
+    _hiddenFocus.unfocus();
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(_hiddenFocus);
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+    });
   }
 
   void _startResendTimer() {
@@ -446,7 +462,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                       child: child);
                                 },
                                 child: GestureDetector(
-                                  onTap: () => _hiddenFocus.requestFocus(),
+                                  onTap: _openKeyboard,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: List.generate(8, (i) {
@@ -564,7 +580,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
                                     shadowColor: Colors.transparent,
                                     shape: RoundedRectangleBorder(
                                         borderRadius:
-                                            BorderRadius.circular(16)),
+                                             BorderRadius.circular(16)),
                                   ),
                                   child: _loading
                                       ? const SizedBox(

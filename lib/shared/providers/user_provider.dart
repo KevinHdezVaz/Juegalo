@@ -216,6 +216,17 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await NotificationService.instance.requestAndSaveToken();
   }
 
+  Future<void> signUpWithEmail({
+    required String email,
+    required String password,
+    String? referralCode,
+  }) async {
+    await _db.auth.signUp(email: email, password: password);
+    await _ensureUserRow();
+    await _applyReferral(referralCode);
+    await NotificationService.instance.requestAndSaveToken();
+  }
+
   // Sign in anónimo (jugar sin cuenta)
   Future<void> signInAnonymously({String? referralCode}) async {
     debugPrint('🔵 [signInAnonymously] Iniciando login anónimo...');

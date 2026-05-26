@@ -168,6 +168,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             if (mounted) _showError(context.l10n.onboardingErrorWrongCredentials);
           }
         },
+        onSignUp: (email, password) async {
+          Navigator.of(ctx).pop();
+          setState(() => _loading = true);
+          try {
+            await ref.read(userNotifierProvider.notifier).signUpWithEmail(
+                  email: email,
+                  password: password,
+                );
+            await _afterLogin();
+          } catch (e) {
+            setState(() => _loading = false);
+            if (mounted) _showError('Error al crear cuenta: ${e.toString()}');
+          }
+        },
       ),
     );
   }
@@ -835,40 +849,95 @@ class _OrDivider extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Email login dialog
+// Email login / register dialog
 // ─────────────────────────────────────────────────────────────────
 class _EmailLoginDialog extends StatefulWidget {
   final Future<void> Function(String email, String password) onLogin;
-  const _EmailLoginDialog({required this.onLogin});
+  final Future<void> Function(String email, String password) onSignUp;
+  const _EmailLoginDialog({required this.onLogin, required this.onSignUp});
 
   @override
   State<_EmailLoginDialog> createState() => _EmailLoginDialogState();
 }
 
-class _EmailLoginDialogState extends State<_EmailLoginDialog> {
-  final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-  bool _obscure = true;
-  bool _loading = false;
+class _EmailLoginDialogState extends State<_EmailLoginDialog>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+  final _emailCtrl      = TextEditingController();
+  final _passCtrl       = TextEditingController();
+  final _passConfirmCtrl = TextEditingController();
+  bool _obscure        = true;
+  bool _obscureConfirm = true;
+  bool _loading        = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl.addListener(() => setState(() => _error = null));
+  }
 
   @override
   void dispose() {
+    _tabCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _passConfirmCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _submitLogin() async {
     final email = _emailCtrl.text.trim();
-    final pass = _passCtrl.text;
+    final pass  = _passCtrl.text;
     if (email.isEmpty || pass.isEmpty) return;
-    setState(() => _loading = true);
-    await widget.onLogin(email, pass);
+    setState(() { _loading = true; _error = null; });
+    try {
+      await widget.onLogin(email, pass);
+    } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
+  Future<void> _submitSignUp() async {
+    final email   = _emailCtrl.text.trim();
+    final pass    = _passCtrl.text;
+    final confirm = _passConfirmCtrl.text;
+    if (email.isEmpty || pass.isEmpty || confirm.isEmpty) return;
+    if (pass != confirm) {
+      setState(() => _error = 'Las contraseñas no coinciden');
+      return;
+    }
+    if (pass.length < 6) {
+      setState(() => _error = 'Mínimo 6 caracteres');
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
+    try {
+      await widget.onSignUp(email, pass);
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, {Widget? suffix}) =>
+    InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
+      prefixIcon: Icon(icon, color: AppColors.textoSecundario, size: 18),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: AppColors.fondoPrincipal,
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.fondoCardBorde)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.fondoCardBorde)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.azulPrimario, width: 1.5)),
+    );
+
   @override
   Widget build(BuildContext context) {
+    final isLogin = _tabCtrl.index == 0;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -876,13 +945,12 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header ──────────────────────────────────────────
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 40, height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.azulPrimario.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
@@ -891,20 +959,10 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
                       color: AppColors.azulPrimario, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(context.l10n.emailDialogTitle,
-                          style: const TextStyle(
-                              color: AppColors.textoPrimario,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16)),
-                      Text(context.l10n.emailDialogSubtitle,
-                          style: const TextStyle(
-                              color: AppColors.textoSecundario, fontSize: 12)),
-                    ],
-                  ),
+                const Expanded(
+                  child: Text('Correo electrónico',
+                      style: TextStyle(color: AppColors.textoPrimario,
+                          fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -913,103 +971,109 @@ class _EmailLoginDialogState extends State<_EmailLoginDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+
+            // ── Tabs ────────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.fondoPrincipal,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabCtrl,
+                indicator: BoxDecoration(
+                  color: AppColors.azulPrimario,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: Colors.white,
+                unselectedLabelColor: AppColors.textoSecundario,
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: 'Iniciar sesión'),
+                  Tab(text: 'Crear cuenta'),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
+
+            // ── Campos ──────────────────────────────────────────
             TextField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              style:
-                  const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)?.emailDialogEmail ?? 'Correo electrónico',
-                labelStyle: const TextStyle(
-                    color: AppColors.textoSecundario, fontSize: 13),
-                prefixIcon: const Icon(Icons.email_outlined,
-                    color: AppColors.textoSecundario, size: 18),
-                filled: true,
-                fillColor: AppColors.fondoPrincipal,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: AppColors.fondoCardBorde)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: AppColors.fondoCardBorde)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: AppColors.azulPrimario, width: 1.5)),
-              ),
+              style: const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
+              decoration: _inputDecoration('Correo electrónico', Icons.email_outlined),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _passCtrl,
               obscureText: _obscure,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _submit(),
-              style:
-                  const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)?.emailDialogPassword ?? 'Contraseña',
-                labelStyle: const TextStyle(
-                    color: AppColors.textoSecundario, fontSize: 13),
-                prefixIcon: const Icon(Icons.lock_outline_rounded,
-                    color: AppColors.textoSecundario, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: AppColors.textoSecundario,
-                    size: 18,
-                  ),
+              textInputAction: isLogin ? TextInputAction.done : TextInputAction.next,
+              onSubmitted: isLogin ? (_) => _submitLogin() : null,
+              style: const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
+              decoration: _inputDecoration('Contraseña', Icons.lock_outline_rounded,
+                suffix: IconButton(
+                  icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.textoSecundario, size: 18),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
-                filled: true,
-                fillColor: AppColors.fondoPrincipal,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: AppColors.fondoCardBorde)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: AppColors.fondoCardBorde)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: AppColors.azulPrimario, width: 1.5)),
               ),
             ),
+
+            // ── Confirmar contraseña (solo en registro) ──────────
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              child: _tabCtrl.index == 1
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: TextField(
+                      controller: _passConfirmCtrl,
+                      obscureText: _obscureConfirm,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submitSignUp(),
+                      style: const TextStyle(color: AppColors.textoPrimario, fontSize: 14),
+                      decoration: _inputDecoration('Confirmar contraseña', Icons.lock_outline_rounded,
+                        suffix: IconButton(
+                          icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: AppColors.textoSecundario, size: 18),
+                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            ),
+
+            // ── Error ────────────────────────────────────────────
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ],
+
             const SizedBox(height: 20),
+
+            // ── Botón ────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
+                onPressed: _loading ? null
+                    : (isLogin ? _submitLogin : _submitSignUp),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.azulPrimario,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      AppColors.azulPrimario.withValues(alpha: 0.5),
+                  disabledBackgroundColor: AppColors.azulPrimario.withValues(alpha: 0.5),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _loading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2.5))
-                    : Text(AppLocalizations.of(context)?.emailDialogSignIn ?? 'Entrar',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 16)),
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                    : Text(isLogin ? 'Entrar' : 'Crear cuenta',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ),
             ),
           ],
