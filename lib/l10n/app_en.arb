@@ -747,7 +747,7 @@
   },
   "phoneVerifyEmailFallbackInvalid": "Enter a valid email address",
   "phoneVerifyButtonSendEmail": "Send code to email",
-  "profileMadeByTeam": "App developed by the Juegalo team",
+  "profileMadeByTeam": "Developer Kevin Hernandez",
 
   "emailVerifTitle": "Identity verification",
   "emailVerifSentTo": "We sent a security code to",
@@ -767,5 +767,27 @@
   "emailVerifErrorSend": "Error sending the code. Please try again.",
   "emailVerifErrorLength": "Enter the 8-digit code",
   "emailVerifErrorWrong": "Incorrect or expired code. Request a new one.",
-  "emailVerifErrorGeneric": "Unexpected error. Please try again."
+  "emailVerifErrorGeneric": "Unexpected error. Please try again.",
+
+  "referralAlreadyUsed": "You already used a referral code",
+  "referralAlreadyUsedDesc": "It can only be used once. You cannot enter another code.",
+
+  "sessionClosedTitle": "Session closed",
+  "sessionClosedContent": "Your account was opened on another device.\nOnly 1 active session is allowed at a time.",
+  "sessionClosedButton": "Got it",
+
+  "gamesDailyLimit": "Up to 2,000 coins per day",
+  "gamesHeroFreeLabel": "Free",
+  "gamesBadgePopular": "Popular",
+  "gamesBadgeVip": "VIP",
+  "gamesBadgeTop": "Top",
+
+  "cashoutAccountLabel": "Account for {method}",
+  "@cashoutAccountLabel": {
+    "placeholders": {
+      "method": { "type": "String" }
+    }
+  },
+
+  "profileDeleteError": "Error deleting account"
 }

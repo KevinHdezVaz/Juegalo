@@ -1553,7 +1553,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get phoneVerifyButtonSendEmail => 'Enviar código por e-mail';
 
   @override
-  String get profileMadeByTeam => 'App desenvolvida pela equipe do Juegalo';
+  String get profileMadeByTeam => 'Desenvolvedor Kevin Hernandez';
 
   @override
   String get emailVerifTitle => 'Verificação de identidade';
@@ -1600,4 +1600,44 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get emailVerifErrorGeneric => 'Erro inesperado. Tente novamente.';
+
+  @override
+  String get referralAlreadyUsed => 'Você já usou um código de indicação';
+
+  @override
+  String get referralAlreadyUsedDesc =>
+      'Só pode ser usado 1 vez. Não é possível inserir outro código.';
+
+  @override
+  String get sessionClosedTitle => 'Sessão encerrada';
+
+  @override
+  String get sessionClosedContent =>
+      'Sua conta foi aberta em outro dispositivo.\nApenas 1 sessão ativa é permitida por vez.';
+
+  @override
+  String get sessionClosedButton => 'Entendi';
+
+  @override
+  String get gamesDailyLimit => 'Até 2.000 moedas por dia';
+
+  @override
+  String get gamesHeroFreeLabel => 'Grátis';
+
+  @override
+  String get gamesBadgePopular => 'Popular';
+
+  @override
+  String get gamesBadgeVip => 'VIP';
+
+  @override
+  String get gamesBadgeTop => 'Top';
+
+  @override
+  String cashoutAccountLabel(String method) {
+    return 'Conta de $method';
+  }
+
+  @override
+  String get profileDeleteError => 'Erro ao excluir a conta';
 }

@@ -20,17 +20,17 @@ class _GameData {
   final String name;
   final String category;
   final List<Color> gradient;
-  final String emoji;
+  final IconData fallbackIcon;
   final String imageUrl;
   final int minCoins;
   final int maxCoins;
-  final String? badge;
+  final _BadgeType? badge;
 
   const _GameData({
     required this.name,
     required this.category,
     required this.gradient,
-    required this.emoji,
+    required this.fallbackIcon,
     required this.imageUrl,
     required this.minCoins,
     required this.maxCoins,
@@ -38,35 +38,37 @@ class _GameData {
   });
 }
 
-// ── Juegos populares con íconos reales de Google Play ─────────────────
+enum _BadgeType { popular, vip, top }
+
+// ── Juegos populares ──────────────────────────────────────────────────
 const List<_GameData> _popularGames = [
   _GameData(
     name: 'Coin Master',
     category: 'Casino',
     gradient: [Color(0xFFFF8F00), Color(0xFFFFCA28)],
-    emoji: '🪙',
+    fallbackIcon: Icons.monetization_on_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/lja_bcS9SXsaK4x_q0rXuiqf3CIIwfy8QveRWfW5MEaAPOST_auDLuzWMyMUrBzi0sI=s256-rw',
     minCoins: 200,
     maxCoins: 800,
-    badge: '🔥 Popular',
+    badge: _BadgeType.popular,
   ),
   _GameData(
     name: 'PUBG Mobile',
     category: 'Battle Royale',
     gradient: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
-    emoji: '🎯',
+    fallbackIcon: Icons.gps_fixed_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/zCSGnBtZk0Lmp1BAbyaZfLktDzHmC6oke67qzz3G1lBegAF2asyt5KzXOJ2PVdHDYkU=s256-rw',
     minCoins: 800,
     maxCoins: 2000,
-    badge: '💎 VIP',
+    badge: _BadgeType.vip,
   ),
   _GameData(
     name: 'Candy Crush Saga',
     category: 'Casual',
     gradient: [Color(0xFFC62828), Color(0xFFEF5350)],
-    emoji: '🍬',
+    fallbackIcon: Icons.extension_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/JvMhIxuwArVmcMReJQB8PIEB1MIQNMGf9j5i914JtkBrHrA55K-nMUIVlYCa7SXAdHtzLtsycEo6NpXeHFxLwvI=s256-rw',
     minCoins: 150,
@@ -77,18 +79,18 @@ const List<_GameData> _popularGames = [
     name: 'Roblox',
     category: 'Sandbox',
     gradient: [Color(0xFF00695C), Color(0xFF26A69A)],
-    emoji: '🎪',
+    fallbackIcon: Icons.games_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ=s256-rw',
     minCoins: 300,
     maxCoins: 700,
-    badge: '🔥 Popular',
+    badge: _BadgeType.popular,
   ),
   _GameData(
     name: 'Subway Surfers',
     category: 'Runner',
     gradient: [Color(0xFFE65100), Color(0xFFFF9800)],
-    emoji: '🛹',
+    fallbackIcon: Icons.directions_run_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/rIMQN2JTiHSCj7IezGHkhE39-F66y3Epqlt-iyvveGzT5n0CPOrYDpSePQ7rZBvMJRY=s256-rw',
     minCoins: 100,
@@ -99,12 +101,12 @@ const List<_GameData> _popularGames = [
     name: 'Brawl Stars',
     category: 'Acción',
     gradient: [Color(0xFF283593), Color(0xFF7986CB)],
-    emoji: '💥',
+    fallbackIcon: Icons.flash_on_rounded,
     imageUrl:
         'https://play-lh.googleusercontent.com/IFACylsXgbKgfNXcLbFrzlNhkB6_5LH3IGNA-frTpTPNolzQxL8mI2B_4jnXe5lTCnQYZYIv9zNTQGWn_8QwLA=s256-rw',
     minCoins: 400,
     maxCoins: 1200,
-    badge: '⭐ Top',
+    badge: _BadgeType.top,
   ),
 ];
 
@@ -137,15 +139,14 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
   void initState() {
     super.initState();
 
-    _pageCtrl = PageController(viewportFraction: 0.78, initialPage: 0);
+    _pageCtrl = PageController(viewportFraction: 0.82, initialPage: 0);
 
-    // Arrancar el auto-scroll DESPUÉS de que el PageView esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _autoScrollTimer =
           Timer.periodic(const Duration(milliseconds: 3500), (_) {
         if (!mounted) return;
-        if (!_pageCtrl.hasClients) return; // guard extra por si acaso
+        if (!_pageCtrl.hasClients) return;
         final next = (_currentPage + 1) % _popularGames.length;
         _pageCtrl.animateToPage(
           next,
@@ -155,7 +156,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
       });
     });
 
-    // Pulso del botón
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
@@ -164,7 +164,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
 
-    // Shimmer del botón
     _shimmerCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -173,7 +172,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
       CurvedAnimation(parent: _shimmerCtrl, curve: Curves.linear),
     );
 
-    // Entrada suave de la pantalla
     _entranceCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
@@ -198,8 +196,9 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
 
-    final appId = ref.read(appConfigProvider).valueOrNull?.adjoeAppId?.isNotEmpty == true
-        ? ref.read(appConfigProvider).valueOrNull!.adjoeAppId!
+    final adjoeIdFromConfig = ref.read(appConfigProvider).valueOrNull?.adjoeAppId;
+    final appId = (adjoeIdFromConfig != null && adjoeIdFromConfig.isNotEmpty)
+        ? adjoeIdFromConfig
         : AppConstants.adjoeAppId;
     if (appId.isEmpty) {
       _showComingSoon();
@@ -282,21 +281,25 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Hero header ────────────────────────────────────────
+
+              // ── Hero header ──────────────────────────────────────────
               _HeroHeader(adjoeReady: adjoeReady),
 
               const SizedBox(height: 24),
 
-              // ── Stats ──────────────────────────────────────────────
+              // ── Stats ────────────────────────────────────────────────
               _StatsRow(adjoeReady: adjoeReady),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // ── Título carousel ────────────────────────────────────
+              // ── Título carousel ──────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
+                    const Icon(Icons.sports_esports_rounded,
+                        color: AppColors.colorJuegos, size: 20),
+                    const SizedBox(width: 8),
                     Text(
                       context.l10n.gamesPopularTitle,
                       style: const TextStyle(
@@ -305,33 +308,23 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.colorJuegos.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_popularGames.length}',
-                        style: const TextStyle(
-                          color: AppColors.colorJuegos,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
                     const Spacer(),
                     GestureDetector(
                       onTap: _openOfferwall,
-                      child: Text(
-                        context.l10n.gamesSeeAll,
-                        style: const TextStyle(
-                          color: AppColors.colorJuegos,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        children: [
+                          Text(
+                            context.l10n.gamesSeeAll,
+                            style: const TextStyle(
+                              color: AppColors.colorJuegos,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: AppColors.colorJuegos, size: 11),
+                        ],
                       ),
                     ),
                   ],
@@ -340,14 +333,15 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
               const SizedBox(height: 14),
 
-              // ── Carousel PageView ──────────────────────────────────
+              // ── Carousel PageView ────────────────────────────────────
               SizedBox(
-                height: 110,
+                height: 148,
                 child: PageView.builder(
                   controller: _pageCtrl,
                   itemCount: _popularGames.length,
                   onPageChanged: (i) => setState(() => _currentPage = i),
                   itemBuilder: (context, i) {
+                    final isActive = i == _currentPage;
                     return AnimatedBuilder(
                       animation: _pageCtrl,
                       builder: (context, child) {
@@ -356,18 +350,16 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                           page = _pageCtrl.page ?? _currentPage.toDouble();
                         } catch (_) {}
                         final diff = (page - i).abs();
-                        final scale = (1.0 - diff * 0.08).clamp(0.88, 1.0);
-                        final opacity = (1.0 - diff * 0.35).clamp(0.5, 1.0);
+                        final scale = (1.0 - diff * 0.07).clamp(0.88, 1.0);
+                        final opacity = (1.0 - diff * 0.30).clamp(0.55, 1.0);
                         return Transform.scale(
                           scale: scale,
-                          child: Opacity(
-                            opacity: opacity,
-                            child: child,
-                          ),
+                          child: Opacity(opacity: opacity, child: child),
                         );
                       },
                       child: _GameCard(
                         game: _popularGames[i],
+                        isActive: isActive,
                         onTap: _openOfferwall,
                       ),
                     );
@@ -377,20 +369,20 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
               const SizedBox(height: 12),
 
-              // ── Indicador de puntos ────────────────────────────────
+              // ── Indicadores de página ────────────────────────────────
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: List.generate(_popularGames.length, (i) {
-                    final isActive = i == _currentPage;
+                    final active = i == _currentPage;
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
                       margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: isActive ? 20 : 6,
+                      width: active ? 20 : 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: isActive
+                        color: active
                             ? AppColors.colorJuegos
                             : AppColors.colorJuegos.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(3),
@@ -400,9 +392,9 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              // ── Botón CTA animado ──────────────────────────────────
+              // ── Botón CTA animado ────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _AnimatedCTAButton(
@@ -416,7 +408,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
               const SizedBox(height: 28),
 
-              // ── Cómo funciona ──────────────────────────────────────
+              // ── Cómo funciona ────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -460,7 +452,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
               const SizedBox(height: 24),
 
-              // ── Banner inferior ────────────────────────────────────
+              // ── Banner inferior ──────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -522,11 +514,9 @@ class _HeroHeader extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            top: -30,
-            right: -20,
+            top: -30, right: -20,
             child: Container(
-              width: 140,
-              height: 140,
+              width: 140, height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.05),
@@ -534,11 +524,9 @@ class _HeroHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: -40,
-            left: -10,
+            bottom: -40, left: -10,
             child: Container(
-              width: 100,
-              height: 100,
+              width: 100, height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.04),
@@ -553,42 +541,73 @@ class _HeroHeader extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: adjoeReady
-                                    ? AppColors.verdePrimario
-                                    : AppColors.dorado,
-                                shape: BoxShape.circle,
-                              ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.25)),
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              adjoeReady
-                                  ? context.l10n.gamesStatusActive
-                                  : context.l10n.gamesStatusSoon,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6, height: 6,
+                                  decoration: BoxDecoration(
+                                    color: adjoeReady
+                                        ? AppColors.verdePrimario
+                                        : AppColors.dorado,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  adjoeReady
+                                      ? context.l10n.gamesStatusActive
+                                      : context.l10n.gamesStatusSoon,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFD700).withValues(alpha: 0.20),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: const Color(0xFFFFD700)
+                                      .withValues(alpha: 0.40)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.monetization_on_rounded,
+                                    color: Color(0xFFFFD700), size: 11),
+                                const SizedBox(width: 4),
+                                Text(
+                                  context.l10n.gamesHeroFreeLabel,
+                                  style: const TextStyle(
+                                    color: Color(0xFFFFD700),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -609,13 +628,37 @@ class _HeroHeader extends StatelessWidget {
                           height: 1.4,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.trending_up_rounded,
+                                color: Colors.white, size: 13),
+                            const SizedBox(width: 5),
+                            Text(
+                              context.l10n.gamesDailyLimit,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 16),
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: 80, height: 80,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(22),
@@ -627,8 +670,7 @@ class _HeroHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
                       'assets/icons/app_icon.png',
-                      width: 60,
-                      height: 60,
+                      width: 60, height: 60,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -710,11 +752,13 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ── Tarjeta de juego ──────────────────────────────────────────────────
+// ── Tarjeta de juego (carousel) ───────────────────────────────────────
 class _GameCard extends StatefulWidget {
   final _GameData game;
   final VoidCallback onTap;
-  const _GameCard({required this.game, required this.onTap});
+  final bool isActive;
+  const _GameCard(
+      {required this.game, required this.onTap, this.isActive = false});
 
   @override
   State<_GameCard> createState() => _GameCardState();
@@ -744,6 +788,28 @@ class _GameCardState extends State<_GameCard>
     super.dispose();
   }
 
+  String _badgeLabel(_BadgeType type, BuildContext context) {
+    switch (type) {
+      case _BadgeType.popular:
+        return context.l10n.gamesBadgePopular;
+      case _BadgeType.vip:
+        return context.l10n.gamesBadgeVip;
+      case _BadgeType.top:
+        return context.l10n.gamesBadgeTop;
+    }
+  }
+
+  IconData _badgeIcon(_BadgeType type) {
+    switch (type) {
+      case _BadgeType.popular:
+        return Icons.local_fire_department_rounded;
+      case _BadgeType.vip:
+        return Icons.diamond_rounded;
+      case _BadgeType.top:
+        return Icons.star_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final game = widget.game;
@@ -759,27 +825,29 @@ class _GameCardState extends State<_GameCard>
         builder: (context, child) =>
             Transform.scale(scale: _scaleAnim.value, child: child),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: game.gradient,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: game.gradient.first.withValues(alpha: 0.40),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF1D4ED8).withValues(
+                    alpha: widget.isActive ? 0.55 : 0.28),
+                blurRadius: widget.isActive ? 20 : 10,
+                spreadRadius: widget.isActive ? 2 : 0,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             child: Row(
               children: [
-                // ── Izquierda 50%: imagen ────────────────────────────
+                // Imagen izquierda
                 Expanded(
                   flex: 1,
                   child: Padding(
@@ -790,9 +858,9 @@ class _GameCardState extends State<_GameCard>
                         fit: StackFit.expand,
                         children: [
                           Container(
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: game.gradient,
+                                colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -800,11 +868,10 @@ class _GameCardState extends State<_GameCard>
                           ),
                           CachedNetworkImage(
                             imageUrl: game.imageUrl,
-                            height: double.infinity,
                             fit: BoxFit.cover,
                             errorWidget: (_, __, ___) => Center(
-                              child: Text(game.emoji,
-                                  style: const TextStyle(fontSize: 32)),
+                              child: Icon(game.fallbackIcon,
+                                  color: Colors.white, size: 36),
                             ),
                             placeholder: (_, __) => const SizedBox.shrink(),
                           ),
@@ -814,13 +881,12 @@ class _GameCardState extends State<_GameCard>
                   ),
                 ),
 
-                // ── Derecha 50%: gradiente + círculos + info ─────────
+                // Info derecha
                 Expanded(
                   flex: 1,
                   child: Stack(
                     clipBehavior: Clip.hardEdge,
                     children: [
-                      // Gradiente oscuro de izquierda a derecha
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
@@ -835,7 +901,6 @@ class _GameCardState extends State<_GameCard>
                           ),
                         ),
                       ),
-                      // Círculo grande arriba-derecha
                       Positioned(
                         top: -18, right: -18,
                         child: Container(
@@ -846,7 +911,6 @@ class _GameCardState extends State<_GameCard>
                           ),
                         ),
                       ),
-                      // Círculo mediano abajo-izquierda
                       Positioned(
                         bottom: -14, left: -10,
                         child: Container(
@@ -857,47 +921,43 @@ class _GameCardState extends State<_GameCard>
                           ),
                         ),
                       ),
-                      // Círculo pequeño centro-derecha
-                      Positioned(
-                        top: 20, right: 10,
-                        child: Container(
-                          width: 14, height: 14,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.10),
-                          ),
-                        ),
-                      ),
-                      // Info encima de todo
                       Positioned.fill(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               if (game.badge != null)
                                 Container(
-                                  margin: const EdgeInsets.only(bottom: 3),
+                                  margin: const EdgeInsets.only(bottom: 4),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.22),
-                                    borderRadius: BorderRadius.circular(5),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Text(
-                                    game.badge!,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w700),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(_badgeIcon(game.badge!),
+                                          color: Colors.white, size: 9),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        _badgeLabel(game.badge!, context),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               Text(
                                 game.name,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                   height: 1.1,
                                 ),
@@ -912,7 +972,7 @@ class _GameCardState extends State<_GameCard>
                                   fontSize: 10,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 7, vertical: 3),
@@ -920,13 +980,21 @@ class _GameCardState extends State<_GameCard>
                                   color: Colors.black.withValues(alpha: 0.28),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(
-                                  '🪙 +${game.maxCoins.formatted}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.monetization_on_rounded,
+                                        color: Color(0xFFFFD700), size: 11),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '+${game.maxCoins.formatted}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -979,7 +1047,6 @@ class _AnimatedCTAButton extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Glow pulsante exterior
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
@@ -992,8 +1059,6 @@ class _AnimatedCTAButton extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Botón gradiente
                 ClipRRect(
                   borderRadius: BorderRadius.circular(18),
                   child: Container(
@@ -1013,7 +1078,6 @@ class _AnimatedCTAButton extends StatelessWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Shimmer sweep
                         Transform.translate(
                           offset: Offset(shimmerX * 250, 0),
                           child: Transform.rotate(
@@ -1033,8 +1097,6 @@ class _AnimatedCTAButton extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        // Contenido
                         if (loading)
                           const SizedBox(
                             width: 24,
@@ -1119,9 +1181,26 @@ class _HowItWorksCard extends StatelessWidget {
         color: AppColors.fondoElevado,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.fondoCardBorde),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.05),
+            AppColors.fondoElevado,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
       ),
       child: Row(
         children: [
+          Container(
+            width: 4,
+            height: 46,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
           Container(
             width: 46,
             height: 46,

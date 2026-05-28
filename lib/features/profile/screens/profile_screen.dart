@@ -190,7 +190,7 @@ class ProfileScreen extends ConsumerWidget {
       if (response.statusCode == 200) {
         await Supabase.instance.client.auth.signOut();
       } else {
-        final msg = (response.data as Map?)?['error'] ?? 'Error al eliminar la cuenta';
+        final msg = (response.data as Map?)?['error'] ?? context.l10n.profileDeleteError;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg),
           backgroundColor: AppColors.error,
@@ -439,7 +439,7 @@ class ProfileScreen extends ConsumerWidget {
                       Text(
                         context.l10n.profileMadeByTeam,
                         style: const TextStyle(
-                          color: AppColors.textoDeshabilitado,
+                          color: Colors.black,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -612,8 +612,47 @@ class _ReferralCard extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Estado del bono de bienvenida ───────────────────
+          // ── Código de referido ya usado / botón registrar ───
           if (user.referredBy != null) ...[
+            // Banner: ya usaste el código
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(children: [
+                const Text('🔒', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.referralAlreadyUsed,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.l10n.referralAlreadyUsedDesc,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 11,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 8),
+            // Estado del bono
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
@@ -666,7 +705,7 @@ class _ReferralCard extends ConsumerWidget {
             const SizedBox(height: 10),
           ],
 
-          // ── Botón registrar código ───────────────────────────
+          // ── Botón registrar código (solo si nunca lo usó) ───
           if (user.referredBy == null)
             SizedBox(
               width: double.infinity,

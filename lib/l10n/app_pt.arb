@@ -747,7 +747,7 @@
   },
   "phoneVerifyEmailFallbackInvalid": "Digite um e-mail válido",
   "phoneVerifyButtonSendEmail": "Enviar código por e-mail",
-  "profileMadeByTeam": "App desenvolvida pela equipe do Juegalo",
+  "profileMadeByTeam": "Desenvolvedor Kevin Hernandez",
 
   "emailVerifTitle": "Verificação de identidade",
   "emailVerifSentTo": "Enviamos um código de segurança para",
@@ -767,5 +767,27 @@
   "emailVerifErrorSend": "Erro ao enviar o código. Tente novamente.",
   "emailVerifErrorLength": "Digite o código de 8 dígitos",
   "emailVerifErrorWrong": "Código incorreto ou expirado. Solicite um novo.",
-  "emailVerifErrorGeneric": "Erro inesperado. Tente novamente."
+  "emailVerifErrorGeneric": "Erro inesperado. Tente novamente.",
+
+  "referralAlreadyUsed": "Você já usou um código de indicação",
+  "referralAlreadyUsedDesc": "Só pode ser usado 1 vez. Não é possível inserir outro código.",
+
+  "sessionClosedTitle": "Sessão encerrada",
+  "sessionClosedContent": "Sua conta foi aberta em outro dispositivo.\nApenas 1 sessão ativa é permitida por vez.",
+  "sessionClosedButton": "Entendi",
+
+  "gamesDailyLimit": "Até 2.000 moedas por dia",
+  "gamesHeroFreeLabel": "Grátis",
+  "gamesBadgePopular": "Popular",
+  "gamesBadgeVip": "VIP",
+  "gamesBadgeTop": "Top",
+
+  "cashoutAccountLabel": "Conta de {method}",
+  "@cashoutAccountLabel": {
+    "placeholders": {
+      "method": { "type": "String" }
+    }
+  },
+
+  "profileDeleteError": "Erro ao excluir a conta"
 }

@@ -1,7 +1,7 @@
 name: juegalo_gana_dinero
 description: "JUEGALO — Gana Dinero Real."
 publish_to: 'none'
-version: 1.0.7+225
+version: 1.0.8+230
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

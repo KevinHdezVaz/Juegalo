@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/services/device_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
@@ -32,13 +33,17 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   StreamSubscription<String>? _notifSub;
   StreamSubscription<void>? _paymentSub;
+
+  bool _kickedDialogShown = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _notifSub = NotificationService.instance.onNavigate.listen((route) {
       if (mounted) context.go(route);
     });
@@ -46,11 +51,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _paymentSub = NotificationService.instance.onPaymentTapped.listen((_) {
       if (mounted) _maybeRequestReview(fromNotification: true);
     });
-    // Trigger al abrir la app — esperar 4s para que Supabase restaure la sesión
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Iniciar escucha Realtime de sesión inmediatamente al montar
+      _listenDeviceSession();
+      // Pedir reseña después de 4s
       await Future.delayed(const Duration(seconds: 4));
       _maybeRequestReview();
     });
+  }
+
+  void _listenDeviceSession() {
+    ref.listenManual(
+      deviceSessionGuardProvider,
+      (_, next) {
+        final isValid = next.valueOrNull;
+        if (isValid == false && !_kickedDialogShown && mounted) {
+          _kickedDialogShown = true;
+          _showKickedDialog();
+        }
+      },
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      // Resetear flag y verificar sesión al volver de background.
+      // Realtime puede haber perdido eventos mientras la app estaba en background.
+      _kickedDialogShown = false;
+      _checkDeviceSessionOnResume();
+    }
+  }
+
+  /// Consulta la BD directamente al volver de background para detectar si
+  /// otro dispositivo tomó la sesión mientras esta app estaba inactiva.
+  Future<void> _checkDeviceSessionOnResume() async {
+    if (_kickedDialogShown || !mounted) return;
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+      final deviceId = await DeviceService.instance.getDeviceId();
+      final row = await Supabase.instance.client
+          .from('users')
+          .select('active_device_id')
+          .eq('id', uid)
+          .maybeSingle();
+      if (!mounted || _kickedDialogShown) return;
+      final storedId = row?['active_device_id'] as String?;
+      if (storedId != null && storedId.isNotEmpty && storedId != deviceId) {
+        _kickedDialogShown = true;
+        _showKickedDialog();
+      }
+    } catch (_) {
+      // Error de red — no cerrar sesión
+    }
+  }
+
+  void _showKickedDialog() {
+    if (!mounted) return;
+    final l = context.l10n;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Text(l.sessionClosedTitle),
+          content: Text(
+            l.sessionClosedContent,
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black, fontWeight: FontWeight.w400),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                final notifier = ref.read(userNotifierProvider.notifier);
+                final router = GoRouter.of(context);
+                Navigator.of(context).pop();
+                notifier.signOut().then((_) => router.go(AppRoutes.onboarding));
+              },
+              child: Text(l.sessionClosedButton),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Muestra el dialog de reseña si el usuario ya recibió al menos un pago
@@ -100,6 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _notifSub?.cancel();
     _paymentSub?.cancel();
     super.dispose();

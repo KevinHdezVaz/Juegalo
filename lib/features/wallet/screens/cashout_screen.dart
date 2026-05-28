@@ -351,7 +351,7 @@ class _RequestTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Cuenta de ${method.label}',
+                Text(context.l10n.cashoutAccountLabel(method.label),
                     style: const TextStyle(
                         color: AppColors.textoSecundario,
                         fontSize: 12,

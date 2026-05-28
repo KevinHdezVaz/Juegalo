@@ -2857,7 +2857,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileMadeByTeam.
   ///
   /// In es, this message translates to:
-  /// **'App desarrollada por el equipo de Juegalo'**
+  /// **'Desarrollador Kevin Hernandez'**
   String get profileMadeByTeam;
 
   /// No description provided for @emailVerifTitle.
@@ -2943,6 +2943,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error inesperado. Intenta de nuevo.'**
   String get emailVerifErrorGeneric;
+
+  /// No description provided for @referralAlreadyUsed.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya usaste tu código de referido'**
+  String get referralAlreadyUsed;
+
+  /// No description provided for @referralAlreadyUsedDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo se puede usar 1 vez. No es posible ingresar otro código.'**
+  String get referralAlreadyUsedDesc;
+
+  /// No description provided for @sessionClosedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sesión cerrada'**
+  String get sessionClosedTitle;
+
+  /// No description provided for @sessionClosedContent.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta fue abierta en otro dispositivo.\nSolo se permite 1 sesión activa a la vez.'**
+  String get sessionClosedContent;
+
+  /// No description provided for @sessionClosedButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get sessionClosedButton;
+
+  /// No description provided for @gamesDailyLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta 2,000 monedas por día'**
+  String get gamesDailyLimit;
+
+  /// No description provided for @gamesHeroFreeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Gratis'**
+  String get gamesHeroFreeLabel;
+
+  /// No description provided for @gamesBadgePopular.
+  ///
+  /// In es, this message translates to:
+  /// **'Popular'**
+  String get gamesBadgePopular;
+
+  /// No description provided for @gamesBadgeVip.
+  ///
+  /// In es, this message translates to:
+  /// **'VIP'**
+  String get gamesBadgeVip;
+
+  /// No description provided for @gamesBadgeTop.
+  ///
+  /// In es, this message translates to:
+  /// **'Top'**
+  String get gamesBadgeTop;
+
+  /// No description provided for @cashoutAccountLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de {method}'**
+  String cashoutAccountLabel(String method);
+
+  /// No description provided for @profileDeleteError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar la cuenta'**
+  String get profileDeleteError;
 }
 
 class _AppLocalizationsDelegate

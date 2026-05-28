@@ -121,6 +121,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         _notifSub = NotificationService.instance.onNavigate.listen((route) {
           if (mounted) context.go(route);
         });
+
+        // ── Verificar sesión de dispositivo único ──────────────
+        final sessionValid = await ref
+            .read(userNotifierProvider.notifier)
+            .verifyDeviceSession();
+        if (!mounted) return;
+        if (!sessionValid) {
+          // Sesión desplazada — mostrar aviso y redirigir al onboarding
+          _showKickedDialog();
+          return;
+        }
       }
 
       final tutorialDone = await isTutorialCompleted();
@@ -142,6 +153,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         context.go(AppRoutes.onboarding);
       }
     }
+  }
+
+  void _showKickedDialog() {
+    if (!mounted) return;
+    final l = context.l10n;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Text(l.sessionClosedTitle),
+          content: Text(
+            l.sessionClosedContent,
+            style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w400),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go(AppRoutes.onboarding);
+              },
+              child: Text(l.sessionClosedButton),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

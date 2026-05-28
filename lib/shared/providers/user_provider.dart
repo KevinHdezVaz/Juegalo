@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/device_service.dart';
 import '../../core/services/notification_service.dart';
 
 // Web OAuth client ID (para que Supabase verifique el token)
@@ -116,6 +117,33 @@ final userProvider = StreamProvider<AppUser?>((ref) {
       .map((rows) => rows.isEmpty ? null : AppUser.fromJson(rows.first));
 });
 
+// ── Guard de sesión por dispositivo ──────────────────────────────
+// Emite false cuando el active_device_id en la BD deja de coincidir
+// con el ID de este dispositivo (ya sea en la emisión inicial o en
+// cualquier cambio posterior vía Realtime).
+//
+// NO usa .skip(1): la primera emisión es el estado actual de la BD.
+// Como _saveDeviceId() siempre se llama ANTES de navegar a HomeScreen,
+// el primer valor ya es el ID correcto de este dispositivo.
+final deviceSessionGuardProvider = StreamProvider<bool>((ref) {
+  final userId = _db.auth.currentUser?.id;
+  if (userId == null) return Stream.value(true);
+
+  return Future(() async {
+    final localDeviceId = await DeviceService.instance.getDeviceId();
+    return _db
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .map((rows) {
+          if (rows.isEmpty) return true;
+          final storedId = rows.first['active_device_id'] as String?;
+          if (storedId == null || storedId.isEmpty) return true;
+          return storedId == localDeviceId;
+        });
+  }).asStream().asyncExpand((s) => s);
+});
+
 // ── Notifier para acciones del usuario ───────────────────────────
 class UserNotifier extends AsyncNotifier<AppUser?> {
   @override
@@ -163,6 +191,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
+    await _saveDeviceId();
   }
 
   // Sign in con Apple
@@ -190,6 +219,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
+    await _saveDeviceId();
   }
 
   String _generateNonce([int length = 32]) {
@@ -214,6 +244,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
+    await _saveDeviceId();
   }
 
   Future<void> signUpWithEmail({
@@ -225,6 +256,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     await _ensureUserRow();
     await _applyReferral(referralCode);
     await NotificationService.instance.requestAndSaveToken();
+    await _saveDeviceId();
   }
 
   // Sign in anónimo (jugar sin cuenta)
@@ -251,6 +283,7 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
     } catch (e) {
       debugPrint('🟡 [signInAnonymously] FCM token falló (no crítico): $e');
     }
+    await _saveDeviceId();
     debugPrint('✅ [signInAnonymously] Flujo completo');
   }
 
@@ -478,6 +511,57 @@ class UserNotifier extends AsyncNotifier<AppUser?> {
           .single();
       state = AsyncData(AppUser.fromJson(row));
     } catch (_) {}
+  }
+
+  /// Guarda el device ID de este dispositivo en Supabase.
+  /// Se llama después de cada login para "registrar" el dispositivo activo.
+  Future<void> _saveDeviceId() async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final deviceId = await DeviceService.instance.getDeviceId();
+      await _db.from('users').update({'active_device_id': deviceId}).eq('id', uid);
+      debugPrint('📱 [DeviceSession] device_id guardado: $deviceId');
+    } catch (e) {
+      debugPrint('🟡 [DeviceSession] No se pudo guardar device_id: $e');
+    }
+  }
+
+  /// Verifica al arrancar la app (splash) que este dispositivo sea el activo.
+  ///
+  /// - Sin active_device_id en la BD → primera vez → guarda este dispositivo → true.
+  /// - El ID almacenado coincide → todo OK → true.
+  /// - El ID almacenado es de OTRO dispositivo → hace signOut → false.
+  ///   (El usuario deberá iniciar sesión de nuevo; eso actualizará el active_device_id.)
+  Future<bool> verifyDeviceSession() async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return true;
+    try {
+      final deviceId = await DeviceService.instance.getDeviceId();
+      final row = await _db
+          .from('users')
+          .select('active_device_id')
+          .eq('id', uid)
+          .maybeSingle();
+      if (row == null) return true;
+      final storedId = row['active_device_id'] as String?;
+
+      if (storedId == null || storedId.isEmpty) {
+        // Primera vez — este dispositivo reclama la sesión
+        await _saveDeviceId();
+        return true;
+      }
+
+      if (storedId == deviceId) return true;
+
+      // Otro dispositivo tiene la sesión activa → cerrar sesión aquí
+      debugPrint('🚫 [DeviceSession] Sesión en otro dispositivo. stored=$storedId local=$deviceId');
+      await signOut();
+      return false;
+    } catch (e) {
+      debugPrint('🟡 [DeviceSession] Error al verificar dispositivo: $e');
+      return true; // ante error de red, no cerrar sesión
+    }
   }
 
   // Sign out
