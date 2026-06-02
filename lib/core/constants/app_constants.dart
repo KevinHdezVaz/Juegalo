@@ -16,7 +16,7 @@ class AppConstants {
   static const int dailyGoalMax = 20000;    // techo = $2.00
 
   // ── Recompensas ───────────────────────────────────────────────
-  static const int coinsPerVideo = 30;      // 30 monedas = $0.003 por video
+  static const int coinsPerVideo = 25;      // 25 monedas = $0.0025 por video
   static const int coinsPerVideoMax = 50;   // max 50 videos/día = 1,500 monedas
   // ── CPX Research — economía de encuestas ─────────────────────────
   // Estos valores DEBEN coincidir con las env vars del servidor:
