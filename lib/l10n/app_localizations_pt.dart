@@ -69,13 +69,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tutorialRankingFirst => '1º Lugar';
 
   @override
-  String get tutorialRankingFirstValue => '2.500 moedas';
+  String get tutorialRankingFirstValue => '2.000 moedas';
 
   @override
   String get tutorialRankingSecond => '2º Lugar';
 
   @override
-  String get tutorialRankingSecondValue => '1.000 moedas';
+  String get tutorialRankingSecondValue => '700 moedas';
 
   @override
   String get tutorialRankingThird => '3º Lugar';

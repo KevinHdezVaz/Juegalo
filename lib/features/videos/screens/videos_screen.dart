@@ -315,25 +315,35 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     // Cooldown de 60 s solo para este slot
     _startCooldown(index);
 
+    // Capturar saldo ANTES de esperar el SSV
+    final coinsBefore = ref.read(userProvider).value?.coins ?? 0;
+
     // Esperar 6 s para que el SSV de AdMob llegue al servidor
     await Future.delayed(const Duration(seconds: 6));
     if (!context.mounted) return;
 
     ref.invalidate(userProvider);
-    ref.invalidate(
-        transactionsProvider); // refresca "últimas transacciones" en wallet
+    ref.invalidate(transactionsProvider);
 
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        // ignore: use_build_context_synchronously
-        context.l10n.videosCoinsEarned(AppConstants.coinsPerVideo),
-        style: const TextStyle(fontWeight: FontWeight.w700),
-      ),
-      backgroundColor: AppColors.verdePrimario,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 3),
-    ));
+    // Esperar a que el provider se actualice con el nuevo saldo
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!context.mounted) return;
+
+    // Solo mostrar snackbar si el saldo realmente subió (SSV llegó y fue aceptado)
+    final coinsAfter = ref.read(userProvider).value?.coins ?? 0;
+    if (coinsAfter > coinsBefore) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          // ignore: use_build_context_synchronously
+          context.l10n.videosCoinsEarned(AppConstants.coinsPerVideo),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: AppColors.verdePrimario,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ));
+    }
 
     // ignore: use_build_context_synchronously
     await tryClaimDailyBonus(context, ref);

@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialRankingFirstValue.
   ///
   /// In es, this message translates to:
-  /// **'2,500 monedas'**
+  /// **'2,000 monedas'**
   String get tutorialRankingFirstValue;
 
   /// No description provided for @tutorialRankingSecond.
@@ -229,7 +229,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialRankingSecondValue.
   ///
   /// In es, this message translates to:
-  /// **'1,000 monedas'**
+  /// **'700 monedas'**
   String get tutorialRankingSecondValue;
 
   /// No description provided for @tutorialRankingThird.
