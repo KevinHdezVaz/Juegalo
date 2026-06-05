@@ -69,13 +69,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialRankingFirst => 'Place #1';
 
   @override
-  String get tutorialRankingFirstValue => '2,000 coins';
+  String get tutorialRankingFirstValue => '1,400 coins';
 
   @override
   String get tutorialRankingSecond => 'Place #2';
 
   @override
-  String get tutorialRankingSecondValue => '700 coins';
+  String get tutorialRankingSecondValue => '900 coins';
 
   @override
   String get tutorialRankingThird => 'Place #3';
@@ -88,7 +88,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialCashoutSubtitle =>
-      '10,000 coins = \$1.00 USD.\nWithdraw from \$1 with no fee.';
+      '10,000 coins = \$1.00 USD.\nWithdraw from \$2 with no fee.';
 
   @override
   String get tutorialCashoutPaypalValue => 'Instant';
@@ -649,7 +649,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletRequestCashout => 'Request cashout';
 
   @override
-  String get walletMinimumCashout => 'Minimum \$1.00 to withdraw';
+  String get walletMinimumCashout => 'Minimum \$2.00 to withdraw';
 
   @override
   String get walletPaymentMethods => 'Payment methods';
@@ -677,7 +677,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String walletNeedCoins(String coins, String missing) {
-    return 'You need at least $coins coins (\$1.00 USD) to withdraw.\n\nYou\'re missing $missing coins.';
+    return 'You need at least $coins coins (\$2.00 USD) to withdraw.\n\nYou\'re missing $missing coins.';
   }
 
   @override
@@ -804,7 +804,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cashoutNeedCoins(String coins, String missing) {
-    return 'You need at least $coins coins (\$1.00 USD) to withdraw via PayPal.\n\nYou\'re missing $missing coins.';
+    return 'You need at least $coins coins (\$2.00 USD) to withdraw via PayPal.\n\nYou\'re missing $missing coins.';
   }
 
   @override
@@ -1635,4 +1635,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileDeleteError => 'Error deleting account';
+
+  @override
+  String get paypalDuplicateTitle => 'Duplicate PayPal account';
+
+  @override
+  String get paypalDuplicateBadge => 'SECURITY ALERT';
+
+  @override
+  String get paypalDuplicateReason =>
+      'This PayPal email is already linked to another JUEGALO user.';
+
+  @override
+  String get paypalDuplicatePolicy => 'Anti-fraud policy';
+
+  @override
+  String get paypalDuplicatePolicyDesc =>
+      'To protect real payments, each account must use a unique PayPal. Cashing out to the same PayPal from multiple accounts is not allowed.';
+
+  @override
+  String get paypalDuplicateConsequence =>
+      'Your cashout request was NOT processed. Change your PayPal account or contact support if you believe this is an error.';
+
+  @override
+  String get paypalDuplicateChangeAccount => 'Change PayPal';
+
+  @override
+  String get paypalDuplicateContactSupport => 'Contact support';
 }

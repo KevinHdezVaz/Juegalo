@@ -164,8 +164,14 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Promo banner ─────────────────────────────────────────
-            const _PromoAppBanner(),
+            // ── Promo banners en row (Winner + MusicMeet) ────────────
+            const Row(
+              children: [
+                Expanded(child: _WinnerPromoBanner()),
+                SizedBox(width: 10),
+                Expanded(child: _PromoAppBanner()),
+              ],
+            ),
             const SizedBox(height: 16),
 
             // ── Header ──────────────────────────────────────────────
@@ -457,6 +463,111 @@ class _SurveyCard extends StatelessWidget {
   }
 }
 
+// ── Banner promocional Winner (app del mismo creador) ────────────────
+class _WinnerPromoBanner extends StatelessWidget {
+  const _WinnerPromoBanner();
+
+  static const _urlAndroid =
+      'https://play.google.com/store/apps/details?id=com.kevinGame.winner&hl=es_MX';
+  static const _urlIos =
+      'https://apps.apple.com/us/app/winner-gana-dinero-jugando/id6769851325';
+  static const _iconUrl =
+      'https://play-lh.googleusercontent.com/Ye_p03ap5KbWGKUeTXf82_1ihiuSe9SElq_a7zjOHyO1NpTgd_B25M2rPJQvjncaEAF2BFatbfjxARJDDlIS=w240-h480';
+
+  Future<void> _openStore() async {
+    final uri = Uri.parse(Platform.isIOS ? _urlIos : _urlAndroid);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _openStore,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF065F46), Color(0xFF10B981)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withValues(alpha: 0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                _iconUrl,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 42,
+                  height: 42,
+                  color: const Color(0xFF065F46),
+                  child: const Icon(Icons.attach_money_rounded,
+                      color: Colors.white, size: 22),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Winner',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  Text(
+                    'Gana en PayPal',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Color(0xFF059669),
+                size: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Banner promocional MusicMeet ──────────────────────────────────────
 class _PromoAppBanner extends StatelessWidget {
   const _PromoAppBanner();
@@ -480,93 +591,70 @@ class _PromoAppBanner extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF6D28D9), Color(0xFF9333EA), Color(0xFFDB2777)],
+            colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF9333EA).withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(10),
         child: Row(
           children: [
-            // Logo
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/images/logoMusicMeet.png',
-                width: 54,
-                height: 54,
+                width: 42,
+                height: 42,
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: 12),
-
-            // Texto
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      context.l10n.promoMusicMeetBadge,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   const Text(
                     'MusicMeet',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 15,
+                      fontSize: 13.5,
                     ),
                   ),
-                  const SizedBox(height: 2),
                   Text(
-                    context.l10n.promoMusicMeetSubtitle,
+                    'Conecta por música',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 12,
-                      height: 1.3,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      height: 1.2,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-
-            // Botón
+            const SizedBox(width: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                shape: BoxShape.circle,
               ),
-              child: Text(
-                context.l10n.promoMusicMeetButton,
-                style: const TextStyle(
-                  color: Color(0xFF7C3AED),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Color(0xFF9333EA),
+                size: 14,
               ),
             ),
           ],

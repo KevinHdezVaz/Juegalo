@@ -367,11 +367,14 @@ class ProfileScreen extends ConsumerWidget {
                   label: context.l10n.profileCurrentStreak, value: context.l10n.profileStreakDays(user.streakDays)),
               const SizedBox(height: 24),
 
-              // ── Tarjeta de referidos (solo usuarios con cuenta) ──
-              if (!isAnon) ...[
-                _ReferralCard(user: user),
-                const SizedBox(height: 24),
-              ],
+              // ── Tarjeta de referidos: OCULTA temporalmente ──
+              // El sistema de bonos de referido fue removido. La sección queda
+              // oculta para no prometer monedas que ya no se pagan. El widget
+              // _ReferralCard se mantiene en código por si se reactiva.
+              // if (!isAnon) ...[
+              //   _ReferralCard(user: user),
+              //   const SizedBox(height: 24),
+              // ],
 
               // ── Cerrar sesión ────────────────────────────────────
               OutlinedButton(
@@ -458,6 +461,7 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 // ── Tarjeta de referidos ──────────────────────────────────────────
+// ignore: unused_element
 class _ReferralCard extends ConsumerWidget {
   final AppUser user;
   const _ReferralCard({required this.user});

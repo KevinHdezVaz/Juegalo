@@ -76,6 +76,10 @@ Future<void> main() async {
   // Corre la app y busca en los logs: "Use RequestConfiguration.Builder
   // .setTestDeviceIds" — ahí aparece tu device ID. Pégalo aquí.
   // Puedes agregar varios IDs si pruebas en más de un dispositivo.
+  //
+  // ⚠️ NUNCA quites los test devices y luego veas/clickees tus propios
+  // ads — Google lo detecta como tráfico inválido y puede suspenderte
+  // la cuenta de AdMob. En release siempre debe ir activo para tu cel.
   await MobileAds.instance.updateRequestConfiguration(
     RequestConfiguration(
       testDeviceIds: [

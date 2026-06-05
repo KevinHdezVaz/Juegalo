@@ -22,14 +22,14 @@
   "tutorialRankingTitle": "Ranking semanal",
   "tutorialRankingSubtitle": "Compita toda semana.\nOs melhores ganham prêmios extras.",
   "tutorialRankingFirst": "1º Lugar",
-  "tutorialRankingFirstValue": "2.000 moedas",
+  "tutorialRankingFirstValue": "1.400 moedas",
   "tutorialRankingSecond": "2º Lugar",
-  "tutorialRankingSecondValue": "700 moedas",
+  "tutorialRankingSecondValue": "900 moedas",
   "tutorialRankingThird": "3º Lugar",
   "tutorialRankingThirdValue": "500 moedas",
 
   "tutorialCashoutTitle": "Saque quando quiser",
-  "tutorialCashoutSubtitle": "10.000 moedas = $1,00 USD.\nSaque a partir de $1 sem taxa.",
+  "tutorialCashoutSubtitle": "10.000 moedas = $1,00 USD.\nSaque a partir de $2 sem taxa.",
   "tutorialCashoutPaypalValue": "Instantâneo",
 
   "tutorialSkip": "Pular",
@@ -330,7 +330,7 @@
     }
   },
   "walletRequestCashout": "Solicitar saque",
-  "walletMinimumCashout": "Mínimo $1,00 para sacar",
+  "walletMinimumCashout": "Mínimo $2,00 para sacar",
   "walletPaymentMethods": "Métodos de saque",
   "walletPaypalDesc": "Internacional · 1–3 dias úteis",
   "walletMercadopagoDesc": "México e LatAm · sem taxa",
@@ -339,7 +339,7 @@
   "walletTransactions": "Últimas transações",
   "walletNoTransactions": "Sem transações ainda",
   "walletAlmostThere": "Quase lá!",
-  "walletNeedCoins": "Você precisa de pelo menos {coins} moedas ($1,00 USD) para sacar.\n\nFaltam {missing} moedas.",
+  "walletNeedCoins": "Você precisa de pelo menos {coins} moedas ($2,00 USD) para sacar.\n\nFaltam {missing} moedas.",
   "@walletNeedCoins": {
     "placeholders": {
       "coins": { "type": "String" },
@@ -415,7 +415,7 @@
       "coins": { "type": "String" }
     }
   },
-  "cashoutNeedCoins": "Você precisa de pelo menos {coins} moedas ($1,00 USD) para sacar pelo PayPal.\n\nFaltam {missing} moedas.",
+  "cashoutNeedCoins": "Você precisa de pelo menos {coins} moedas ($2,00 USD) para sacar pelo PayPal.\n\nFaltam {missing} moedas.",
   "@cashoutNeedCoins": {
     "placeholders": {
       "coins": { "type": "String" },
@@ -789,5 +789,14 @@
     }
   },
 
-  "profileDeleteError": "Erro ao excluir a conta"
+  "profileDeleteError": "Erro ao excluir a conta",
+
+  "paypalDuplicateTitle": "Conta PayPal duplicada",
+  "paypalDuplicateBadge": "ALERTA DE SEGURANÇA",
+  "paypalDuplicateReason": "Este e-mail do PayPal já está vinculado a outro usuário do JUEGALO.",
+  "paypalDuplicatePolicy": "Política antifraude",
+  "paypalDuplicatePolicyDesc": "Para proteger pagamentos reais, cada conta deve usar um PayPal único. Não é permitido sacar para o mesmo PayPal a partir de várias contas.",
+  "paypalDuplicateConsequence": "Sua solicitação de saque NÃO foi processada. Altere a conta PayPal ou contate o suporte se achar que é um erro.",
+  "paypalDuplicateChangeAccount": "Alterar PayPal",
+  "paypalDuplicateContactSupport": "Contatar suporte"
 }

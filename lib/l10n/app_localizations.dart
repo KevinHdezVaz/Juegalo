@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialRankingFirstValue.
   ///
   /// In es, this message translates to:
-  /// **'2,000 monedas'**
+  /// **'1,400 monedas'**
   String get tutorialRankingFirstValue;
 
   /// No description provided for @tutorialRankingSecond.
@@ -229,7 +229,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialRankingSecondValue.
   ///
   /// In es, this message translates to:
-  /// **'700 monedas'**
+  /// **'900 monedas'**
   String get tutorialRankingSecondValue;
 
   /// No description provided for @tutorialRankingThird.
@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialCashoutSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'10,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.'**
+  /// **'10,000 monedas = \$1.00 USD.\nRetira desde \$2 sin comisión.'**
   String get tutorialCashoutSubtitle;
 
   /// No description provided for @tutorialCashoutPaypalValue.
@@ -1243,7 +1243,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletMinimumCashout.
   ///
   /// In es, this message translates to:
-  /// **'Mínimo \$1.00 para retirar'**
+  /// **'Mínimo \$2.00 para retirar'**
   String get walletMinimumCashout;
 
   /// No description provided for @walletPaymentMethods.
@@ -1297,7 +1297,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletNeedCoins.
   ///
   /// In es, this message translates to:
-  /// **'Necesitas al menos {coins} monedas (\$1.00 USD) para retirar.\n\nTe faltan {missing} monedas.'**
+  /// **'Necesitas al menos {coins} monedas (\$2.00 USD) para retirar.\n\nTe faltan {missing} monedas.'**
   String walletNeedCoins(String coins, String missing);
 
   /// No description provided for @walletGotIt.
@@ -1513,7 +1513,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashoutNeedCoins.
   ///
   /// In es, this message translates to:
-  /// **'Necesitas al menos {coins} monedas (\$1.00 USD) para retirar por PayPal.\n\nTe faltan {missing} monedas.'**
+  /// **'Necesitas al menos {coins} monedas (\$2.00 USD) para retirar por PayPal.\n\nTe faltan {missing} monedas.'**
   String cashoutNeedCoins(String coins, String missing);
 
   /// No description provided for @cashoutGuestTitle.
@@ -3015,6 +3015,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error al eliminar la cuenta'**
   String get profileDeleteError;
+
+  /// No description provided for @paypalDuplicateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta PayPal duplicada'**
+  String get paypalDuplicateTitle;
+
+  /// No description provided for @paypalDuplicateBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'ALERTA DE SEGURIDAD'**
+  String get paypalDuplicateBadge;
+
+  /// No description provided for @paypalDuplicateReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Este correo de PayPal ya está vinculado a otro usuario de JUEGALO.'**
+  String get paypalDuplicateReason;
+
+  /// No description provided for @paypalDuplicatePolicy.
+  ///
+  /// In es, this message translates to:
+  /// **'Política anti-fraude'**
+  String get paypalDuplicatePolicy;
+
+  /// No description provided for @paypalDuplicatePolicyDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Para proteger los pagos reales, cada cuenta debe usar un PayPal único. No se permite cobrar al mismo PayPal desde múltiples cuentas.'**
+  String get paypalDuplicatePolicyDesc;
+
+  /// No description provided for @paypalDuplicateConsequence.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu solicitud de cobro NO fue procesada. Cambia la cuenta de PayPal o contacta a soporte si crees que es un error.'**
+  String get paypalDuplicateConsequence;
+
+  /// No description provided for @paypalDuplicateChangeAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar PayPal'**
+  String get paypalDuplicateChangeAccount;
+
+  /// No description provided for @paypalDuplicateContactSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Contactar soporte'**
+  String get paypalDuplicateContactSupport;
 }
 
 class _AppLocalizationsDelegate

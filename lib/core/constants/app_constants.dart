@@ -7,7 +7,7 @@ class AppConstants {
 
   // ── Sistema de monedas ────────────────────────────────────────
   static const int coinsPerDollar = 10000; // 10,000 monedas = $1.00 USD
-  static const int minCashoutCoins = 10000; // mínimo $1.00 para cobrar
+  static const int minCashoutCoins = 20000; // mínimo $2.00 para cobrar
   static const int maxDailyEarnCoins = 100000; // cap anti-fraude $10/día
 
   // ── Meta diaria (sube cada día) ───────────────────────────────
@@ -16,8 +16,8 @@ class AppConstants {
   static const int dailyGoalMax = 20000;    // techo = $2.00
 
   // ── Recompensas ───────────────────────────────────────────────
-  static const int coinsPerVideo = 25;      // 25 monedas = $0.0025 por video
-  static const int coinsPerVideoMax = 50;   // max 50 videos/día = 1,500 monedas
+  static const int coinsPerVideo = 27;      // 27 monedas = $0.0027 por video
+  static const int coinsPerVideoMax = 50;   // max 50 videos/día = 1,350 monedas
   // ── CPX Research — economía de encuestas ─────────────────────────
   // Estos valores DEBEN coincidir con las env vars del servidor:
   //   CPX_COINS_DIVISOR=2  CPX_COINS_MAX=5000  CPX_COINS_MIN=100

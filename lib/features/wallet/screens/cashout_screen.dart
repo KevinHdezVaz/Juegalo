@@ -7,6 +7,7 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'email_verification_screen.dart';
 import '../../../shared/widgets/app_error_widget.dart';
@@ -77,14 +78,46 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     super.dispose();
   }
 
+  // Clave en SharedPreferences para cachear la última verificación OTP exitosa.
+  // El caché es POR USUARIO (uid) para que cambiar de cuenta no aproveche el caché ajeno.
+  static const _kOtpCachePrefix = 'cashout_otp_verified_at_';
+  static const Duration _otpCacheDuration = Duration(days: 7);
+
   /// Abre la pantalla de verificación de email OTP y espera el resultado.
+  /// Si el usuario verificó hace menos de 7 días en este dispositivo, devuelve
+  /// true inmediatamente sin pedir código nuevo.
   Future<bool> _ensureEmailVerified() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+
+    // Revisar caché — si verificó hace <7 días, saltarse el OTP
+    if (uid != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final lastMs = prefs.getInt('$_kOtpCachePrefix$uid') ?? 0;
+      if (lastMs > 0) {
+        final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
+        if (DateTime.now().difference(last) < _otpCacheDuration) {
+          debugPrint('🔐 [Cashout] OTP cacheado — skip verificación');
+          return true;
+        }
+      }
+    }
+
+    if (!mounted) return false;
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => const EmailVerificationScreen(),
       ),
     );
+
+    // Si verificó exitosamente, guardar timestamp para futuras 7 días
+    if (result == true && uid != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(
+        '$_kOtpCachePrefix$uid',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    }
     return result == true;
   }
 
@@ -133,7 +166,15 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       }
     } catch (e, stack) {
       debugPrint('🔴 [Cashout] ERROR snackbar: $e\n$stack');
-      if (mounted) _snack('Error: $e', error: true);
+      if (mounted) {
+        // Detección de error específico: PayPal ya vinculado a otra cuenta
+        final msg = e.toString();
+        if (msg.contains('PAYPAL_ALREADY_LINKED')) {
+          _showPayPalDuplicateDialog();
+        } else {
+          _snack('Error: $e', error: true);
+        }
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -145,6 +186,307 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
       backgroundColor: error ? AppColors.colorVideos : AppColors.verdePrimario,
       behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  /// Dialog autoritativo cuando el usuario intenta cobrar a un PayPal ya
+  /// usado por otra cuenta. Diseñado para transmitir seriedad anti-fraude.
+  void _showPayPalDuplicateDialog() {
+    final l = context.l10n;
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      barrierLabel: 'Cerrar',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, __, ___) {
+        final scale = Tween<double>(begin: 0.92, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic))
+            .animate(anim);
+        return FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(
+            scale: scale,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Material(
+                  color: Colors.transparent,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1F1330), Color(0xFF14091F)],
+                        ),
+                        border: Border.all(
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.55),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+                            blurRadius: 45,
+                            spreadRadius: 2,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            blurRadius: 30,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header con franja roja superior
+                          Container(
+                            width: double.infinity,
+                            padding:
+                                const EdgeInsets.fromLTRB(24, 22, 24, 18),
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFFDC2626).withValues(alpha: 0.20),
+                                  const Color(0xFF7F1D1D).withValues(alpha: 0.05),
+                                ],
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                // Badge "ALERTA DE SEGURIDAD"
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDC2626),
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        l.paypalDuplicateBadge,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                // Ícono escudo con glow
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFFDC2626)
+                                        .withValues(alpha: 0.15),
+                                    border: Border.all(
+                                      color: const Color(0xFFDC2626),
+                                      width: 2.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFDC2626)
+                                            .withValues(alpha: 0.5),
+                                        blurRadius: 24,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.gpp_bad_rounded,
+                                    color: Color(0xFFFCA5A5),
+                                    size: 38,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // Título
+                                Text(
+                                  l.paypalDuplicateTitle,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Body
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Razón principal
+                                Text(
+                                  l.paypalDuplicateReason,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    height: 1.45,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // Card política
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white
+                                        .withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.08),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.policy_outlined,
+                                            color: Color(0xFFFCA5A5),
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            l.paypalDuplicatePolicy,
+                                            style: const TextStyle(
+                                              color: Color(0xFFFCA5A5),
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.6,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        l.paypalDuplicatePolicyDesc,
+                                        style: TextStyle(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.78),
+                                          fontSize: 12.5,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                // Consecuencia
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDC2626)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border(
+                                      left: BorderSide(
+                                        color: const Color(0xFFDC2626),
+                                        width: 3,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l.paypalDuplicateConsequence,
+                                    style: const TextStyle(
+                                      color: Color(0xFFFCA5A5),
+                                      fontSize: 12.5,
+                                      height: 1.45,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                // CTA principal
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color(0xFFDC2626),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      l.paypalDuplicateChangeAccount,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                // Botón soporte secundario
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  style: TextButton.styleFrom(
+                                    minimumSize:
+                                        const Size(double.infinity, 36),
+                                  ),
+                                  child: Text(
+                                    l.paypalDuplicateContactSupport,
+                                    style: TextStyle(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.55),
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showInsufficientCoinsDialog(BuildContext context, int currentCoins) {

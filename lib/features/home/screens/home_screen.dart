@@ -15,6 +15,8 @@ import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
 import '../../games/screens/games_screen.dart';
+import '../widgets/payouts_ticker.dart';
+import '../widgets/cross_promo_dialog.dart';
 import '../../ranking/screens/ranking_screen.dart';
 import '../../surveys/screens/surveys_screen.dart';
 import '../../videos/screens/videos_screen.dart';
@@ -54,6 +56,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Iniciar escucha Realtime de sesión inmediatamente al montar
       _listenDeviceSession();
+      // Cross-promo de otra app (máximo 1 vez por semana)
+      await Future.delayed(const Duration(seconds: 3));
+      if (mounted) await CrossPromoDialog.maybeShow(context);
       // Pedir reseña después de 4s
       await Future.delayed(const Duration(seconds: 4));
       _maybeRequestReview();
@@ -335,17 +340,25 @@ class _HomeScreenBody extends ConsumerWidget {
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          screens[safeTab],
-          if (user != null)
-            CPXResearch(
-              config: CPXConfig(
-                appID: _cpxAppId,
-                userID: user.id,
-                accentColor: AppColors.azulPrimario,
-              ),
+          // Live ticker de pagos recientes — solo para usuarios logueados
+          if (user != null) const PayoutsTicker(),
+          Expanded(
+            child: Stack(
+              children: [
+                screens[safeTab],
+                if (user != null)
+                  CPXResearch(
+                    config: CPXConfig(
+                      appID: _cpxAppId,
+                      userID: user.id,
+                      accentColor: AppColors.azulPrimario,
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
       bottomNavigationBar: _NavBar(

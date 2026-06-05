@@ -69,13 +69,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tutorialRankingFirst => 'Puesto #1';
 
   @override
-  String get tutorialRankingFirstValue => '2,000 monedas';
+  String get tutorialRankingFirstValue => '1,400 monedas';
 
   @override
   String get tutorialRankingSecond => 'Puesto #2';
 
   @override
-  String get tutorialRankingSecondValue => '700 monedas';
+  String get tutorialRankingSecondValue => '900 monedas';
 
   @override
   String get tutorialRankingThird => 'Puesto #3';
@@ -88,7 +88,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tutorialCashoutSubtitle =>
-      '10,000 monedas = \$1.00 USD.\nRetira desde \$1 sin comisión.';
+      '10,000 monedas = \$1.00 USD.\nRetira desde \$2 sin comisión.';
 
   @override
   String get tutorialCashoutPaypalValue => 'Instantáneo';
@@ -650,7 +650,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get walletRequestCashout => 'Solicitar cobro';
 
   @override
-  String get walletMinimumCashout => 'Mínimo \$1.00 para retirar';
+  String get walletMinimumCashout => 'Mínimo \$2.00 para retirar';
 
   @override
   String get walletPaymentMethods => 'Métodos de cobro';
@@ -678,7 +678,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String walletNeedCoins(String coins, String missing) {
-    return 'Necesitas al menos $coins monedas (\$1.00 USD) para retirar.\n\nTe faltan $missing monedas.';
+    return 'Necesitas al menos $coins monedas (\$2.00 USD) para retirar.\n\nTe faltan $missing monedas.';
   }
 
   @override
@@ -804,7 +804,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String cashoutNeedCoins(String coins, String missing) {
-    return 'Necesitas al menos $coins monedas (\$1.00 USD) para retirar por PayPal.\n\nTe faltan $missing monedas.';
+    return 'Necesitas al menos $coins monedas (\$2.00 USD) para retirar por PayPal.\n\nTe faltan $missing monedas.';
   }
 
   @override
@@ -1641,4 +1641,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileDeleteError => 'Error al eliminar la cuenta';
+
+  @override
+  String get paypalDuplicateTitle => 'Cuenta PayPal duplicada';
+
+  @override
+  String get paypalDuplicateBadge => 'ALERTA DE SEGURIDAD';
+
+  @override
+  String get paypalDuplicateReason =>
+      'Este correo de PayPal ya está vinculado a otro usuario de JUEGALO.';
+
+  @override
+  String get paypalDuplicatePolicy => 'Política anti-fraude';
+
+  @override
+  String get paypalDuplicatePolicyDesc =>
+      'Para proteger los pagos reales, cada cuenta debe usar un PayPal único. No se permite cobrar al mismo PayPal desde múltiples cuentas.';
+
+  @override
+  String get paypalDuplicateConsequence =>
+      'Tu solicitud de cobro NO fue procesada. Cambia la cuenta de PayPal o contacta a soporte si crees que es un error.';
+
+  @override
+  String get paypalDuplicateChangeAccount => 'Cambiar PayPal';
+
+  @override
+  String get paypalDuplicateContactSupport => 'Contactar soporte';
 }
