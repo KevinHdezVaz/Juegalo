@@ -9,6 +9,8 @@ import '../../../shared/providers/cashout_provider.dart';
 import '../../../shared/providers/user_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/play_integrity_service.dart';
+import '../../../shared/widgets/integrity_action_block_dialog.dart';
 import 'email_verification_screen.dart';
 import '../../../shared/widgets/app_error_widget.dart';
 
@@ -145,6 +147,26 @@ class _CashoutScreenState extends ConsumerState<CashoutScreen>
     try {
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) throw Exception('No autenticado');
+
+      // ── Anti-fraude: Play Integrity antes de procesar el cobro ─────
+      // En debug y iOS pasa siempre. En Android release verifica:
+      //   - APK no modificado
+      //   - Device no es emulador
+      //   - App instalada desde Play Store
+      final integrity = await PlayIntegrityService.checkBeforeAction(
+        'request_cashout',
+      );
+      debugPrint('🛡 [Cashout] integrity → ok=${integrity.ok} reason=${integrity.reason}');
+      // Solo bloqueamos si la razón es GRAVE (emulator/rooted o APK modificado).
+      // Errores de red, devices raros con UNEVALUATED, etc. → dejamos pasar
+      // para no joder UX a usuarios legítimos.
+      if (integrity.shouldStrictlyBlock) {
+        if (mounted) {
+          setState(() => _loading = false);
+          await IntegrityActionBlockDialog.show(context);
+        }
+        return;
+      }
 
       debugPrint('💸 [Cashout] RPC → uid=$uid coins=$coinsToSpend method=${_method.name}');
       // p_amount_usd se calcula DENTRO del RPC (coins / coinsPerDollar)

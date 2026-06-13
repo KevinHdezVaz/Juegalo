@@ -798,5 +798,13 @@
   "paypalDuplicatePolicyDesc": "Para proteger pagamentos reais, cada conta deve usar um PayPal único. Não é permitido sacar para o mesmo PayPal a partir de várias contas.",
   "paypalDuplicateConsequence": "Sua solicitação de saque NÃO foi processada. Altere a conta PayPal ou contate o suporte se achar que é um erro.",
   "paypalDuplicateChangeAccount": "Alterar PayPal",
-  "paypalDuplicateContactSupport": "Contatar suporte"
+  "paypalDuplicateContactSupport": "Contatar suporte",
+
+  "integrityBlockTitle": "Dispositivo não verificado",
+  "integrityBlockBadge": "BLOQUEIO DE SEGURANÇA",
+  "integrityBlockReason": "Por segurança, só aceitamos esta ação de dispositivos Android originais com o app instalado da Google Play Store.",
+  "integrityBlockPolicy": "Política antifraude",
+  "integrityBlockPolicyDesc": "Detectamos que seu dispositivo está modificado, é um emulador ou o app não foi instalado da Google Play. Para proteger pagamentos reais, esta ação está bloqueada.",
+  "integrityBlockConsequence": "Se você acredita que é um erro, reinstale o app da Google Play Store em um dispositivo Android original.",
+  "integrityBlockClose": "Entendido"
 }

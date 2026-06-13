@@ -6,9 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/l10n_ext.dart';
 
-// IDs de las tiendas — reemplaza el App Store ID cuando lo tengas
+// IDs de las tiendas
 const _androidPackage = 'com.kevinhv.juegalo';
-const _iosAppId       = 'XXXXXXXXX'; // reemplaza con tu Apple App ID numérico
+const _iosAppId       = '6761789534'; // Apple App ID de JUEGALO
 
 class VersionCheckService {
   VersionCheckService._();
@@ -25,7 +25,9 @@ class VersionCheckService {
       bool   forceUpdate = false;
       String minVersion  = '1.0.0';
 
-      // Leer desde Supabase (/api/config) — única fuente de verdad
+      // Leer desde Supabase (/api/config) — única fuente de verdad.
+      // Keys distintas por plataforma — Android e iOS llevan versiones
+      // independientes porque suben a stores diferentes.
       try {
         final dio = Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 4),
@@ -34,11 +36,13 @@ class VersionCheckService {
         final res = await dio.get('${AppConstants.apiBaseUrl}/api/config');
         if (res.statusCode == 200 && res.data is Map) {
           final data = res.data as Map;
-          final apiForce = data['force_update']?.toString();
-          final apiMin   = data['min_version']?.toString();
+          final forceKey   = Platform.isIOS ? 'force_update_ios' : 'force_update';
+          final versionKey = Platform.isIOS ? 'min_version_ios'  : 'min_version';
+          final apiForce = data[forceKey]?.toString();
+          final apiMin   = data[versionKey]?.toString();
           forceUpdate = (apiForce == 'true');
           if (apiMin != null && apiMin.isNotEmpty) minVersion = apiMin;
-          debugPrint('🚀 [VersionCheck] Supabase → force=$forceUpdate min=$minVersion');
+          debugPrint('🚀 [VersionCheck] ${Platform.isIOS ? "iOS" : "Android"} → force=$forceUpdate min=$minVersion');
         }
       } catch (e) {
         // Sin internet o error → no bloquear al usuario

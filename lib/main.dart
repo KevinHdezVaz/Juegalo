@@ -18,6 +18,9 @@ import 'core/router/app_router.dart';
 import 'shared/providers/locale_provider.dart';
 import 'shared/providers/feature_flags_provider.dart';
 import 'shared/widgets/maintenance_screen.dart';
+import 'shared/widgets/integrity_block_screen.dart';
+import 'core/services/device_integrity.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'core/services/notification_service.dart';
 import 'core/services/version_check_service.dart';
 import 'core/theme/app_theme.dart';
@@ -111,7 +114,36 @@ Future<void> main() async {
     NotificationService.instance.requestAndSaveToken().catchError((_) {});
   }
 
+  // ── Anti-fraude: detección de emulador ────────────────────────────
+  // 🧪 TESTING: si debugForceIntegrityCheck es true, también corre en debug.
+  // ⚠️ Cambia a false cuando termines de probar para no estorbar al desarrollar.
+  // En release siempre corre (kReleaseMode = true → siempre activo).
+  const bool debugForceIntegrityCheck = false;
+  if (kReleaseMode || debugForceIntegrityCheck) {
+    final integrity = await DeviceIntegrity.runIntegrityCheck();
+    if (integrity.isBlocked) {
+      runApp(_IntegrityBlockedApp(result: integrity));
+      return;
+    }
+  }
+
   runApp(const ProviderScope(child: JuegaloApp()));
+}
+
+/// App mínima que solo muestra la pantalla de bloqueo cuando detectamos
+/// emulador/jailbreak. No carga router, providers, ni Supabase calls.
+class _IntegrityBlockedApp extends StatelessWidget {
+  final IntegrityResult result;
+  const _IntegrityBlockedApp({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'JUEGALO',
+      debugShowCheckedModeBanner: false,
+      home: IntegrityBlockScreen(result: result),
+    );
+  }
 }
 
 class JuegaloApp extends ConsumerWidget {

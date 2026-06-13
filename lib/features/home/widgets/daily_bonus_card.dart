@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/play_integrity_service.dart';
 import '../../../core/utils/l10n_ext.dart';
 import '../../../core/utils/number_format_ext.dart';
 import '../../../shared/providers/user_provider.dart';
@@ -143,6 +144,16 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
 
     setState(() => _claiming = true);
     try {
+      // Anti-fraude: Play Integrity — bloqueo silencioso
+      final integrity = await PlayIntegrityService.checkBeforeAction(
+        'claim_daily_bonus',
+      );
+      if (integrity.shouldStrictlyBlock) {
+        debugPrint('🛡 [DailyBonusCard] bloqueado: ${integrity.reason}');
+        if (mounted) setState(() => _claiming = false);
+        return;
+      }
+
       final result = await Supabase.instance.client
           .rpc('claim_daily_bonus', params: {'p_user_id': uid});
 

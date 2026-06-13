@@ -798,5 +798,13 @@
   "paypalDuplicatePolicyDesc": "To protect real payments, each account must use a unique PayPal. Cashing out to the same PayPal from multiple accounts is not allowed.",
   "paypalDuplicateConsequence": "Your cashout request was NOT processed. Change your PayPal account or contact support if you believe this is an error.",
   "paypalDuplicateChangeAccount": "Change PayPal",
-  "paypalDuplicateContactSupport": "Contact support"
+  "paypalDuplicateContactSupport": "Contact support",
+
+  "integrityBlockTitle": "Unverified device",
+  "integrityBlockBadge": "SECURITY BLOCK",
+  "integrityBlockReason": "For security reasons, we only accept this action from original Android devices with the app installed from Google Play Store.",
+  "integrityBlockPolicy": "Anti-fraud policy",
+  "integrityBlockPolicyDesc": "We detected that your device is modified, an emulator, or the app was not installed from Google Play. To protect real payments, this action is blocked.",
+  "integrityBlockConsequence": "If you believe this is an error, reinstall the app from Google Play Store on an original Android device.",
+  "integrityBlockClose": "Got it"
 }

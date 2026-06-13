@@ -1,7 +1,7 @@
 name: juegalo_gana_dinero
 description: "JUEGALO — Gana Dinero Real."
 publish_to: 'none'
-version: 1.0.11+245
+version: 1.0.12+246
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -32,6 +32,10 @@ dependencies:
 
   # --- Cache local ---
   shared_preferences: ^2.3.4
+
+  # --- Anti-fraude: detección de emulador via device_info_plus.isPhysicalDevice ---
+  # (oficial Google/Apple, sin paquetes de terceros que rompen builds)
+  device_info_plus: ^10.1.2
 
   # --- AdMob (videos rewarded) ---
   google_mobile_ads: ^6.0.0

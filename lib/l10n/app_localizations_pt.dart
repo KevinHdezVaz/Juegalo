@@ -1667,4 +1667,28 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get paypalDuplicateContactSupport => 'Contatar suporte';
+
+  @override
+  String get integrityBlockTitle => 'Dispositivo não verificado';
+
+  @override
+  String get integrityBlockBadge => 'BLOQUEIO DE SEGURANÇA';
+
+  @override
+  String get integrityBlockReason =>
+      'Por segurança, só aceitamos esta ação de dispositivos Android originais com o app instalado da Google Play Store.';
+
+  @override
+  String get integrityBlockPolicy => 'Política antifraude';
+
+  @override
+  String get integrityBlockPolicyDesc =>
+      'Detectamos que seu dispositivo está modificado, é um emulador ou o app não foi instalado da Google Play. Para proteger pagamentos reais, esta ação está bloqueada.';
+
+  @override
+  String get integrityBlockConsequence =>
+      'Se você acredita que é um erro, reinstale o app da Google Play Store em um dispositivo Android original.';
+
+  @override
+  String get integrityBlockClose => 'Entendido';
 }

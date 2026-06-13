@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/play_integrity_service.dart';
 import '../../core/utils/l10n_ext.dart';
 import '../../core/utils/number_format_ext.dart';
 import '../providers/user_provider.dart';
@@ -29,6 +30,15 @@ Future<void> tryClaimDailyBonus(BuildContext context, WidgetRef ref) async {
   try {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return;
+
+    // Anti-fraude: Play Integrity — bloqueo silencioso si emulator/APK modificado
+    final integrity = await PlayIntegrityService.checkBeforeAction(
+      'claim_daily_bonus',
+    );
+    if (integrity.shouldStrictlyBlock) {
+      debugPrint('🛡 [DailyBonus] bloqueado por Play Integrity: ${integrity.reason}');
+      return;
+    }
 
     final result = await Supabase.instance.client
         .rpc('claim_daily_bonus', params: {'p_user_id': uid});

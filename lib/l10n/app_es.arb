@@ -798,5 +798,13 @@
   "paypalDuplicatePolicyDesc": "Para proteger los pagos reales, cada cuenta debe usar un PayPal único. No se permite cobrar al mismo PayPal desde múltiples cuentas.",
   "paypalDuplicateConsequence": "Tu solicitud de cobro NO fue procesada. Cambia la cuenta de PayPal o contacta a soporte si crees que es un error.",
   "paypalDuplicateChangeAccount": "Cambiar PayPal",
-  "paypalDuplicateContactSupport": "Contactar soporte"
+  "paypalDuplicateContactSupport": "Contactar soporte",
+
+  "integrityBlockTitle": "Dispositivo no verificado",
+  "integrityBlockBadge": "BLOQUEO DE SEGURIDAD",
+  "integrityBlockReason": "Por seguridad, solo aceptamos esta acción desde dispositivos Android originales con la app instalada desde Google Play Store.",
+  "integrityBlockPolicy": "Política anti-fraude",
+  "integrityBlockPolicyDesc": "Detectamos que tu dispositivo está modificado, es un emulador, o la app no fue instalada desde Google Play. Para proteger los pagos reales, esta acción está bloqueada.",
+  "integrityBlockConsequence": "Si crees que es un error, reinstala la app desde Google Play Store en un dispositivo Android original.",
+  "integrityBlockClose": "Entendido"
 }

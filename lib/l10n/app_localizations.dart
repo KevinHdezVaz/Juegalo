@@ -3063,6 +3063,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Contactar soporte'**
   String get paypalDuplicateContactSupport;
+
+  /// No description provided for @integrityBlockTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivo no verificado'**
+  String get integrityBlockTitle;
+
+  /// No description provided for @integrityBlockBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'BLOQUEO DE SEGURIDAD'**
+  String get integrityBlockBadge;
+
+  /// No description provided for @integrityBlockReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Por seguridad, solo aceptamos esta acción desde dispositivos Android originales con la app instalada desde Google Play Store.'**
+  String get integrityBlockReason;
+
+  /// No description provided for @integrityBlockPolicy.
+  ///
+  /// In es, this message translates to:
+  /// **'Política anti-fraude'**
+  String get integrityBlockPolicy;
+
+  /// No description provided for @integrityBlockPolicyDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos que tu dispositivo está modificado, es un emulador, o la app no fue instalada desde Google Play. Para proteger los pagos reales, esta acción está bloqueada.'**
+  String get integrityBlockPolicyDesc;
+
+  /// No description provided for @integrityBlockConsequence.
+  ///
+  /// In es, this message translates to:
+  /// **'Si crees que es un error, reinstala la app desde Google Play Store en un dispositivo Android original.'**
+  String get integrityBlockConsequence;
+
+  /// No description provided for @integrityBlockClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get integrityBlockClose;
 }
 
 class _AppLocalizationsDelegate
